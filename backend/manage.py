@@ -4,11 +4,14 @@ import os
 import sys
 # APMinSight auto-instrumentation breaks some local dev environments.
 # Enable it only when explicitly requested.
-if os.getenv("ENABLE_APMINSIGHT", "").lower() in {"1", "true", "yes"}:
+if (
+    os.getenv("ENABLE_APMINSIGHT", "").lower() in {"1", "true", "yes"}
+    and os.getenv("APMINSIGHT_LICENSE_KEY")
+):
     from apminsight import initialize_agent
 
     initialize_agent({
-        "license_key" : os.getenv("APMINSIGHT_LICENSE_KEY", "in_f419a525151d411f86974a28ae84af86"),
+        "license_key" : os.getenv("APMINSIGHT_LICENSE_KEY"),
         "appname" : os.getenv("APMINSIGHT_APPNAME", "Clinq"),
         "exporter_status_port" : os.getenv("APMINSIGHT_EXPORTER_STATUS_PORT", "20021"),
         "exporter_data_port" : os.getenv("APMINSIGHT_EXPORTER_DATA_PORT", "20022"),

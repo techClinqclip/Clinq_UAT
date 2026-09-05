@@ -62,8 +62,9 @@ DEBUG=False
 DATABASE_URL=postgresql://<user>:<password>@<host>:<port>/<database>
 ALLOWED_HOSTS=api.example.com
 CORS_ALLOW_ALL_ORIGINS=False
-CORS_ALLOWED_ORIGINS=https://app.example.com
-CSRF_TRUSTED_ORIGINS=https://app.example.com
+CORS_ALLOWED_ORIGINS=https://clinq.defite.in
+CSRF_TRUSTED_ORIGINS=https://clinq.defite.in
+FRONTEND_URL=https://clinq.defite.in
 REDIS_URL=redis://<redis-host>:6379/0
 SUPABASE_URL=https://<project>.supabase.co
 SUPABASE_KEY=<server-side-supabase-key>
@@ -90,13 +91,25 @@ These must be available while running `npm run build`:
 VITE_API_BASE_URL=https://api.example.com
 VITE_SUPABASE_URL=https://<project>.supabase.co
 VITE_SUPABASE_ANON_KEY=<supabase-anon-key>
-VITE_OAUTH_REDIRECT_URL=https://app.example.com/auth/callback
+VITE_OAUTH_REDIRECT_URL=https://clinq.defite.in/auth/callback
 VITE_GOOGLE_CLIENT_ID=<google-oauth-client-id>
 ```
 
 Only public values should use the `VITE_` prefix. Never expose `SUPABASE_KEY`, a Supabase service-role key, SMTP credentials, or `SECRET_KEY` in frontend variables.
 
 ## 5. Production Processes
+
+### Render deployment
+
+This repository includes `render.yaml` for Render Blueprint deployment. In Render, choose **New > Blueprint**, select this repository and the `main` branch, then review the services before applying:
+
+- `clinq-api`: Dockerized Django/Gunicorn API
+- `clinq-worker`: Celery worker
+- `clinq-postgres`: PostgreSQL database
+- `clinq-redis`: Redis-compatible key-value store
+- `clinq-frontend`: React/Vite static site
+
+Set the `sync: false` variables in the Render dashboard when prompted. In particular, set the frontend `VITE_API_BASE_URL` to the deployed API URL, for example `https://clinq-api.onrender.com`, and set the Supabase and SMTP values. Add `clinq.defite.in` as a custom domain for `clinq-frontend`, then complete the DNS records shown by Render.
 
 Run database migrations before accepting traffic:
 

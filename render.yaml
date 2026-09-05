@@ -1,0 +1,127 @@
+databases:
+  - name: clinq-postgres
+    databaseName: clinq
+    user: clinq
+    plan: free
+
+services:
+  - type: keyvalue
+    name: clinq-redis
+    plan: free
+    ipAllowList: []
+
+  - type: web
+    name: clinq-api
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: ./
+    plan: free
+    preDeployCommand: python manage.py migrate && python manage.py collectstatic --noinput
+    healthCheckPath: /api/schema/
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        fromService:
+          type: web
+          name: clinq-api
+          property: host
+      - key: DATABASE_URL
+        fromDatabase:
+          name: clinq-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: clinq-redis
+          property: connectionString
+      - key: DB_SSL_REQUIRE
+        value: "True"
+      - key: CORS_ALLOW_ALL_ORIGINS
+        value: "False"
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://clinq.defite.in
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://clinq.defite.in
+      - key: FRONTEND_URL
+        value: https://clinq.defite.in
+      - key: SECURE_SSL_REDIRECT
+        value: "True"
+      - key: SESSION_COOKIE_SECURE
+        value: "True"
+      - key: CSRF_COOKIE_SECURE
+        value: "True"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        sync: false
+
+  - type: worker
+    name: clinq-worker
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: ./
+    dockerCommand: celery -A core worker --loglevel=INFO
+    plan: free
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: clinq-api
+          envVarKey: SECRET_KEY
+      - key: DATABASE_URL
+        fromDatabase:
+          name: clinq-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: clinq-redis
+          property: connectionString
+      - key: ALLOWED_HOSTS
+        value: clinq-api.onrender.com
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+
+  - type: static
+    name: clinq-frontend
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
+      - key: VITE_OAUTH_REDIRECT_URL
+        value: https://clinq.defite.in/auth/callback
+      - key: VITE_GOOGLE_CLIENT_ID
+        sync: false

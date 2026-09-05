@@ -7,13 +7,8 @@ This repository contains the Clinq full-stack application:
 
 ## Prerequisites
 
-<<<<<<< HEAD
 - Python 3.10+ (Python 3.11 recommended)
 - Node.js 20.19+ or 22.12+ / npm 10+ (Node 22 LTS or 24 LTS recommended)
-=======
-- Python 3.11+ (or compatible Python 3.x)
-- Node 18+ / npm 10+
->>>>>>> c5f093941fb5ef9dc0c908f24541365f4ba9f83b
 - Redis (optional for Celery/background workers)
 - PostgreSQL or any database supported by `DATABASE_URL`
 
@@ -25,17 +20,10 @@ This repository contains the Clinq full-stack application:
 cd backend
 ```
 
-<<<<<<< HEAD
 2. Create and activate a virtual environment with a supported Python version:
 
 ```powershell
 py -3.10 -m venv .venv
-=======
-2. Create and activate a virtual environment:
-
-```powershell
-python -m venv .venv
->>>>>>> c5f093941fb5ef9dc0c908f24541365f4ba9f83b
 .\.venv\Scripts\Activate.ps1
 ```
 
@@ -101,7 +89,6 @@ redis-cli PING
 cd frontend
 ```
 
-<<<<<<< HEAD
 2. Ensure you are using a supported Node.js version (`20.19+` or `22.12+`; `22 LTS` or `24 LTS` recommended):
 
 ```powershell
@@ -109,39 +96,24 @@ node -v
 ```
 
 3. Install dependencies:
-=======
-2. Install dependencies:
->>>>>>> c5f093941fb5ef9dc0c908f24541365f4ba9f83b
 
 ```powershell
-npm install
+npm ci
 ```
 
-<<<<<<< HEAD
 4. Create a `.env` file in `frontend/` if needed:
-=======
-3. Create a `.env` file in `frontend/` if needed:
->>>>>>> c5f093941fb5ef9dc0c908f24541365f4ba9f83b
 
 ```env
 VITE_API_BASE_URL=http://localhost:8000
 ```
 
-<<<<<<< HEAD
 5. Start the Vite development server:
-=======
-4. Start the Vite development server:
->>>>>>> c5f093941fb5ef9dc0c908f24541365f4ba9f83b
 
 ```powershell
 npm run dev
 ```
 
-<<<<<<< HEAD
 6. Open the application in your browser at:
-=======
-5. Open the application in your browser at:
->>>>>>> c5f093941fb5ef9dc0c908f24541365f4ba9f83b
 
 ```text
 http://localhost:5173

@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
+from django.conf import settings
 from drf_spectacular.utils import extend_schema
 
 from .models import ReferralCode, Referral, ReferralInvite
@@ -50,7 +51,7 @@ class ReferralViewSet(viewsets.ViewSet):
         
         return Response({
             'referral_code': referral_code.code,
-            'referral_link': f"https://clinqclippers.com/signup?ref={referral_code.code}",
+            'referral_link': f"{settings.FRONTEND_URL.rstrip('/')}/signup?ref={referral_code.code}",
             'total_referrals': total_referrals,
             'active_referrals': active_referrals.count(),
             'total_earned': total_earned,
@@ -98,7 +99,7 @@ class ReferralViewSet(viewsets.ViewSet):
             )
         
         # Create invite
-        invite_link = f"https://clinqclippers.com/signup?ref={referral_code.code}&email={email}"
+        invite_link = f"{settings.FRONTEND_URL.rstrip('/')}/signup?ref={referral_code.code}&email={email}"
         invite = ReferralInvite.objects.create(
             referrer=user,
             email=email,
