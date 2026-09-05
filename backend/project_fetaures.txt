@@ -1,0 +1,362 @@
+I have a backend ready with REST APIs. I want to build a frontend using React.js
+
+## Roles:
+- Creator
+- Clipper
+- Brand
+
+## Pages
+- Login
+- Signup
+- ### Homepage/Landing
+    - Hero section showcasing platform value (creators, clippers, brands)
+    - Featured gigs/projects
+    - Top performers preview (leaderboard snippet)
+    - Success stories/testimonials
+    - How it works (3-step flow for each user type)
+    - CTA for signup with referral code input
+- ### Dashboard (Role-Specific)
+    - Creator Dashboard:
+        - Active gigs overview (open/bidding/in-progress/completed)
+        - Earnings summary (total, pending, available for withdrawal)
+        - Recent collaborations & submissions
+        - Brand deal opportunities feed
+        - Content performance metrics
+        - Pending clipper submissions to review
+        - Quick actions: Create Gig, Post Content, View Analytics
+    - Clipper Dashboard:
+        - Available gigs feed (filtered by skills)
+        - Active projects & deadlines
+        - Earnings tracker (per gig, total, referral earnings)
+        - Leaderboard position
+        - Skill badges & achievements
+        - Notifications: New gigs, accepted bids, payments
+        - Quick actions: Browse Gigs, Submit Work, Claim Reward
+    - Brand Dashboard:
+        - Active UGC campaigns
+        - Submitted content review queue
+        - Campaign performance analytics
+        - Creator/clipper directory
+        - Budget tracking
+        - Content library (approved UGC)
+        - Quick actions: Create Campaign, Browse Creators, Download Content
+- ### 🎨 Content & Collaboration Pages
+    - Gig/Project Pages
+        - Gig Marketplace:
+            - Filter by: Category, Budget, Deadline, Project Type (open/bidding)
+            - Sort by: Recent, Budget, Urgency
+            - Gig cards showing: Title, Creator, Budget, Deadline, Skills needed, Type indicator
+            - Search functionality
+        - Create Gig (Creator):
+            - Project details form
+            - Budget & payment terms
+            - Deadline selection
+            - Project type toggle: Open collaboration vs. Bidding
+            - Skills required (multi-select)
+            - Reference files/brief upload
+            - Preview before publish
+        - Gig Detail Page:
+            - Full project description
+            - Creator profile preview
+            - Budget & deadline
+            - Required skills & deliverables
+            - Type: Open (multiple submissions) or Bidding (proposal-based)
+            - If Open: "Start Working" button
+            - If Bidding: "Submit Proposal" with bid amount & timeline
+            - Active clippers (for open projects)
+            - Comments/Q&A section
+            - Similar gigs
+        - Submission Management:
+            - For Clippers: Upload work, add description, submit
+            - For Creators: Review submissions grid, approve/reject/request revisions
+            - Version history
+            - Messaging thread per submission
+- ### Content Pages
+    - Content Feed:
+        - Published content from creators
+        - Filter by: Category, Creator, Date, Engagement
+        - Social engagement (likes, comments, shares)
+        - "Clip This" option for clippers (if creator enables)
+    - Content Detail:
+        - Full content view (video/image player)
+        - Creator info & bio snippet
+        - Engagement metrics
+        - Related content
+        - Comments section
+    - My Content (Creator):
+        - Grid/list view of all posted content
+        - Performance analytics per post
+        - Enable/disable clipping requests
+        - Archive/delete options
+- ### 💰 Earnings & Finance Pages
+    - Earnings Overview:
+        - Total earnings (lifetime, monthly, weekly)
+        - Breakdown by source: Gigs, Brand Deals, Referrals, Bonuses
+        - Pending payments
+        - Transaction history table
+        - Earnings chart (timeline graph)
+    - Payout Page:
+        - Available balance
+        - Payout method selection (UPI/Bank/PayPal)
+        - Payout threshold indicator
+        - Payment details form
+        - Withdrawal history
+        - Tax/invoice documents
+    - Transaction History:
+        - Filterable table: Date, Type, Amount, Status, Project
+        - Export to CSV
+        - Invoice download per transaction
+- ### 🏆 Leaderboard Pages
+    - Main Leaderboard:
+        - Tabs: Overall, Creators, Clippers, Brands, This Month, All Time
+        - Ranking table with: Rank, Avatar, Name, Points/Earnings, Badge
+        - Your position highlight
+        - Top 10 detailed cards (stats, achievements)
+        - Pagination for full list
+    - Leaderboard Profile (Public):
+        - User's rank & stats
+        - Achievement badges
+        - Recent projects/content
+        - Earnings trend (if public)
+        - Reviews/ratings
+- ### 🎁 Referral System Pages
+    - Referral Dashboard:
+        - Your unique referral code & link (copy button)
+        - Share buttons (WhatsApp, Email, Twitter, LinkedIn)
+        - Referral stats: Total invited, Active users, Earnings from referrals
+        - Invite via email form (bulk import)
+        - Referral history table: Email, Status (Sent/Opened/Accepted), Date, Earnings
+        - Leaderboard of top referrers
+        - Referral program terms & rewards breakdown
+    - Referral Rewards:
+        - How it works explanation
+        - Reward tiers visualization
+        - Pending bonuses
+        - Claimed rewards history
+        - Milestone tracker (e.g., "3 more referrals to unlock ₹500 bonus")
+- ### 🤝 Brand Collaboration Pages
+    - Brand Deals Marketplace:
+        - Active brand campaigns/UGC requests
+        - Filter by: Industry, Budget, Content Type, Deadline
+        - Campaign cards: Brand logo, Description, Compensation, Requirements
+        - "Apply" or "Submit Content" CTA
+    - Brand Campaign Detail:
+        - Full brief & guidelines
+        - Content requirements (format, duration, style)
+        - Compensation details
+        - Submission deadline
+        - Brand profile link
+        - Submission form
+        - Past campaign examples
+    - My Collaborations:
+        - Applied campaigns
+        - Active projects
+        - Completed work & earnings
+        - Rejected submissions with feedback
+- ### 👤 Profile & Account Pages
+    - Public Profile:
+        - Avatar, cover image, bio
+        - Role badge (Creator/Clipper/Brand)
+        - Stats: Total earnings (if public), Projects completed, Rating
+        - Skills & expertise
+        - Portfolio grid (content/projects)
+        - Reviews from collaborators
+        - Social links
+        - "Hire" or "Collaborate" button
+    - Edit Profile: 
+        - Personal info (name, bio, location)
+        - Profile & cover photo upload
+        - Skills management (add/remove)
+        - Portfolio management
+        - Social media links
+        - Bank/payment details
+        - Privacy settings (from UserSettings model) 
+    - Account Settings (from your UserSettings model): 
+        - Notifications: Email, Push, by Category (earnings, content, social, marketing)
+        - Privacy: Profile visibility (Public/Private/Friends), Show earnings toggle, Show email
+        - Appearance: Theme (Light/Dark/Auto), Language, Timezone
+        - Content Preferences: Default category, Auto-claim gigs toggle
+        - Payment: Preferred payout method, Payout threshold slider
+        - Security: Change password, Two-factor authentication, Active sessions
+        - Danger Zone: Deactivate/delete account
+- ### Courses
+    - **Student Facing Pages**
+        - **Discovery & Browsing**:
+            - Homepage - Featured courses, popular paths, categories, testimonials
+            - Course Catalog - All courses with filters (price, level, duration, rating, language)
+            - Learning Paths/Programs - Browse curated learning paths
+            - Path Details Page - Shows all courses in a path, progression flow, outcomes, total duration
+            - Course Details - Individual course information, preview lessons, curriculum
+            - Category Pages - Courses by topic (e.g., "Web Development," "Data Science")
+            - Search Results - Unified search across courses and paths
+            - Instructor Directory - Browse all instructors
+            - Instructor Profile - Bio, courses taught, ratings, student count
+
+        - **Learning Experience:**
+            - Student Dashboard - Overview of enrolled courses, paths in progress, recommendations
+            - My Courses - All enrolled courses
+            - My Learning Paths - Enrolled paths with progress tracking
+            - Course Player - Video/content delivery interface with navigation
+            - Path Progress Tracker - Visual flow showing completed/current/upcoming courses in path
+            - Assignments/Quizzes - Interactive assessments
+            - Certificates - Earned certificates for courses and completed paths
+            - Notes & Resources - Personal notes, downloadable materials
+
+        - **Commerce & Community:**
+            - Shopping Cart - Bundle courses or entire paths
+            - Checkout - Payment processing
+            - Wishlist - Saved courses and paths
+            - Course/Path Reviews - Rating and review system
+            - Discussion Forums - Q&A for each course
+            - Student Profile - Public profile showing achievements, certificates
+
+
+    - **Instructor-Facing Pages**
+        - **Dashboard & Analytics:**
+            - Instructor Dashboard - Overview of earnings, enrollments, ratings, pending tasks
+            - Analytics/Insights - Student engagement, completion rates, revenue, demographics
+            - Revenue & Payouts - Earnings breakdown, payment history, withdrawal options
+            
+        - **Course Management:**
+            - My Courses - List of all instructor's courses (draft, published, archived)
+            - Create/Edit Course - Course builder with curriculum structure, lessons, resources
+            - Content Upload - Video, documents, quizzes, assignments upload interface
+            - Pricing & Promotions - Set pricing, discounts, coupons
+            - Course Settings - Privacy, enrollment limits, prerequisites
+            - Preview Course - Test course as a student would see it
+
+        - **Path Management** (if instructors can create paths):
+            - My Learning Paths - Created paths
+            - Create/Edit Path - Add courses, set sequence, define outcomes
+            - Path Settings - Bundled pricing, prerequisites
+            
+        - **Student Interaction:**
+            - Student Messages/Q&A - Answer student questions
+            - Reviews Management - View and respond to reviews
+            - Announcements - Send updates to enrolled students
+            - Student List - See who's enrolled, track progress
+
+        - **Profile & Setup:**
+            - Instructor Profile Editor - Bio, expertise, social links, credentials
+            - Notification Settings - Email/push preferences
+            - Payout Settings - Banking/payment method setup
+- ### 🎫 Support & Help Pages
+    - Help Center:
+        - Search bar for FAQs
+        - Category tabs (from your FAQ model): General, Getting Started, Earnings, Content, Account, Technical, Billing
+        - Featured FAQs
+        - FAQ cards with expand/collapse
+        - "Was this helpful?" feedback (Yes/No) - updates your FAQFeedback model
+        - Popular articles
+    - FAQ Detail:
+        - Full question & answer
+        - Related FAQs
+        - "Contact Support" button if unsolved
+        - View count display
+    - Support Tickets:
+        - Create ticket form: Subject, Category dropdown, Priority, Description, File attachment
+        - My tickets table: Ticket #, Subject, Status, Priority, Created, Last Updated
+        - Status badges (Open/In Progress/Resolved/Closed)
+        - Ticket detail view with conversation thread
+        - Contact Us:
+        - Support form (creates ticket)
+        - Email & chat options
+        - Response time expectations
+- ### 🔍 Discovery & Search Pages
+    - Explore/Discover:
+        - Trending gigs
+        - Top creators/clippers
+        - Trending content
+        - New brand campaigns
+        - Category navigation
+    - Search Results:
+        - Unified search: Gigs, Users, Content, Brands
+        - Advanced filters sidebar
+        - Sort options
+        - Results with type indicators
+    - Categories/Browse:
+        - Category landing pages (e.g., "Video Editing Gigs")
+        - Subcategory filters
+        - Popular tags
+        - Category-specific leaderboard
+- ### 📊 Analytics Pages
+    - Creator Analytics:
+        - Gig performance (views, applications, completion rate)
+        - Content performance (views, engagement, clipping requests)
+        - Earnings breakdown & trends
+        - Clipper ratings & feedback
+        - Growth metrics (followers, reach)
+    - Clipper Analytics:
+        - Acceptance rate
+        - Average earnings per gig
+        - Skill performance
+        - Creator ratings received
+        - Time tracking per project
+    - Brand Analytics:
+        - Campaign reach & engagement
+        - Content submissions timeline
+        - ROI calculator
+        - Creator performance comparison
+        - Content library analytics
+- ### 🔔 Notifications Center
+    - Notifications Page:
+        - Tabs: All, Earnings, Projects, Social, System
+        - Real-time updates
+        - Mark as read/unread
+        - Filter by date
+        - Action buttons (View Gig, Approve Submission, etc.)
+- ### Onboarding Flow:
+    - Welcome & role selection (Creator/Clipper/Brand)
+    - Profile setup wizard
+    - Skills/interests selection
+    - Payment details
+    - Referral code input (optional)
+    - Tutorial/walkthrough
+- ### Legal & Static:
+    - Terms of Service
+    - Privacy Policy
+    - Community Guidelines
+    - Creator Agreement
+    - Clipper Agreement
+    - Brand Partnership Terms
+    - Cookie Policy
+    - About Us
+    - Careers
+    - Blog
+- ### Authentication:
+    - Login (with "Forgot Password")
+    - Signup (with referral code field)
+    - Email verification
+    - Password reset
+    - Social login options
+- ### Mobile-Specific:
+    - Mobile navigation menu
+    - Mobile gig discovery (swipe cards)
+    - Quick submission camera interface
+    - Push notification settings
+
+--- 
+## 🎯 User Flows
+- ### Clipper Flow:
+    - Browse gigs → Filter by skills
+    - View gig details → Check if open/bidding
+    - If open: Start working → Submit work
+    - If bidding: Submit proposal → Wait for acceptance → Work → Submit
+    - Creator reviews → Approved → Payment released
+    - Check earnings → Withdraw when threshold met
+- ### Creator Flow:
+    - Create gig → Set type (open/bidding)
+    - Publish → Receive applications/submissions
+    - If bidding: Review proposals → Accept best bid
+    - If open: Monitor submissions → Review & approve
+    - Release payment → Rate clipper
+    - Post content → Enable clipping requests
+    - Apply for brand deals
+- ### Brand Flow:
+    - Create UGC campaign → Set requirements & budget
+    - Publish → Receive submissions from creators/clippers
+    - Review content → Approve/reject with feedback
+    - Download approved content → Release payment
+    - Track campaign analytics
+    - Browse creators → Direct collaboration invite
+

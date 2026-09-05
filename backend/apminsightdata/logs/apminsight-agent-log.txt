@@ -1,0 +1,263 @@
+2026-06-27 17:32:39,798 900 INFO http.client is already imported so we are trying to instrument it
+2026-06-27 17:32:39,799 900 INFO http.client instrumented
+2026-06-27 17:32:39,800 900 INFO urllib.request is already imported so we are trying to instrument it
+2026-06-27 17:32:39,800 900 INFO urllib.request instrumented
+2026-06-27 17:32:39,801 900 INFO concurrent.futures is already imported so we are trying to instrument it
+2026-06-27 17:32:39,803 900 INFO concurrent.futures instrumented
+2026-06-27 17:32:39,804 900 INFO http.client is already imported so we are trying to instrument it
+2026-06-27 17:32:39,804 900 INFO urllib.request is already imported so we are trying to instrument it
+2026-06-27 17:32:39,805 900 INFO concurrent.futures is already imported so we are trying to instrument it
+2026-06-27 17:32:40,091 900 INFO Agent not hosted in cloud environment
+2026-06-27 17:32:40,249 900 DEBUG Scheduling task: get_proc_cpu_percent to run every 60 seconds
+2026-06-27 17:32:40,249 900 DEBUG Scheduling task: agent_heartbeat to run every 60 seconds
+2026-06-27 17:32:41,114 900 INFO django.template instrumented
+2026-06-27 17:32:41,258 900 INFO django.urls instrumented
+2026-06-27 17:32:41,629 900 INFO django.core.handlers.base instrumented
+2026-06-27 17:32:41,630 900 INFO django.core.handlers.asgi instrumented
+2026-06-27 17:32:41,631 900 INFO django.core.handlers.wsgi instrumented
+2026-06-27 17:32:41,728 900 INFO wsgiref.handlers instrumented
+2026-06-27 17:32:41,730 900 INFO django.core.wsgi instrumented
+2026-06-27 17:32:41,960 900 INFO psycopg2._psycopg instrumented
+2026-06-27 17:32:41,963 900 INFO psycopg2._json instrumented
+2026-06-27 17:32:41,966 900 INFO psycopg2.extensions instrumented
+2026-06-27 17:32:41,966 900 INFO psycopg2 instrumented
+2026-06-27 17:32:42,647 900 INFO urllib3.connectionpool instrumented
+2026-06-27 17:32:42,925 900 ERROR in args_wrapper function
+Traceback (most recent call last):
+  File "C:\Users\Sumit Kumar\OneDrive - Aptiva Technologies L.L.C\Desktop\Kushal\Clipper\clinqclippers\clinq\backend\.venv\Lib\site-packages\apminsight\instrumentation\wrapper.py", line 273, in replace_view_wrapper
+    setattr(act_method, "apm_view_wrapper", view_wrapper)
+AttributeError: 'method' object has no attribute 'apm_view_wrapper'
+2026-06-27 17:32:42,952 900 INFO django.conf.urls instrumented
+2026-06-27 17:32:43,069 900 INFO httpx._client instrumented
+2026-06-27 17:40:19,901 5096 INFO http.client is already imported so we are trying to instrument it
+2026-06-27 17:40:19,902 5096 INFO http.client instrumented
+2026-06-27 17:40:19,902 5096 INFO urllib.request is already imported so we are trying to instrument it
+2026-06-27 17:40:19,902 5096 INFO urllib.request instrumented
+2026-06-27 17:40:19,902 5096 INFO concurrent.futures is already imported so we are trying to instrument it
+2026-06-27 17:40:19,905 5096 INFO concurrent.futures instrumented
+2026-06-27 17:40:19,905 5096 INFO http.client is already imported so we are trying to instrument it
+2026-06-27 17:40:19,905 5096 INFO urllib.request is already imported so we are trying to instrument it
+2026-06-27 17:40:19,907 5096 INFO concurrent.futures is already imported so we are trying to instrument it
+2026-06-27 17:40:20,029 5096 INFO Agent not hosted in cloud environment
+2026-06-27 17:40:20,140 5096 DEBUG Scheduling task: get_proc_cpu_percent to run every 60 seconds
+2026-06-27 17:40:20,140 5096 DEBUG Scheduling task: agent_heartbeat to run every 60 seconds
+2026-06-27 17:40:21,167 5096 INFO django.template instrumented
+2026-06-27 17:40:21,322 5096 INFO django.urls instrumented
+2026-06-27 17:40:21,595 5096 INFO django.core.handlers.base instrumented
+2026-06-27 17:40:21,597 5096 INFO django.core.handlers.asgi instrumented
+2026-06-27 17:40:21,601 5096 INFO django.core.handlers.wsgi instrumented
+2026-06-27 17:40:21,673 5096 INFO wsgiref.handlers instrumented
+2026-06-27 17:40:21,677 5096 INFO django.core.wsgi instrumented
+2026-06-27 17:40:21,734 5096 INFO psycopg2._psycopg instrumented
+2026-06-27 17:40:21,739 5096 INFO psycopg2._json instrumented
+2026-06-27 17:40:21,741 5096 INFO psycopg2.extensions instrumented
+2026-06-27 17:40:21,742 5096 INFO psycopg2 instrumented
+2026-06-27 17:40:22,242 5096 INFO urllib3.connectionpool instrumented
+2026-06-27 17:40:22,657 5096 ERROR in args_wrapper function
+Traceback (most recent call last):
+  File "C:\Users\Sumit Kumar\OneDrive - Aptiva Technologies L.L.C\Desktop\Kushal\Clipper\clinqclippers\clinq\backend\.venv\Lib\site-packages\apminsight\instrumentation\wrapper.py", line 273, in replace_view_wrapper
+    setattr(act_method, "apm_view_wrapper", view_wrapper)
+AttributeError: 'method' object has no attribute 'apm_view_wrapper'
+2026-06-27 17:40:22,681 5096 INFO django.conf.urls instrumented
+2026-06-27 17:40:22,767 5096 INFO httpx._client instrumented
+2026-06-27 17:40:31,220 20204 INFO http.client is already imported so we are trying to instrument it
+2026-06-27 17:40:31,220 20204 INFO http.client instrumented
+2026-06-27 17:40:31,220 20204 INFO urllib.request is already imported so we are trying to instrument it
+2026-06-27 17:40:31,221 20204 INFO urllib.request instrumented
+2026-06-27 17:40:31,221 20204 INFO concurrent.futures is already imported so we are trying to instrument it
+2026-06-27 17:40:31,222 20204 INFO concurrent.futures instrumented
+2026-06-27 17:40:31,223 20204 INFO http.client is already imported so we are trying to instrument it
+2026-06-27 17:40:31,223 20204 INFO urllib.request is already imported so we are trying to instrument it
+2026-06-27 17:40:31,223 20204 INFO concurrent.futures is already imported so we are trying to instrument it
+2026-06-27 17:40:31,273 20204 INFO Agent not hosted in cloud environment
+2026-06-27 17:40:31,341 20204 DEBUG Scheduling task: get_proc_cpu_percent to run every 60 seconds
+2026-06-27 17:40:31,342 20204 DEBUG Scheduling task: agent_heartbeat to run every 60 seconds
+2026-06-27 17:40:31,985 20204 INFO django.template instrumented
+2026-06-27 17:40:32,109 20204 INFO django.urls instrumented
+2026-06-27 17:40:32,272 20204 INFO django.core.handlers.base instrumented
+2026-06-27 17:40:32,273 20204 INFO django.core.handlers.asgi instrumented
+2026-06-27 17:40:32,275 20204 INFO django.core.handlers.wsgi instrumented
+2026-06-27 17:40:32,322 20204 INFO wsgiref.handlers instrumented
+2026-06-27 17:40:32,323 20204 INFO django.core.wsgi instrumented
+2026-06-27 17:40:32,371 20204 INFO psycopg2._psycopg instrumented
+2026-06-27 17:40:32,378 20204 INFO psycopg2._json instrumented
+2026-06-27 17:40:32,389 20204 INFO psycopg2.extensions instrumented
+2026-06-27 17:40:32,391 20204 INFO psycopg2 instrumented
+2026-06-27 17:40:57,236 30092 INFO http.client is already imported so we are trying to instrument it
+2026-06-27 17:40:57,236 30092 INFO http.client instrumented
+2026-06-27 17:40:57,237 30092 INFO urllib.request is already imported so we are trying to instrument it
+2026-06-27 17:40:57,237 30092 INFO urllib.request instrumented
+2026-06-27 17:40:57,237 30092 INFO concurrent.futures is already imported so we are trying to instrument it
+2026-06-27 17:40:57,239 30092 INFO concurrent.futures instrumented
+2026-06-27 17:40:57,239 30092 INFO http.client is already imported so we are trying to instrument it
+2026-06-27 17:40:57,239 30092 INFO urllib.request is already imported so we are trying to instrument it
+2026-06-27 17:40:57,239 30092 INFO concurrent.futures is already imported so we are trying to instrument it
+2026-06-27 17:40:57,303 30092 INFO Agent not hosted in cloud environment
+2026-06-27 17:40:57,368 30092 DEBUG Scheduling task: get_proc_cpu_percent to run every 60 seconds
+2026-06-27 17:40:57,369 30092 DEBUG Scheduling task: agent_heartbeat to run every 60 seconds
+2026-06-27 17:40:58,129 30092 INFO django.template instrumented
+2026-06-27 17:40:58,244 30092 INFO django.urls instrumented
+2026-06-27 17:40:58,431 30092 INFO django.core.handlers.base instrumented
+2026-06-27 17:40:58,434 30092 INFO django.core.handlers.asgi instrumented
+2026-06-27 17:40:58,436 30092 INFO django.core.handlers.wsgi instrumented
+2026-06-27 17:40:58,478 30092 INFO wsgiref.handlers instrumented
+2026-06-27 17:40:58,479 30092 INFO django.core.wsgi instrumented
+2026-06-27 17:40:58,511 30092 INFO psycopg2._psycopg instrumented
+2026-06-27 17:40:58,513 30092 INFO psycopg2._json instrumented
+2026-06-27 17:40:58,520 30092 INFO psycopg2.extensions instrumented
+2026-06-27 17:40:58,520 30092 INFO psycopg2 instrumented
+2026-06-27 17:40:58,805 30092 INFO urllib3.connectionpool instrumented
+2026-06-27 17:40:59,027 30092 ERROR in args_wrapper function
+Traceback (most recent call last):
+  File "C:\Users\Sumit Kumar\OneDrive - Aptiva Technologies L.L.C\Desktop\Kushal\Clipper\clinqclippers\clinq\backend\.venv\Lib\site-packages\apminsight\instrumentation\wrapper.py", line 273, in replace_view_wrapper
+    setattr(act_method, "apm_view_wrapper", view_wrapper)
+AttributeError: 'method' object has no attribute 'apm_view_wrapper'
+2026-06-27 17:40:59,039 30092 INFO django.conf.urls instrumented
+2026-06-27 17:40:59,124 30092 INFO httpx._client instrumented
+2026-06-27 17:45:02,794 29900 INFO http.client is already imported so we are trying to instrument it
+2026-06-27 17:45:02,794 29900 INFO http.client instrumented
+2026-06-27 17:45:02,795 29900 INFO urllib.request is already imported so we are trying to instrument it
+2026-06-27 17:45:02,795 29900 INFO urllib.request instrumented
+2026-06-27 17:45:02,796 29900 INFO concurrent.futures is already imported so we are trying to instrument it
+2026-06-27 17:45:02,798 29900 INFO concurrent.futures instrumented
+2026-06-27 17:45:02,798 29900 INFO http.client is already imported so we are trying to instrument it
+2026-06-27 17:45:02,798 29900 INFO urllib.request is already imported so we are trying to instrument it
+2026-06-27 17:45:02,798 29900 INFO concurrent.futures is already imported so we are trying to instrument it
+2026-06-27 17:45:02,913 29900 INFO Agent not hosted in cloud environment
+2026-06-27 17:45:02,990 29900 DEBUG Scheduling task: get_proc_cpu_percent to run every 60 seconds
+2026-06-27 17:45:02,991 29900 DEBUG Scheduling task: agent_heartbeat to run every 60 seconds
+2026-06-27 17:45:03,967 29900 INFO django.template instrumented
+2026-06-27 17:45:04,383 29900 INFO django.urls instrumented
+2026-06-27 17:45:04,895 29900 INFO django.core.handlers.base instrumented
+2026-06-27 17:45:04,925 29900 INFO django.core.handlers.asgi instrumented
+2026-06-27 17:45:04,940 29900 INFO django.core.handlers.wsgi instrumented
+2026-06-27 17:45:05,138 29900 INFO wsgiref.handlers instrumented
+2026-06-27 17:45:05,145 29900 INFO django.core.wsgi instrumented
+2026-06-27 17:45:05,206 29900 INFO psycopg2._psycopg instrumented
+2026-06-27 17:45:05,212 29900 INFO psycopg2._json instrumented
+2026-06-27 17:45:05,220 29900 INFO psycopg2.extensions instrumented
+2026-06-27 17:45:05,220 29900 INFO psycopg2 instrumented
+2026-06-27 17:45:05,889 29900 INFO urllib3.connectionpool instrumented
+2026-06-27 17:45:06,819 29900 ERROR in args_wrapper function
+Traceback (most recent call last):
+  File "C:\Users\Sumit Kumar\OneDrive - Aptiva Technologies L.L.C\Desktop\Kushal\Clipper\clinqclippers\clinq\backend\.venv\Lib\site-packages\apminsight\instrumentation\wrapper.py", line 273, in replace_view_wrapper
+    setattr(act_method, "apm_view_wrapper", view_wrapper)
+AttributeError: 'method' object has no attribute 'apm_view_wrapper'
+2026-06-27 17:45:06,835 29900 INFO django.conf.urls instrumented
+2026-06-27 17:45:06,975 29900 INFO httpx._client instrumented
+2026-06-27 17:45:16,240 22972 INFO http.client is already imported so we are trying to instrument it
+2026-06-27 17:45:16,240 22972 INFO http.client instrumented
+2026-06-27 17:45:16,241 22972 INFO urllib.request is already imported so we are trying to instrument it
+2026-06-27 17:45:16,241 22972 INFO urllib.request instrumented
+2026-06-27 17:45:16,241 22972 INFO concurrent.futures is already imported so we are trying to instrument it
+2026-06-27 17:45:16,243 22972 INFO concurrent.futures instrumented
+2026-06-27 17:45:16,243 22972 INFO http.client is already imported so we are trying to instrument it
+2026-06-27 17:45:16,244 22972 INFO urllib.request is already imported so we are trying to instrument it
+2026-06-27 17:45:16,244 22972 INFO concurrent.futures is already imported so we are trying to instrument it
+2026-06-27 17:45:16,298 22972 INFO Agent not hosted in cloud environment
+2026-06-27 17:45:16,374 22972 DEBUG Scheduling task: get_proc_cpu_percent to run every 60 seconds
+2026-06-27 17:45:16,374 22972 DEBUG Scheduling task: agent_heartbeat to run every 60 seconds
+2026-06-27 17:45:17,060 22972 INFO django.template instrumented
+2026-06-27 17:45:17,275 22972 INFO django.urls instrumented
+2026-06-27 17:45:17,467 22972 INFO django.core.handlers.base instrumented
+2026-06-27 17:45:17,473 22972 INFO django.core.handlers.asgi instrumented
+2026-06-27 17:45:17,477 22972 INFO django.core.handlers.wsgi instrumented
+2026-06-27 17:45:17,539 22972 INFO wsgiref.handlers instrumented
+2026-06-27 17:45:17,541 22972 INFO django.core.wsgi instrumented
+2026-06-27 17:45:17,576 22972 INFO psycopg2._psycopg instrumented
+2026-06-27 17:45:17,581 22972 INFO psycopg2._json instrumented
+2026-06-27 17:45:17,593 22972 INFO psycopg2.extensions instrumented
+2026-06-27 17:45:17,594 22972 INFO psycopg2 instrumented
+2026-06-27 17:45:17,899 22972 INFO urllib3.connectionpool instrumented
+2026-06-27 17:45:18,209 22972 ERROR in args_wrapper function
+Traceback (most recent call last):
+  File "C:\Users\Sumit Kumar\OneDrive - Aptiva Technologies L.L.C\Desktop\Kushal\Clipper\clinqclippers\clinq\backend\.venv\Lib\site-packages\apminsight\instrumentation\wrapper.py", line 273, in replace_view_wrapper
+    setattr(act_method, "apm_view_wrapper", view_wrapper)
+AttributeError: 'method' object has no attribute 'apm_view_wrapper'
+2026-06-27 17:45:18,217 22972 INFO django.conf.urls instrumented
+2026-06-27 17:45:18,281 22972 INFO httpx._client instrumented
+2026-06-27 18:11:03,903 26732 INFO http.client is already imported so we are trying to instrument it
+2026-06-27 18:11:03,903 26732 INFO http.client instrumented
+2026-06-27 18:11:03,904 26732 INFO urllib.request is already imported so we are trying to instrument it
+2026-06-27 18:11:03,904 26732 INFO urllib.request instrumented
+2026-06-27 18:11:03,904 26732 INFO concurrent.futures is already imported so we are trying to instrument it
+2026-06-27 18:11:03,907 26732 INFO concurrent.futures instrumented
+2026-06-27 18:11:03,907 26732 INFO http.client is already imported so we are trying to instrument it
+2026-06-27 18:11:03,907 26732 INFO urllib.request is already imported so we are trying to instrument it
+2026-06-27 18:11:03,908 26732 INFO concurrent.futures is already imported so we are trying to instrument it
+2026-06-27 18:11:04,070 26732 INFO Agent not hosted in cloud environment
+2026-06-27 18:11:04,172 26732 DEBUG Scheduling task: get_proc_cpu_percent to run every 60 seconds
+2026-06-27 18:11:04,172 26732 DEBUG Scheduling task: agent_heartbeat to run every 60 seconds
+2026-06-27 18:11:05,096 26732 INFO django.template instrumented
+2026-06-27 18:11:05,280 26732 INFO django.urls instrumented
+2026-06-27 18:11:05,530 26732 INFO django.core.handlers.base instrumented
+2026-06-27 18:11:05,531 26732 INFO django.core.handlers.asgi instrumented
+2026-06-27 18:11:05,533 26732 INFO django.core.handlers.wsgi instrumented
+2026-06-27 18:11:05,589 26732 INFO wsgiref.handlers instrumented
+2026-06-27 18:11:05,592 26732 INFO django.core.wsgi instrumented
+2026-06-27 18:11:05,643 26732 INFO psycopg2._psycopg instrumented
+2026-06-27 18:11:05,647 26732 INFO psycopg2._json instrumented
+2026-06-27 18:11:05,649 26732 INFO psycopg2.extensions instrumented
+2026-06-27 18:11:05,649 26732 INFO psycopg2 instrumented
+2026-06-27 18:11:06,025 26732 INFO urllib3.connectionpool instrumented
+2026-06-27 18:11:06,392 26732 ERROR in args_wrapper function
+Traceback (most recent call last):
+  File "C:\Users\Sumit Kumar\OneDrive - Aptiva Technologies L.L.C\Desktop\Kushal\Clipper\clinqclippers\clinq\backend\.venv\Lib\site-packages\apminsight\instrumentation\wrapper.py", line 273, in replace_view_wrapper
+    setattr(act_method, "apm_view_wrapper", view_wrapper)
+AttributeError: 'method' object has no attribute 'apm_view_wrapper'
+2026-06-27 18:11:06,403 26732 INFO django.conf.urls instrumented
+2026-06-27 18:11:06,468 26732 INFO httpx._client instrumented
+2026-06-27 18:12:49,321 7480 INFO http.client is already imported so we are trying to instrument it
+2026-06-27 18:12:49,321 7480 INFO http.client instrumented
+2026-06-27 18:12:49,321 7480 INFO urllib.request is already imported so we are trying to instrument it
+2026-06-27 18:12:49,322 7480 INFO urllib.request instrumented
+2026-06-27 18:12:49,322 7480 INFO concurrent.futures is already imported so we are trying to instrument it
+2026-06-27 18:12:49,323 7480 INFO concurrent.futures instrumented
+2026-06-27 18:12:49,324 7480 INFO http.client is already imported so we are trying to instrument it
+2026-06-27 18:12:49,324 7480 INFO urllib.request is already imported so we are trying to instrument it
+2026-06-27 18:12:49,324 7480 INFO concurrent.futures is already imported so we are trying to instrument it
+2026-06-27 18:12:49,427 7480 INFO Agent not hosted in cloud environment
+2026-06-27 18:12:49,530 7480 DEBUG Scheduling task: get_proc_cpu_percent to run every 60 seconds
+2026-06-27 18:12:49,530 7480 DEBUG Scheduling task: agent_heartbeat to run every 60 seconds
+2026-06-27 18:12:50,030 7480 INFO django.template instrumented
+2026-06-27 18:12:50,137 7480 INFO django.urls instrumented
+2026-06-27 18:12:50,276 7480 INFO django.core.handlers.base instrumented
+2026-06-27 18:12:50,277 7480 INFO django.core.handlers.asgi instrumented
+2026-06-27 18:12:50,278 7480 INFO django.core.handlers.wsgi instrumented
+2026-06-27 18:12:50,319 7480 INFO wsgiref.handlers instrumented
+2026-06-27 18:12:50,321 7480 INFO django.core.wsgi instrumented
+2026-06-27 18:12:50,359 7480 INFO psycopg2._psycopg instrumented
+2026-06-27 18:12:50,361 7480 INFO psycopg2._json instrumented
+2026-06-27 18:12:50,363 7480 INFO psycopg2.extensions instrumented
+2026-06-27 18:12:50,364 7480 INFO psycopg2 instrumented
+2026-06-27 18:12:50,736 10512 INFO http.client is already imported so we are trying to instrument it
+2026-06-27 18:12:50,737 10512 INFO http.client instrumented
+2026-06-27 18:12:50,737 10512 INFO urllib.request is already imported so we are trying to instrument it
+2026-06-27 18:12:50,738 10512 INFO urllib.request instrumented
+2026-06-27 18:12:50,738 10512 INFO concurrent.futures is already imported so we are trying to instrument it
+2026-06-27 18:12:50,739 10512 INFO concurrent.futures instrumented
+2026-06-27 18:12:50,740 10512 INFO http.client is already imported so we are trying to instrument it
+2026-06-27 18:12:50,740 10512 INFO urllib.request is already imported so we are trying to instrument it
+2026-06-27 18:12:50,740 10512 INFO concurrent.futures is already imported so we are trying to instrument it
+2026-06-27 18:12:50,790 10512 INFO Agent not hosted in cloud environment
+2026-06-27 18:12:50,842 10512 DEBUG Scheduling task: get_proc_cpu_percent to run every 60 seconds
+2026-06-27 18:12:50,843 10512 DEBUG Scheduling task: agent_heartbeat to run every 60 seconds
+2026-06-27 18:12:51,149 10512 INFO django.template instrumented
+2026-06-27 18:12:51,235 10512 INFO django.urls instrumented
+2026-06-27 18:12:51,342 10512 INFO django.core.handlers.base instrumented
+2026-06-27 18:12:51,342 10512 INFO django.core.handlers.asgi instrumented
+2026-06-27 18:12:51,344 10512 INFO django.core.handlers.wsgi instrumented
+2026-06-27 18:12:51,382 10512 INFO wsgiref.handlers instrumented
+2026-06-27 18:12:51,384 10512 INFO django.core.wsgi instrumented
+2026-06-27 18:12:51,410 10512 INFO psycopg2._psycopg instrumented
+2026-06-27 18:12:51,412 10512 INFO psycopg2._json instrumented
+2026-06-27 18:12:51,414 10512 INFO psycopg2.extensions instrumented
+2026-06-27 18:12:51,415 10512 INFO psycopg2 instrumented
+2026-06-27 18:12:51,618 10512 INFO urllib3.connectionpool instrumented
+2026-06-27 18:12:51,791 10512 ERROR in args_wrapper function
+Traceback (most recent call last):
+  File "C:\Users\Sumit Kumar\OneDrive - Aptiva Technologies L.L.C\Desktop\Kushal\Clipper\clinqclippers\clinq\backend\.venv\Lib\site-packages\apminsight\instrumentation\wrapper.py", line 273, in replace_view_wrapper
+    setattr(act_method, "apm_view_wrapper", view_wrapper)
+AttributeError: 'method' object has no attribute 'apm_view_wrapper'
+2026-06-27 18:12:51,797 10512 INFO django.conf.urls instrumented
+2026-06-27 18:12:51,853 10512 INFO httpx._client instrumented

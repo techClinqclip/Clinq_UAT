@@ -1,0 +1,76 @@
+# =========================
+# ClinqClippers mono-repo gitignore
+# =========================
+
+# ---- OS / editor ----
+.DS_Store
+Thumbs.db
+
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+
+*.log
+
+# Virtualenvs
+.venv/
+venv/
+ENV/
+
+# Build / distribution
+build/
+dist/
+*.egg-info/
+
+# Coverage / test outputs
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.pytest_cache/
+
+# Django
+*.sqlite3
+db.sqlite3
+media/
+staticfiles/
+
+# Django env files
+.env
+.env.*
+*.env
+
+# ---- Node / React (frontend) ----
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.*
+
+# If you also have a package lock for npm/yarn/pnpm, keep it tracked (do not ignore)
+# but ignore optional local cache
+frontend/.eslintcache
+
+# ---- General build artifacts ----
+**/node_modules/
+**/.cache/
+**/dist/
+**/build/
+
+# ---- IDE logs (optional) ----
+*.pid
+*.seed
+
+# ---- Git ----
+# Never commit local git config
+.git/config
+

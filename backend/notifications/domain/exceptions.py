@@ -1,0 +1,2 @@
+class DuplicateNotification(Exception):
+    pass
