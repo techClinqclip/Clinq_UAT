@@ -15,7 +15,7 @@ import {
     CreditCard,
 } from "lucide-react";
 import Breadcrumbs from "../../components/Breadcrumbs";
-import EarningsChartCard from "../Clipper/components/EarningsChartCard";
+import EarningsChartCard from "../clipper/components/EarningsChartCard";
 import AddFundsModal from "./components/AddFundsModal";
 import WithdrawModal from "./components/WithdrawModal";
 import TransferToCampaignModal from "./components/TransferToCampaignModal";

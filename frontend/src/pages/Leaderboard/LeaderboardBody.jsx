@@ -1,12 +1,12 @@
 import { Trophy } from "lucide-react";
 import { LeaderboardProvider, useLeaderboard } from "./LeaderboardContext";
 import LeaderboardLayout from "./LeaderboardLayout";
-import RoleFilter from "./components/RoleFilter";
-import TimeFilter from "./components/TimeFilter";
-import PodiumTop3 from "./components/PodiumTop3";
-import SpecialRankCards from "./components/SpecialRankCards";
-import LeaderboardRow from "./components/LeaderboardRow";
-import CurrentUserPinnedCard from "./components/CurrentUserPinnedCard";
+import RoleFilter from "./components/Rolefilter";
+import TimeFilter from "./components/Timefilter";
+import PodiumTop3 from "./components/Podiumtop3";
+import SpecialRankCards from "./components/Specialrankcards";
+import LeaderboardRow from "./components/Leaderboardrow";
+import CurrentUserPinnedCard from "./components/Currentuserpinnedcard";
 
 function SectionLabel({ children }) {
   return (

@@ -15,7 +15,7 @@ import { Link } from "react-router-dom";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import PayoutTrendChart from "./PayoutTrendChart"; // ADJUST to match this file's actual path
 import LoadingScreen from "../../shared/ui/LoadingScreen"; // ADJUST to match this file's actual path
-import AddFundsModal from "./components/AddFundsModal";
+import AddFundsModal from "./Components/AddFundsModal";
 import { api } from "../../lib/api"; // ADJUST to match this file's actual path
 
 /*

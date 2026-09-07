@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Wallet, Plus } from "lucide-react";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { api } from "../../lib/api";
-import AddFundsModal from "../../pages/Brand/components/AddFundsModal";
+import AddFundsModal from "../../pages/Brand/Components/AddFundsModal";
 
 const formatBalance = (n) =>
   new Intl.NumberFormat("en-IN").format(Number.isFinite(n) ? n : 0);

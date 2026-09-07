@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useState } from "react";
-import { entries as rawEntries, currentUser } from "./leaderboardData";
+import { entries as rawEntries, currentUser } from "./Leaderboarddata";
 
 const LeaderboardContext = createContext(null);
 

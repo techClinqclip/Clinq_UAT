@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Building2, UserRound, Mail, CheckCircle2, ChevronDown, Check ,  Loader2, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import OnboardingLayout, { Field, Input, TextArea, accentStyles } from "./layout";
+import OnboardingLayout, { Field, Input, TextArea, accentStyles } from "./Layout";
 import { api } from "../lib/api";
 import { getStoredUserEmail } from "../lib/auth";
 import useToast from "../hooks/useToast";

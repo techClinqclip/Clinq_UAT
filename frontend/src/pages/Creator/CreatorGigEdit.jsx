@@ -1,6 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import CampaignForm from "../campaignform";
+import CampaignForm from "../CampaignForm";
 
 const MOCK_EXISTING_GIG = {
   name: "Podcast Clips Campaign",

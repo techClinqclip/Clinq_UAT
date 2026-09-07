@@ -9,7 +9,7 @@ import OnboardingLayout, {
   ChipGroup,
   OtherOptionInput,
   accentStyles,
-} from "./layout";
+} from "./Layout";
 import { api } from "../lib/api";
 import ProcessingModal from "../shared/ui/ProcessingModal"; // adjust path to your shared UI folder
 function XLogoIcon({ size = 16 }) {

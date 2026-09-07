@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { MessageCircle } from "lucide-react";
-import { useMessaging } from "../MessagingContext";
+import { useMessaging } from "./MessagingContext";
 
 // Drop this into AppSidebar (or wherever your nav lives) to link to the
 // Messages page with a live unread badge. Requires MessagingProvider to

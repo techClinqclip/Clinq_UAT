@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import CampaignForm from "../campaignForm";
+import CampaignForm from "../CampaignForm";
 import { api } from "../../lib/api";
 import ContentLoader from "../../shared/ui/ContentLoader";
 

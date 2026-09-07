@@ -17,7 +17,7 @@ import OnboardingLayout, {
   ChipGroup,
   ImageUpload,
   accentStyles,
-} from "./layout";
+} from "../onboarding/Layout";
 
 /*
   Profile Setup — the "Common" fields from the spec, collected once after
