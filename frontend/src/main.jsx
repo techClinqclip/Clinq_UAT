@@ -9,7 +9,7 @@ import { MessagingProvider } from "./shared/messaging/MessagingContext";
 import { NotificationProvider } from "./shared/notifications/NotificationContext";
 import { SocialProvider } from "./shared/social/SocialContext";
 import ProfileModal from "./shared/social/ProfileModal";
-import QuickMessageModal from "./shared/messaging/QuickMessageModal";
+import QuickMessageModal from "./shared/messaging/Quickmessagemodal";
 import NetworkStatusBanner from "./pages/NetworkStatusBanner";
 
 

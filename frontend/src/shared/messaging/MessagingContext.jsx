@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { seedConversations } from "./messagingSeedData";
+import { seedConversations } from "./Messagingseeddata";
 
 const MessagingContext = createContext(null);
 

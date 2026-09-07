@@ -1,4 +1,4 @@
-import { MessagingProvider } from "../../shared/messaging/Messagingcontext";
+import { MessagingProvider } from "../../shared/messaging/MessagingContext";
 import MessagesLayout from "./MessagesLayout";
 import ChatList from "./Chatlist";
 import ChatWindow from "./Chandwindow";
