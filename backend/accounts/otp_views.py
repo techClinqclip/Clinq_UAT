@@ -2,10 +2,11 @@ from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
+from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
+from django.core.validators import validate_email
 from django.utils import timezone
 from django.conf import settings
-import threading
 import logging
 
 logger = logging.getLogger(__name__)
@@ -22,35 +23,48 @@ class SendOTPView(APIView):
         email = (request.data.get('email') or '').strip().lower()
         if not email:
             return Response({'detail': 'Email is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            validate_email(email)
+        except ValidationError:
+            return Response({'detail': 'Enter a valid email address.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # generate otp
+        # Render must provide SMTP credentials. Returning an error here is
+        # preferable to claiming success when no message can be delivered.
+        is_smtp_backend = settings.EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend'
+        if is_smtp_backend and (not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD):
+            logger.error('OTP email is not configured: SMTP credentials are missing.')
+            return Response(
+                {'detail': 'Email delivery is not configured. Please contact support.'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
         otp_code = generate_otp_code(6)
         otp_hash = sha256_hexdigest(otp_code)
 
-        # upsert strategy: invalidate old unexpired challenges by simply creating new row
-        EmailOTPChallenge.create_for_email(email=email, otp_hash=otp_hash)
-
-
-        # send email asynchronously so OTP issuance is not delayed by SMTP latency.
-        # In development, you must set EMAIL_BACKEND and EMAIL_HOST details in env.
-        def send_otp_message():
-            try:
-                subject = 'Your Clinq verification code'
-                message = (
+        try:
+            send_mail(
+                'Your Clinq verification code',
+                (
                     f"Hello,\n\n"
                     f"Use the following verification code to complete your Clinq signup: {otp_code}\n\n"
                     f"This code is valid for 10 minutes. Please do not share it with anyone.\n\n"
                     f"If you did not request this code, you can safely ignore this email.\n\n"
                     f"Thanks,\n"
                     f"The Clinq Team"
-                )
-                from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None) or 'noreply@clinq.app'
-                send_mail(subject, message, from_email, [email], fail_silently=False)
-            except Exception:
-                logger.exception('Failed to send OTP email')
+                ),
+                settings.DEFAULT_FROM_EMAIL or settings.EMAIL_HOST_USER,
+                [email],
+                fail_silently=False,
+            )
+        except Exception:
+            logger.exception('Failed to send OTP email.')
+            return Response(
+                {'detail': 'We could not send the verification code. Please try again shortly.'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
 
-        thread = threading.Thread(target=send_otp_message, daemon=True)
-        thread.start()
+        # Create a verifiable challenge only after the matching code was sent.
+        EmailOTPChallenge.create_for_email(email=email, otp_hash=otp_hash)
 
         return Response({'detail': 'OTP sent successfully.'}, status=status.HTTP_200_OK)
 
