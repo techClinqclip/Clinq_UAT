@@ -462,6 +462,12 @@ function buildFriendlyErrorMessage(response, data) {
       : "You're doing that a bit too fast. Please wait a moment and try again.";
   }
 
+  // A 503 from the OTP endpoint is an expected, safe delivery-status
+  // message (for example, SMTP has not been configured yet).
+  if (response.status === 503) {
+    return formatErrorMessage(data);
+  }
+
   if (response.status >= 500) {
     return 'Something went wrong on our end. Please try again in a moment.';
   }
