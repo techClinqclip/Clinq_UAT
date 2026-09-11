@@ -164,6 +164,7 @@ export default function Analytics() {
 
   const topGigs = (analytics?.top_gigs || []).map((gig) => ({
     ...gig,
+    accessKey: gig.accessKey || gig.access_key || String(gig.id),
     views: formatCompact(Number(gig.views || 0)),
     payout: `₹${formatCompact(Number(gig.payout || 0))}`,
   }));

@@ -213,6 +213,7 @@ class CreatorDashboardApiTests(TestCase):
         self.assertEqual(payload['avg_watch_time_seconds'], 0)
         self.assertTrue(len(payload['platform_breakdown']) >= 2)
         self.assertTrue(payload['top_gigs'])
+        self.assertEqual(payload['top_gigs'][0]['accessKey'], str(campaign.public_access_key))
 
     def test_wallet_endpoint_returns_creator_gigs_and_recent_activity_from_db(self):
         brand = get_user_model().objects.create_user(email='brand-wallet@example.com', password='pass1234', type='brand')

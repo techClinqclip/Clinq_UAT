@@ -669,6 +669,7 @@ class CreatorAnalyticsViewSet(viewsets.ReadOnlyModelViewSet):
                 if campaign.id not in campaign_stats:
                     campaign_stats[campaign.id] = {
                         'id': campaign.id,
+                        'accessKey': str(campaign.public_access_key),
                         'name': campaign.name,
                         'views': 0,
                         'submissions': 0,
