@@ -143,6 +143,8 @@ class CreatorSubmissionViewSet(viewsets.ModelViewSet):
             display_status = 'Closed'
         elif campaign_status == 'paused':
             display_status = 'Paused'
+        elif campaign_status == 'active':
+            display_status = 'Active'
         elif campaign_status in {'inactive', 'completed'}:
             display_status = campaign_status.title()
         else:
@@ -282,6 +284,8 @@ class CreatorSubmissionViewSet(viewsets.ModelViewSet):
                     display_status = 'Closed'
                 elif campaign_status == 'paused':
                     display_status = 'Paused'
+                elif campaign_status == 'active':
+                    display_status = 'Active'
                 elif campaign_status in {'inactive', 'completed'}:
                     display_status = campaign_status.title()
                 elif participant.approved_posts:

@@ -40,7 +40,7 @@ export default function CreatorSubmissions() {
               statusRaw = 'closed';
             } else if (submission.campaign_status === 'paused') {
               statusRaw = 'paused';
-            } else if ((submission.approved_posts || 0) > 0) {
+            } else if (submission.campaign_status === 'active') {
               statusRaw = 'active';
             } else {
               statusRaw = submission.status || 'pending';
