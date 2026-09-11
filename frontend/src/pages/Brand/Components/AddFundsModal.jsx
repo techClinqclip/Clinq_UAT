@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { X, IndianRupee, Smartphone, Building2, CreditCard, AlertCircle } from "lucide-react";
 import ProcessingModal from "../../../shared/ui/ProcessingModal"; // ADJUST to match this file's actual path
 import useToast from "../../../hooks/useToast"; // ADJUST to match this file's actual path
@@ -76,15 +77,17 @@ export default function AddFundsModal({ isOpen, onClose, onSuccess, savedMethod 
 
   const MethodIcon = savedMethod?.icon || Smartphone;
 
-  return (
+  // This modal can be opened from the sticky navbar. Rendering it at the document
+  // root prevents the navbar's layout context from offsetting or clipping the overlay.
+  return createPortal(
     <>
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+        className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm"
         onClick={handleClose}
       >
         <div
           onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-md rounded-2xl border border-white/10 bg-[#131316] p-6 shadow-2xl"
+          className="my-auto w-full max-w-md rounded-2xl border border-white/10 bg-[#131316] p-6 shadow-2xl"
         >
           <div className="flex items-start justify-between">
             <div>
@@ -202,6 +205,7 @@ export default function AddFundsModal({ isOpen, onClose, onSuccess, savedMethod 
           showToast({ type: "success", message: `₹${value.toLocaleString()} added to your wallet.` });
         }}
       />
-    </>
+    </>,
+    document.body
   );
 }
