@@ -103,8 +103,9 @@ class Profile(models.Model):
     # Basic Intro
     bio = models.TextField(max_length=700, blank=True)
     location = models.CharField(max_length=100, blank=True)
-    avatar = models.ImageField(upload_to=user_avatar_upload_path, null=True, blank=True)
-    cover = models.ImageField(upload_to=user_cover_upload_path, null=True, blank=True)
+    # Supabase public URLs are longer than Django ImageField's 100-character default.
+    avatar = models.ImageField(upload_to=user_avatar_upload_path, null=True, blank=True, max_length=500)
+    cover = models.ImageField(upload_to=user_cover_upload_path, null=True, blank=True, max_length=500)
     onboarding_data = models.JSONField(default=dict, blank=True)
     # Personal fields (used for both Brand and Creator profiles)
     first_name = models.CharField(max_length=150, blank=True)

@@ -468,6 +468,10 @@ function buildFriendlyErrorMessage(response, data) {
     return formatErrorMessage(data);
   }
 
+  if (response.status === 502) {
+    return formatErrorMessage(data) || 'Unable to reach the upload service. Please try again shortly.';
+  }
+
   if (response.status >= 500) {
     return 'Something went wrong on our end. Please try again in a moment.';
   }

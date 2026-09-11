@@ -174,10 +174,17 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
             if uploaded_file is not None:
                 logger.info(f"[ProfileUpdate] received image for {image_field} user={request.user.pk} filename={getattr(uploaded_file, 'name', '<in-memory>')} content_type={getattr(uploaded_file, 'content_type', None)}")
-                image_url = upload_public_media(
-                    uploaded_file,
-                    folder=f"profiles/{request.user.pk}/{image_field}",
-                )
+                try:
+                    image_url = upload_public_media(
+                        uploaded_file,
+                        folder=f"profiles/{request.user.pk}/{image_field}",
+                    )
+                except Exception:
+                    logger.exception("[ProfileUpdate] image upload failed for user=%s", request.user.pk)
+                    return Response(
+                        {'detail': 'Unable to store the image. Please try again.'},
+                        status=status.HTTP_502_BAD_GATEWAY,
+                    )
                 setattr(profile, image_field, image_url)
                 incoming.pop(image_field, None)
                 profile.save(update_fields=[image_field])
