@@ -1951,6 +1951,34 @@ class CampaignViewSetTest(TestCase):
         self.assertEqual(matching[0]['pendingPayout'], 30.0)
         self.assertEqual(matching[0]['myEarnings'], 0.0)
 
+    def test_campaign_clipper_gigs_summary_includes_the_clippers_submission_count(self):
+        clipper = User.objects.create_user(
+            email='clipper-summary-count@test.com',
+            password='testpass123',
+            type='clipper'
+        )
+        participant = CampaignParticipant.objects.create(
+            campaign=self.campaign,
+            clipper=clipper,
+            status='submitted'
+        )
+        for index in range(2):
+            CampaignSubmission.objects.create(
+                participant=participant,
+                platform='instagram',
+                platform_username='@clipper-summary-count',
+                content_url=f'https://example.com/summary-count-{index}',
+                status='pending',
+            )
+
+        self.client.force_authenticate(user=clipper)
+        response = self.client.get('/api/content/campaigns/clipper-gigs/?summary=true')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        matching = [gig for gig in response.data if gig['id'] == self.campaign.id]
+        self.assertEqual(len(matching), 1)
+        self.assertEqual(matching[0]['totalSubmissions'], 2)
+
     def test_clipper_joined_gig_detail_endpoint_returns_campaign_for_participant(self):
         clipper = User.objects.create_user(
             email='clipper5@test.com',

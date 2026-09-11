@@ -632,7 +632,8 @@ class CampaignViewSet(viewsets.ModelViewSet):
                 aggregated_earnings=Sum(
                     'submissions__earning',
                     filter=Q(submissions__status='approved'),
-                )
+                ),
+                aggregated_submission_count=Count('submissions', distinct=True),
             )
         else:
             participants = participants.prefetch_related('submissions')
@@ -650,7 +651,7 @@ class CampaignViewSet(viewsets.ModelViewSet):
             if summary_only:
                 pending_earnings = 0
                 total_earnings = participant.aggregated_earnings or 0
-                total_submissions = 0
+                total_submissions = participant.aggregated_submission_count or 0
             else:
                 # Ensure the latest approved submission earnings are recalculated before computing totals.
                 for submission in participant.submissions.filter(status='approved'):
