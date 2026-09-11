@@ -31,6 +31,7 @@ import { api } from "../../lib/api";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import useToast from "../../hooks/useToast";
 import SubmitClipDialog from "./SubmitClipDialog";
+import ConfirmModal from "../../shared/ui/ComfirmModal";
 
 const STATUS_STYLES = {
   pending: "bg-yellow-500/10 text-yellow-400",
@@ -348,6 +349,7 @@ export default function SubmissionDetails() {
   const [error, setError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [copied, setCopied] = useState(false);
   const { showToast } = useToast();
 
@@ -452,6 +454,7 @@ export default function SubmissionDetails() {
       });
     } finally {
       setDeletingId(null);
+      setDeleteTargetId(null);
     }
   };
 
@@ -940,7 +943,7 @@ export default function SubmissionDetails() {
 
                           <button
                             type="button"
-                            onClick={() => handleDeleteSubmission(entry.id)}
+                            onClick={() => setDeleteTargetId(entry.id)}
                             disabled={deletingId === entry.id}
                             className="inline-flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-60"
                           >
@@ -963,6 +966,18 @@ export default function SubmissionDetails() {
         onClose={() => setIsModalOpen(false)}
         campaignId={id?.replace(/^campaign-/, "")}
         onSubmit={handleSubmitContent}
+      />
+
+      <ConfirmModal
+        open={Boolean(deleteTargetId)}
+        title="Delete this submission?"
+        description="This will remove the submitted clip from this campaign. You can submit another clip later."
+        icon={Trash2}
+        color="red"
+        confirmText="Delete submission"
+        loading={Boolean(deletingId)}
+        onCancel={() => setDeleteTargetId(null)}
+        onConfirm={() => handleDeleteSubmission(deleteTargetId)}
       />
     </PageShell>
   );
