@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Download, Trash2, X, AlertCircle } from "lucide-react";
+import { ArrowLeft, Download, Trash2, X, AlertCircle, Globe2 } from "lucide-react";
+import { FaYoutube, FaInstagram, FaFacebook, FaTiktok, FaXTwitter } from "react-icons/fa6";
 import { Link, useParams } from "react-router-dom";
 import ViewsChart from "../Brand/Components/ViewsChart";
 import PayoutChart from "../Brand/Components/PayoutChart";
@@ -101,21 +102,34 @@ const STATUS_STYLES = {
 };
 
 const PLATFORM_STYLES = {
-  YouTube: { color: "bg-red-500", name: "YouTube" },
-  Instagram: { color: "bg-pink-500", name: "Instagram" },
-  Facebook: { color: "bg-blue-500", name: "Facebook" },
-  "X": { color: "bg-gray-500", name: "X" },
-  "X (Twitter)": { color: "bg-gray-500", name: "X" },
-  TikTok: { color: "bg-purple-500", name: "TikTok" },
+  youtube: { name: "YouTube", icon: FaYoutube, textColor: "text-red-500" },
+  instagram: { name: "Instagram", icon: FaInstagram, textColor: "text-pink-500" },
+  facebook: { name: "Facebook", icon: FaFacebook, textColor: "text-blue-500" },
+  x: { name: "X", icon: FaXTwitter, textColor: "text-white" },
+  "x (twitter)": { name: "X", icon: FaXTwitter, textColor: "text-white" },
+  "twitter/x": { name: "X", icon: FaXTwitter, textColor: "text-white" },
+  twitter: { name: "X", icon: FaXTwitter, textColor: "text-white" },
+  tiktok: { name: "TikTok", icon: FaTiktok, textColor: "text-slate-200" },
 };
 
 const PlatformBadge = ({ platform }) => {
-  const style = PLATFORM_STYLES[platform] || { color: "bg-gray-500", name: platform };
+  const platformName = String(platform || "Platform").trim();
+  const style = PLATFORM_STYLES[platformName.toLowerCase()] || {
+    name: platformName,
+    icon: Globe2,
+    textColor: "text-zinc-400",
+  };
+  const Icon = style.icon;
+
   return (
-    <div className="flex items-center gap-2">
-      <div className={`w-3 h-3 rounded-full ${style.color}`} />
-      <span className="text-xs font-medium text-white">{style.name}</span>
-    </div>
+    <span
+      title={style.name}
+      aria-label={style.name}
+      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03]"
+    >
+      <Icon size={17} className={style.textColor} aria-hidden="true" />
+      <span className="sr-only">{style.name}</span>
+    </span>
   );
 };
 
@@ -554,21 +568,9 @@ export default function CreatorSubmissionDetails() {
                   </td>
 
                   <td className="py-5">
-                    <div className="flex items-center gap-4">
-                      {submission.contentUrl ? (
-                        <a
-                          href={submission.contentUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="h-14 w-24 rounded-xl bg-violet-500/10 transition hover:border hover:border-violet-500/30 cursor-pointer"
-                        />
-                      ) : (
-                        <div className="h-14 w-24 rounded-xl bg-violet-500/10 transition hover:border hover:border-violet-500/30" />
-                      )}
-                      <div>
-                        <p className="font-medium text-white">{submission.title}</p>
-                        <p className="text-sm text-zinc-500">Submission #{submission.id}</p>
-                      </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-white">{submission.title}</p>
+                      <p className="text-sm text-zinc-500">Submission #{submission.id}</p>
                     </div>
                   </td>
 

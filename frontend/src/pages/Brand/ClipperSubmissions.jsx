@@ -7,6 +7,7 @@ import {
   Inbox,
   Trophy,
   Sparkles,
+  Globe2,
 } from "lucide-react";
 import {
   FaYoutube,
@@ -21,7 +22,7 @@ import PayoutChart from "./Components/PayoutChart";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import { api } from "../../lib/api";
 import SubmissionsLoadingSkeleton from "../../shared/ui/SubmissionsLoadingSkeleton";
- 
+
 /*
   Approve/Reject removed from this page on purpose: approval is a
   platform-side decision, not something the brand does here. The brand's
@@ -133,21 +134,34 @@ const STATUS_STYLES = {
 };
  
 const PLATFORM_STYLES = {
-  YouTube: { color: "bg-red-500", name: "YouTube", icon: FaYoutube },
-  Instagram: { color: "bg-pink-500", name: "Instagram", icon: FaInstagram },
-  Facebook: { color: "bg-blue-500", name: "Facebook", icon: FaFacebook },
-  "X": { color: "bg-gray-500", name: "X", icon: FaXTwitter },
-  "X (Twitter)": { color: "bg-gray-500", name: "X", icon: FaXTwitter },
-  TikTok: { color: "bg-purple-500", name: "TikTok", icon: FaTiktok },
+  youtube: { name: "YouTube", icon: FaYoutube, textColor: "text-red-500" },
+  instagram: { name: "Instagram", icon: FaInstagram, textColor: "text-pink-500" },
+  facebook: { name: "Facebook", icon: FaFacebook, textColor: "text-blue-500" },
+  x: { name: "X", icon: FaXTwitter, textColor: "text-white" },
+  "x (twitter)": { name: "X", icon: FaXTwitter, textColor: "text-white" },
+  "twitter/x": { name: "X", icon: FaXTwitter, textColor: "text-white" },
+  twitter: { name: "X", icon: FaXTwitter, textColor: "text-white" },
+  tiktok: { name: "TikTok", icon: FaTiktok, textColor: "text-slate-200" },
 };
- 
+
 const PlatformBadge = ({ platform }) => {
-  const style = PLATFORM_STYLES[platform] || { color: "bg-gray-500", name: platform };
+  const platformName = String(platform || "Platform").trim();
+  const style = PLATFORM_STYLES[platformName.toLowerCase()] || {
+    name: platformName,
+    icon: Globe2,
+    textColor: "text-zinc-400",
+  };
+  const Icon = style.icon;
+
   return (
-    <div className="flex items-center gap-2">
-      <div className={`w-3 h-3 rounded-full ${style.color}`} />
-      <span className="text-xs font-medium text-white">{style.name}</span>
-    </div>
+    <span
+      title={style.name}
+      aria-label={style.name}
+      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03]"
+    >
+      <Icon size={17} className={style.textColor} aria-hidden="true" />
+      <span className="sr-only">{style.name}</span>
+    </span>
   );
 };
  
@@ -202,7 +216,6 @@ function DeleteConfirmModal({ count, onCancel, onConfirm, isDeleting }) {
     </div>
   );
 }
- 
 export default function ClipperSubmissions() {
   const { campaignId, clipperId, gigId, participantId } = useParams();
   // Support both Brand (/brand/campaigns/:campaignId/clippers/:clipperId/submissions)
@@ -516,14 +529,9 @@ export default function ClipperSubmissions() {
                   </td>
  
                   <td className="py-5">
-                    <div className="flex items-center gap-4">
-                      <Link to={isCreatorRoute ? `/creator/gigs/${actualCampaignId}/participants/${actualClipperId}/clips/${submission.id}` : `/brand/clips/${submission.id}`}>
-                        <div className="h-14 w-24 rounded-xl bg-violet-500/10 transition hover:border hover:border-violet-500/30" />
-                      </Link>
-                      <div>
-                        <p className="font-medium text-white">{submission.platformUsername || submission.contentUrl || `Submission #${submission.id}`}</p>
-                        <p className="text-sm text-zinc-500">Submission #{submission.id}</p>
-                      </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-white">{submission.platformUsername || submission.contentUrl || `Submission #${submission.id}`}</p>
+                      <p className="text-sm text-zinc-500">Submission #{submission.id}</p>
                     </div>
                   </td>
  
@@ -738,4 +746,3 @@ export default function ClipperSubmissions() {
     </div>
   );
 }
- 
