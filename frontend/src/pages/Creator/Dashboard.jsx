@@ -110,6 +110,9 @@ export default function Dashboard() {
         setProfile(data?.profile ?? null);
         setTopGigs((data?.top_gigs || []).map((gig) => ({
           id: gig.id,
+          // Dashboard data exposes a UUID accessKey; numeric IDs remain a
+          // compatible fallback for older API responses.
+          accessKey: gig.accessKey || gig.access_key || gig.id,
           name: gig.title,
           views: formatCompact(gig.views ?? 0),
           submissions: gig.submissions_count ?? 0,
