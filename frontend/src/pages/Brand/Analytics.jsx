@@ -31,11 +31,10 @@ import { api } from "../../lib/api";
      to "./components/..." to match every other Brand page. Confirm the
      real components actually live there before shipping.
 
-  NOTE: CREATE_CAMPAIGN_ROUTE below is a guess ("/brand/campaigns/new").
-  Point it at whatever your real "create a campaign" route is.
+  Empty-state calls to action share the registered campaign-creation route.
 */
 
-const CREATE_CAMPAIGN_ROUTE = "/brand/campaigns/new";
+const CREATE_CAMPAIGN_ROUTE = "/brand/campaigns/create";
 
 const platformColorMap = {
   YouTube: { icon: FaYoutube, color: "text-red-500", bar: "bg-red-500" },
