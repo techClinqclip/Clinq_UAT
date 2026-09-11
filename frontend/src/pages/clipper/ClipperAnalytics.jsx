@@ -341,6 +341,11 @@ export default function ClipperAnalytics() {
     const hasPerformanceData = analytics.performance.length > 0;
     const hasPlatformData = analytics.platforms.length > 0;
     const hasClips = sortedClips.length > 0;
+    const latestPerformance = analytics.performance.at(-1);
+    const previousPerformance = analytics.performance.at(-2);
+    const viewsGrowth = previousPerformance?.views
+        ? Math.round(((latestPerformance.views - previousPerformance.views) / previousPerformance.views) * 100)
+        : null;
 
     if (loading) {
         return <MarketplaceLoadingSkeleton />;
@@ -422,12 +427,12 @@ export default function ClipperAnalytics() {
                 </section>
 
                 {/* KPI row */}
-                <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+                <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 2xl:grid-cols-4">
                     <KpiCard
                         icon={<Eye size={20} className="text-sky-400" />}
                         label="Total views"
                         value={fmtCompact(analytics.totalViews)}
-                        delta={12}
+                        delta={viewsGrowth}
                         spark={analytics.performance.map((d) => d.views)}
                         color="#38bdf8"
                     />
@@ -435,9 +440,9 @@ export default function ClipperAnalytics() {
                         icon={<Heart size={20} className="text-rose-400" />}
                         label="Engagement rate"
                         value={`${analytics.engagementRate}%`}
-                        delta={3}
                         spark={[5.1, 5.9, 6.4, 6.8, 7.1, 7.4, 7.8]}
                         color="#fb7185"
+                        neutral
                     />
                     <KpiCard
                         icon={<Clapperboard size={20} className="text-violet-400" />}
@@ -452,9 +457,9 @@ export default function ClipperAnalytics() {
                         icon={<TrendingUp size={20} className="text-amber-400" />}
                         label="Avg views / clip"
                         value={fmtCompact(analytics.averageViews)}
-                        delta={9}
                         spark={[112, 128, 140, 155, 168, 178, 189]}
                         color="#fbbf24"
+                        neutral
                     />
                 </section>
 
@@ -545,45 +550,45 @@ export default function ClipperAnalytics() {
                     </div>
 
                     {hasClips ? (
-                        <div className="custom-scrollbar max-h-[360px] overflow-x-auto overflow-y-auto">
-                            <table className="w-full min-w-[640px] border-collapse text-sm">
+                        <div className="custom-scrollbar -mx-2 max-h-[360px] overflow-x-auto overflow-y-auto px-2 sm:mx-0 sm:px-0">
+                            <table className="w-full min-w-[720px] border-collapse text-sm">
                                 <thead className="sticky top-0 z-10 bg-[#0c0c0e]">
                                     <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wide text-zinc-500">
-                                        <th className="pb-3 font-medium">Clip</th>
-                                        <th className="pb-3 font-medium">Platform</th>
+                                        <th className="px-4 py-3 font-medium">Clip</th>
+                                        <th className="px-4 py-3 font-medium">Platform</th>
                                         <SortableHeader label="Views" active={sortKey === "views"} dir={sortDir} onClick={() => toggleSort("views")} />
                                         <SortableHeader label="Engagement" active={sortKey === "engagement"} dir={sortDir} onClick={() => toggleSort("engagement")} />
-                                        <th className="pb-3 pl-4 text-right font-medium">Trend</th>
+                                        <th className="px-4 py-3 text-right font-medium">Trend</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {sortedClips.map((c) => (
                                         <tr key={c.id} className="border-b border-white/5 last:border-0">
-                                            <td className="py-3.5 pr-4">
+                                            <td className="px-4 py-3.5">
                                                 <div className="flex items-center gap-3">
                                                     <div className="flex h-9 w-14 shrink-0 items-center justify-center rounded-md bg-white/5 font-mono text-[10px] text-zinc-500">
                                                         {c.duration}
                                                     </div>
-                                                    <div>
-                                                        <p className="font-medium text-zinc-200">{c.title}</p>
-                                                        <p className="font-mono text-[11px] text-zinc-600">{c.id}</p>
+                                                    <div className="min-w-0">
+                                                        <p className="max-w-[260px] truncate font-medium text-zinc-200">{c.title}</p>
+                                                        <p className="max-w-[260px] truncate font-mono text-[11px] text-zinc-600">{c.id}</p>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="py-3.5 pr-4">
+                                            <td className="px-4 py-3.5">
                                                 <span
-                                                    className="rounded-full px-2.5 py-1 text-xs font-medium"
+                                                    className="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium"
                                                     style={{
-                                                        color: PLATFORM_COLOR[c.platform],
-                                                        backgroundColor: `${PLATFORM_COLOR[c.platform]}1a`,
+                                                        color: PLATFORM_COLOR[c.platform] || "#a1a1aa",
+                                                        backgroundColor: `${PLATFORM_COLOR[c.platform] || "#a1a1aa"}1a`,
                                                     }}
                                                 >
                                                     {c.platform}
                                                 </span>
                                             </td>
-                                            <td className="py-3.5 pr-4 font-mono tabular-nums text-zinc-300">{fmtCompact(c.views)}</td>
-                                            <td className="py-3.5 pr-4 font-mono tabular-nums text-zinc-300">{c.engagement}%</td>
-                                            <td className="py-3.5 pl-4 text-right">
+                                            <td className="px-4 py-3.5 font-mono tabular-nums text-zinc-300">{fmtCompact(c.views)}</td>
+                                            <td className="px-4 py-3.5 font-mono tabular-nums text-zinc-300">{c.engagement}%</td>
+                                            <td className="px-4 py-3.5 text-right">
                                                 <span
                                                     className={`inline-flex items-center gap-1 font-mono text-xs tabular-nums ${
                                                         c.trend >= 0 ? "text-emerald-400" : "text-rose-400"
@@ -603,30 +608,6 @@ export default function ClipperAnalytics() {
                     )}
                 </section>
 
-                {/* Performance Insights + Recent Activity */}
-                {/* <section className="grid gap-6 ">
-                    {/* Performance Insights */}
-                    {/* <div className="rounded-3xl border border-white/10 bg-[#11111A] p-6">
-                        <h3 className="text-sm font-semibold text-white">Performance insights</h3>
-                        <p className="mt-0.5 text-xs text-zinc-500">Auto-generated from this period's data</p>
-
-                        <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                            {insights.map((item) => (
-                                <div
-                                    key={item.title}
-                                    className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 transition hover:border-white/[0.12]"
-                                >
-                                    <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${item.iconBg}`}>
-                                        {item.icon}
-                                    </div>
-                                    <p className="mt-3 text-sm font-medium text-zinc-200">{item.title}</p>
-                                    <p className="mt-1 text-xs leading-5 text-zinc-500">{item.description}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div> */}
-
-                 
             </div>
         </div>
     );
@@ -634,7 +615,7 @@ export default function ClipperAnalytics() {
 
 function SortableHeader({ label, active, dir, onClick }) {
     return (
-        <th className="pb-3 pr-4 font-medium">
+        <th className="px-4 py-3 font-medium">
             <button
                 onClick={onClick}
                 className={`inline-flex items-center gap-1 transition ${active ? "text-zinc-200" : "text-zinc-500 hover:text-zinc-300"}`}
@@ -659,12 +640,12 @@ function KpiCard({ icon, label, value, delta, spark, color, neutral }) {
         .join(" ");
 
     return (
-        <div className="group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] p-5 transition hover:border-white/[0.15]">
-            <div className="flex items-start justify-between">
+        <div className="group relative min-w-0 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] p-5 transition hover:border-white/[0.15]">
+            <div className="flex items-start justify-between gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5">{icon}</div>
-                {!neutral && (
+                {!neutral && delta !== null && delta !== undefined && (
                     <span
-                        className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                        className={`inline-flex shrink-0 items-center gap-0.5 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium ${
                             delta >= 0 ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"
                         }`}
                     >
