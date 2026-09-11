@@ -172,8 +172,9 @@ class CampaignViewSet(viewsets.ModelViewSet):
             except (ValueError, TypeError, AttributeError):
                 raise NotFound()
             obj = get_object_or_404(queryset, public_access_key=access_key)
-            if obj.creator_id != self.request.user.id:
-                raise NotFound()
+
+        # Access-key URLs are used by both event owners and joined
+        # participants. Authorization below restricts every other user.
         if obj.creator == self.request.user or CampaignParticipant.objects.filter(campaign=obj, clipper=self.request.user).exists():
             self.check_object_permissions(self.request, obj)
             return obj

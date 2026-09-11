@@ -1505,6 +1505,18 @@ class CampaignViewSetTest(TestCase):
         response = self.client.get(f'/api/content/campaigns/{self.campaign.public_access_key}/')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
+    def test_joined_participant_can_retrieve_by_access_key(self):
+        clipper = User.objects.create_user(
+            email='participant-access-key@test.com', password='testpass123', type='clipper'
+        )
+        CampaignParticipant.objects.create(campaign=self.campaign, clipper=clipper)
+
+        self.client.force_authenticate(user=clipper)
+        response = self.client.get(f'/api/content/campaigns/{self.campaign.public_access_key}/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['accessKey'], str(self.campaign.public_access_key))
+
     def test_joined_gig_access_key_requires_membership(self):
         clipper = User.objects.create_user(
             email='joined-key-clipper@test.com', password='testpass123', type='clipper'
