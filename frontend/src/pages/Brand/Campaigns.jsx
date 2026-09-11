@@ -17,6 +17,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import CampaignCardSkeleton from "../../shared/ui/CampaignCardSkeleton";
+import useToast from "../../hooks/useToast";
 
 const ACCENTS = {
   violet: {
@@ -279,6 +280,7 @@ export default function Campaigns() {
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
+  const { showToast } = useToast();
 
   useEffect(() => {
     const loadCampaigns = async () => {
@@ -319,7 +321,10 @@ export default function Campaigns() {
     } catch (err) {
       console.error("Failed to update campaign status", err);
       setCampaigns(previous);
-      alert(err.message || "Unable to update campaign status.");
+      showToast({
+        type: "error",
+        message: err.message || "Unable to update campaign status.",
+      });
     }
   };
 
