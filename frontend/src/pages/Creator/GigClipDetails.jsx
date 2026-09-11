@@ -109,8 +109,8 @@ export default function GigClipDetails() {
                     payoutRate: `₹${Number(match.earning || match.pendingEarning || 0).toLocaleString()} / submission`,
                     earned: `₹${Number(match.earning || 0).toLocaleString()}`,
                     status: match.status || "Pending",
-                    campaignId: Number(gigId),
-                    clipperId: Number(participantId),
+                    campaignId: gigId,
+                    clipperId: participantId,
                 } : null);
             } catch (err) {
                 if (!active) return;

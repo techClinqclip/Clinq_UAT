@@ -1716,6 +1716,13 @@ class CampaignViewSetTest(TestCase):
         self.assertEqual(response.data[0]['status'], 'Submitted')
         self.assertEqual(response.data[0]['campaignStatus'], 'active')
         self.assertEqual(response.data[0]['earned'], '₹1200.00')
+        self.assertIn('participantKey', response.data[0])
+
+        encrypted_response = self.client.get(
+            f'/api/content/campaigns/{self.campaign.public_access_key}/clippers/{response.data[0]["participantKey"]}/submissions/'
+        )
+        self.assertEqual(encrypted_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(encrypted_response.data['participant']['clipperId'], clipper.id)
 
     def test_campaign_participants_endpoint_includes_paused_campaign_status(self):
         clipper = User.objects.create_user(
@@ -1740,6 +1747,20 @@ class CampaignViewSetTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['campaignStatus'], 'paused')
+
+    def test_campaign_participants_endpoint_requires_campaign_owner(self):
+        outsider = User.objects.create_user(
+            email='other-owner@test.com',
+            password='testpass123',
+            type='creator',
+        )
+
+        self.client.force_authenticate(user=outsider)
+        response = self.client.get(
+            f'/api/content/campaigns/{self.campaign.public_access_key}/participants/'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_campaign_clipper_submissions_endpoint(self):
         clipper = User.objects.create_user(

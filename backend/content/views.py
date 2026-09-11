@@ -13,6 +13,7 @@ from supabase import create_client
 from decimal import Decimal
 
 from .models import ClipSubmission, Content, Bid, Campaign, CampaignParticipant, CampaignSubmission
+from .access_tokens import create_participant_access_token, resolve_participant_access_token
 
 from .serializers import ContentSerializer, BidSerializer, ClipSubmissionSerializer
 from .serializers import CampaignSerializer, CampaignSummarySerializer, CampaignParticipantSerializer, CampaignSubmissionSerializer
@@ -187,6 +188,24 @@ class CampaignViewSet(viewsets.ModelViewSet):
         if campaign.creator_id != self.request.user.id:
             return Response({'error': 'Only the event owner can manage this campaign or gig.'}, status=status.HTTP_403_FORBIDDEN)
         return None
+
+    @staticmethod
+    def _get_participant(campaign, participant_key):
+        # Retain numeric support for existing API consumers, but new UI URLs
+        # always use the encrypted, campaign-scoped participant token.
+        if str(participant_key).isdigit():
+            clipper_id = int(participant_key)
+        else:
+            clipper_id = resolve_participant_access_token(campaign, participant_key)
+
+        if not clipper_id:
+            raise NotFound('Participant not found.')
+
+        return get_object_or_404(
+            CampaignParticipant.objects.select_related('clipper__profile'),
+            campaign=campaign,
+            clipper_id=clipper_id,
+        )
 
     @action(detail=True, methods=['post'], url_path='close')
     def close(self, request, pk=None):
@@ -1214,6 +1233,9 @@ class CampaignViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'], url_path='participants')
     def participants(self, request, pk=None):
         campaign = self.get_object()
+        denied = self._require_owner(campaign)
+        if denied:
+            return denied
         participants = campaign.participants.select_related('clipper', 'clipper__profile').prefetch_related('submissions').all()
 
         rows = []
@@ -1254,6 +1276,7 @@ class CampaignViewSet(viewsets.ModelViewSet):
             rows.append({
                 'id': participant.clipper_id,
                 'clipperId': participant.clipper_id,
+                'participantKey': create_participant_access_token(campaign, participant.clipper_id),
                 'username': profile_username or fallback_username,
                 'platform': latest_submission.get_platform_display() if latest_submission else '',
                 'views': total_views,
@@ -1273,11 +1296,10 @@ class CampaignViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'], url_path=r'clippers/(?P<clipper_id>[^/.]+)/submissions')
     def clipper_submissions(self, request, pk=None, clipper_id=None):
         campaign = self.get_object()
-        participant = get_object_or_404(
-            CampaignParticipant.objects.select_related('clipper__profile'),
-            campaign=campaign,
-            clipper_id=clipper_id,
-        )
+        denied = self._require_owner(campaign)
+        if denied:
+            return denied
+        participant = self._get_participant(campaign, clipper_id)
 
         # For display: show only non-deleted submissions
         display_submissions = participant.submissions.filter(is_deleted=False).order_by('-created_at')
@@ -1445,11 +1467,7 @@ class CampaignViewSet(viewsets.ModelViewSet):
             )
         
         try:
-            participant = get_object_or_404(
-                CampaignParticipant.objects.select_related('campaign'),
-                campaign=campaign,
-                clipper_id=clipper_id,
-            )
+            participant = self._get_participant(campaign, clipper_id)
             print(f'  participant={participant.id}')
         except Exception as e:
             print(f'  ERROR getting participant: {e}')

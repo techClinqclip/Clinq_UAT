@@ -168,7 +168,7 @@ export default function CampaignDetails() {
     const loadParticipants = async () => {
       setParticipantsLoading(true);
       try {
-        const data = await api(`/api/content/campaigns/${campaign.id}/participants/`);
+        const data = await api(`/api/content/campaigns/${campaign.accessKey || accessKey}/participants/`);
         setParticipants(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Failed to load participants", error);
@@ -181,7 +181,7 @@ export default function CampaignDetails() {
     const loadPerformance = async () => {
       setPerformanceLoading(true);
       try {
-        const data = await api(`/api/content/campaigns/${campaign.id}/performance/`);
+        const data = await api(`/api/content/campaigns/${campaign.accessKey || accessKey}/performance/`);
         setPerformanceData(data || null);
       } catch (error) {
         console.error("Failed to load campaign performance", error);
@@ -650,17 +650,17 @@ export default function CampaignDetails() {
                 </tr>
               ) : participants && participants.length > 0 ? (
                 participants.map((clipper, idx) => {
-                  const userId = clipper.clipperId ?? clipper.id;
+                  const participantKey = clipper.participantKey;
 
                   return (
-                    <tr key={userId ?? idx} className="border-b border-white/5">
+                    <tr key={participantKey ?? clipper.clipperId ?? idx} className="border-b border-white/5">
                       <td className="py-5 font-medium text-white">{idx + 1}</td>
                       <td className="py-5 text-zinc-200">{clipper.username}</td>
                       <td className="py-5 text-white">{clipper.views}</td>
                       <td className="py-5 text-white">{clipper.earned}</td>
                       <td className="py-5">
                         <Link
-                          to={`/brand/campaigns/${campaign.id}/clippers/${userId}`}
+                          to={`/brand/campaigns/${campaign.accessKey || accessKey}/clippers/${participantKey}`}
                           className="rounded-xl border border-white/10 px-4 py-2 text-sm text-white transition hover:border-violet-500/30"
                         >
                           View Submissions

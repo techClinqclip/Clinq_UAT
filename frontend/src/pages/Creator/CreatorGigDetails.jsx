@@ -178,7 +178,7 @@ export default function CreatorGigDetails() {
 
         // Fetch participants for this gig
         try {
-          const participantsData = await api(`/api/content/campaigns/${data.id}/participants/`);
+          const participantsData = await api(`/api/content/campaigns/${data.accessKey || accessKey}/participants/`);
           if (!mounted) return;
           setParticipants(participantsData || []);
         } catch (err) {
@@ -645,12 +645,12 @@ export default function CreatorGigDetails() {
                 </tr>
               ) : (
                 participants.map((participant, idx) => {
-                  const userId = participant.clipperId ?? participant.id;
+                  const participantKey = participant.participantKey;
                   const earningsDisplay = participant.earned || "₹0.00";
 
                   return (
                     <tr
-                      key={userId ?? idx}
+                      key={participantKey ?? participant.clipperId ?? idx}
                       className="border-b border-white/5 transition hover:bg-white/[0.02]"
                     >
                       <td className="py-5 font-medium text-white">{idx + 1}</td>
@@ -659,7 +659,7 @@ export default function CreatorGigDetails() {
                       <td className="py-5 text-white">{earningsDisplay}</td>
                       <td className="py-5">
                         <Link
-                          to={`/creator/gigs/${gig.id}/participants/${userId}`}
+                          to={`/creator/gigs/${gig.accessKey || accessKey}/participants/${participantKey}`}
                           className="rounded-xl border border-white/10 px-4 py-2 text-sm text-white transition hover:border-violet-500/30"
                         >
                           View Submissions
