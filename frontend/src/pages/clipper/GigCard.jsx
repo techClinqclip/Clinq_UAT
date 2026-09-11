@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
     IndianRupee,
     TrendingUp,
@@ -75,6 +75,7 @@ function StatBox({ icon, label, value, valueClass = "text-white" }) {
 }
 
 export default function GigCard({ gig }) {
+    const navigate = useNavigate();
     const title = normalizeString(gig?.name || gig?.title, "Untitled gig");
     const brand = normalizeString(gig?.brandName, "Brand");
     const status = normalizeString(gig?.status, "Active");
@@ -99,8 +100,27 @@ export default function GigCard({ gig }) {
           })
         : "No deadline";
 
+    const gigUrl = gig?.accessKey ? `/clipper/gigs/${gig.accessKey}` : null;
+
+    const openGig = () => {
+        if (gigUrl) navigate(gigUrl);
+    };
+
+    const handleCardKeyDown = (event) => {
+        if (!gigUrl || (event.key !== "Enter" && event.key !== " ")) return;
+        event.preventDefault();
+        openGig();
+    };
+
     return (
-        <div className="group relative flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#11111A] shadow-2xl shadow-transparent transition-all duration-300 ease-out hover:z-10 hover:-translate-y-6 hover:scale-[1.07] hover:border-violet-500/30 hover:shadow-[0_35px_60px_-15px_rgba(0,0,0,0.6)] active:scale-[0.98]">
+        <article
+            role={gigUrl ? "link" : undefined}
+            tabIndex={gigUrl ? 0 : undefined}
+            aria-label={gigUrl ? `Open ${title}` : undefined}
+            onClick={openGig}
+            onKeyDown={handleCardKeyDown}
+            className={`group relative flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#11111A] shadow-2xl shadow-transparent transition-all duration-300 ease-out hover:z-10 hover:-translate-y-6 hover:scale-[1.07] hover:border-violet-500/30 hover:shadow-[0_35px_60px_-15px_rgba(0,0,0,0.6)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 ${gigUrl ? "cursor-pointer" : ""}`}
+        >
             {/* Cover */}
             <div className="relative h-36 overflow-hidden sm:h-40">
                 {thumbnail ? (
@@ -202,7 +222,8 @@ export default function GigCard({ gig }) {
             {/* Mobile/touch CTA: stays in normal flow, no hover on touch */}
             <div className="border-t border-white/5 p-5 pt-5 lg:hidden">
                 <Link
-                    to={`/clipper/gigs/${gig.accessKey}`}
+                    to={gigUrl || "/clipper/gigs"}
+                    onClick={(event) => event.stopPropagation()}
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-3 text-center text-sm font-medium text-white transition hover:bg-violet-500"
                 >
                     Open Gig
@@ -214,7 +235,8 @@ export default function GigCard({ gig }) {
             <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 hidden translate-y-full opacity-0 transition-all duration-300 ease-out group-hover:translate-y-0 group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 group-focus-within:pointer-events-auto lg:block">
                 <div className="border-t border-white/10 bg-[#11111A]/95 p-5 backdrop-blur-sm">
                     <Link
-                        to={`/clipper/gigs/${gig.accessKey}`}
+                        to={gigUrl || "/clipper/gigs"}
+                        onClick={(event) => event.stopPropagation()}
                         className="flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-3 text-center text-sm font-medium text-white transition hover:bg-violet-500"
                     >
                         Open Gig
@@ -222,6 +244,6 @@ export default function GigCard({ gig }) {
                     </Link>
                 </div>
             </div>
-        </div>
+        </article>
     );
 }
