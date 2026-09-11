@@ -1,4 +1,5 @@
 import { Loader2, X } from "lucide-react";
+import { createPortal } from "react-dom";
 
 const COLORS = {
   red: {
@@ -44,8 +45,8 @@ export default function ConfirmModal({
 
   const theme = COLORS[color] || COLORS.violet;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#11111A] p-6 shadow-2xl">
         <div className="flex items-start justify-between">
           <div className={`flex h-11 w-11 items-center justify-center rounded-full ${theme.bg}`}>
@@ -84,6 +85,7 @@ export default function ConfirmModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

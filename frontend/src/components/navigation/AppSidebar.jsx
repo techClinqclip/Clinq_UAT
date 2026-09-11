@@ -6,6 +6,7 @@ import { Compass, BriefcaseBusiness, LogOut } from "lucide-react";
 import SidebarSection from "./SidebarSection";
 import { sidebarConfig } from "./sidebarConfig";
 import { clearAuthStorage } from "../../lib/api";
+import ConfirmModal from "../../shared/ui/ComfirmModal";
 
 export default function AppSidebar({ role: propRole }) {
   const user = useCurrentUser();
@@ -24,17 +25,24 @@ export default function AppSidebar({ role: propRole }) {
   const [openSection, setOpenSection] = useState(
     isExploreRoute ? "explore" : "workspace"
   );
+  const [logoutConfirmationOpen, setLogoutConfirmationOpen] = useState(false);
 
   useEffect(() => {
     setOpenSection(isExploreRoute ? "explore" : "workspace");
   }, [location.pathname, isExploreRoute]);
 
   const handleLogout = () => {
+    setLogoutConfirmationOpen(true);
+  };
+
+  const confirmLogout = () => {
+    setLogoutConfirmationOpen(false);
     clearAuthStorage();
     navigate("/login", { replace: true });
   };
 
   return (
+    <>
     <aside className="fixed left-0 top-0 z-50 flex h-screen w-64 flex-col border-r border-white/10 bg-[#0B0B12]">
       <div className="border-b border-white/10 p-6">
         <h1 className="text-3xl font-bold text-white">
@@ -84,5 +92,16 @@ export default function AppSidebar({ role: propRole }) {
         </button>
       </div>
     </aside>
+      <ConfirmModal
+        open={logoutConfirmationOpen}
+        title="Log out?"
+        description="Are you sure you want to log out? You will need to sign in again to continue."
+        icon={LogOut}
+        color="red"
+        confirmText="Log out"
+        onCancel={() => setLogoutConfirmationOpen(false)}
+        onConfirm={confirmLogout}
+      />
+    </>
   );
 }

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ChevronDown, User, Settings, LogOut } from "lucide-react";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { clearAuthStorage } from "../../lib/api";
+import ConfirmModal from "../ui/ComfirmModal";
 
 const ROLE_BADGE = {
   creator: "bg-violet-500/10 text-violet-300",
@@ -33,6 +34,7 @@ export default function ProfileMenu() {
   const user = useCurrentUser();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [logoutConfirmationOpen, setLogoutConfirmationOpen] = useState(false);
   const ref = useRef(null);
 
   useEffect(() => {
@@ -45,11 +47,17 @@ export default function ProfileMenu() {
 
   const handleLogout = () => {
     setOpen(false);
+    setLogoutConfirmationOpen(true);
+  };
+
+  const confirmLogout = () => {
+    setLogoutConfirmationOpen(false);
     clearAuthStorage();
     navigate("/login", { replace: true });
   };
 
   return (
+    <>
     <div className="relative" ref={ref}>
       <button
         type="button"
@@ -96,5 +104,16 @@ export default function ProfileMenu() {
         </div>
       )}
     </div>
+      <ConfirmModal
+        open={logoutConfirmationOpen}
+        title="Log out?"
+        description="Are you sure you want to log out? You will need to sign in again to continue."
+        icon={LogOut}
+        color="red"
+        confirmText="Log out"
+        onCancel={() => setLogoutConfirmationOpen(false)}
+        onConfirm={confirmLogout}
+      />
+    </>
   );
 }
