@@ -1,4 +1,7 @@
 from django.test import TestCase
+from django.core.files.uploadedfile import SimpleUploadedFile
+from rest_framework.test import APIClient
+from unittest.mock import patch
 
 from accounts.models import CustomUser
 from community.models import Discussion
@@ -65,3 +68,25 @@ class CommunitySerializerTests(TestCase):
             'https://cdn.example.com/post.png',
             'https://cdn.example.com/thumb.png',
         ])
+
+
+class CommunityUploadTests(TestCase):
+    @patch('community.views.upload_public_media', return_value='https://storage.example.com/community/post.png')
+    def test_discussion_upload_persists_public_storage_url(self, upload_public_media):
+        user = CustomUser.objects.create_user(
+            email='community-upload@example.com', password='Password123!', type='clipper'
+        )
+        client = APIClient()
+        client.force_authenticate(user=user)
+        image = SimpleUploadedFile('post.png', b'png-data', content_type='image/png')
+
+        response = client.post('/api/community/discussions/', {
+            'title': 'Image post',
+            'content': 'Here is a screenshot.',
+            'category': 'showcase',
+            'media_files': image,
+        }, format='multipart')
+
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(response.data['media'], ['https://storage.example.com/community/post.png'])
+        upload_public_media.assert_called_once()

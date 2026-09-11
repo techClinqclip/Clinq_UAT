@@ -1,7 +1,4 @@
 import json
-import uuid
-
-from django.core.files.storage import default_storage
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
@@ -15,6 +12,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from .models import Discussion, DiscussionReply, DiscussionLike, CommunityEvent
 from .serializers import DiscussionSerializer, DiscussionCreateSerializer, DiscussionReplySerializer, CommunityEventSerializer
+from core.media_storage import upload_public_media
 
 @extend_schema_view(
     list=extend_schema(summary='List discussions', tags=['Community']),
@@ -83,9 +81,10 @@ class DiscussionViewSet(viewsets.ModelViewSet):
         for uploaded_file in uploaded_media:
             if not uploaded_file:
                 continue
-            path = f"community/discussions/{request.user.id}/{uuid.uuid4().hex}_{uploaded_file.name}"
-            saved_path = default_storage.save(path, uploaded_file)
-            media_urls.append(default_storage.url(saved_path))
+            media_urls.append(upload_public_media(
+                uploaded_file,
+                folder=f"community/discussions/{request.user.id}",
+            ))
 
         if media_urls:
             payload['media'] = [url for url in media_urls if isinstance(url, str) and url.strip()]

@@ -33,6 +33,7 @@ from rest_framework.decorators import action
 from .models import CustomUser, Profile, PasswordResetToken
 from .serializers import RegisterSerializer, ProfileSerializer
 from .email_utils import sha256_hexdigest
+from core.media_storage import upload_public_media
 from decimal import Decimal
 from content.models import CampaignSubmission
 
@@ -173,10 +174,14 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
             if uploaded_file is not None:
                 logger.info(f"[ProfileUpdate] received image for {image_field} user={request.user.pk} filename={getattr(uploaded_file, 'name', '<in-memory>')} content_type={getattr(uploaded_file, 'content_type', None)}")
-                setattr(profile, image_field, uploaded_file)
+                image_url = upload_public_media(
+                    uploaded_file,
+                    folder=f"profiles/{request.user.pk}/{image_field}",
+                )
+                setattr(profile, image_field, image_url)
                 incoming.pop(image_field, None)
                 profile.save(update_fields=[image_field])
-                logger.info(f"[ProfileUpdate] saved image for {image_field} user={request.user.pk} path={getattr(profile, image_field).name if getattr(profile, image_field, None) else None}")
+                logger.info(f"[ProfileUpdate] saved image for {image_field} user={request.user.pk} url={image_url}")
 
         if not incoming.get('resources') and isinstance(incoming.get('onboarding_data'), dict) and incoming['onboarding_data'].get('resources'):
             incoming['resources'] = incoming['onboarding_data'].get('resources')

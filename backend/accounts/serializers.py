@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.conf import settings
 # from django.contrib.auth.models import User 
 from .models import CustomUser, Profile, ProfileResource
+from core.media_storage import resolve_media_url
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.password_validation import validate_password # to enforce the rules set in AUTH_PASSWORD_VALIDATORS in settings.py, for password validation.
 
@@ -170,10 +171,12 @@ class ProfileSerializer(serializers.ModelSerializer):
     def _build_media_url(self, request, field_file):
         if not field_file:
             return None
-        try:
-            url = field_file.url
-        except Exception:
-            url = str(field_file)
+        url = resolve_media_url(field_file)
+
+        if not url:
+            return None
+        if url.startswith(('https://', 'http://')):
+            return url
 
         if request:
             try:

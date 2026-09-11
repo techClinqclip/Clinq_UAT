@@ -2,6 +2,7 @@ from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 from .models import Discussion, DiscussionReply, DiscussionLike, CommunityEvent
 from accounts.serializers import ProfileSerializer
+from core.media_storage import resolve_media_url
 
 
 def _flatten_media_values(value):
@@ -117,7 +118,7 @@ class CommunityAuthorSerializer(serializers.ModelSerializer):
         profile = self._profile(obj)
         if not profile or not getattr(profile, 'avatar', None):
             return None
-        return profile.avatar.url
+        return resolve_media_url(profile.avatar)
 
     def get_bio(self, obj):
         profile = self._profile(obj)
@@ -127,7 +128,7 @@ class CommunityAuthorSerializer(serializers.ModelSerializer):
         profile = self._profile(obj)
         if not profile or not getattr(profile, 'cover', None):
             return None
-        return profile.cover.url
+        return resolve_media_url(profile.cover)
 
 
 class DiscussionReplySerializer(serializers.ModelSerializer):

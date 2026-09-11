@@ -388,7 +388,12 @@ class ProfileResourceAPITest(TestCase):
             'https://example.com/guidelines',
         )
 
-    def test_avatar_and_cover_images_are_persisted_and_returned(self):
+    @patch('accounts.views.upload_public_media')
+    def test_avatar_and_cover_images_are_persisted_and_returned(self, upload_public_media):
+        upload_public_media.side_effect = [
+            'https://storage.example.com/profiles/avatar.png',
+            'https://storage.example.com/profiles/cover.png',
+        ]
         avatar_bytes = b'\x89PNG\r\n\x1a\n' + b'fake-avatar-image-bytes'
         cover_bytes = b'\x89PNG\r\n\x1a\n' + b'fake-cover-image-bytes'
         payload = {
@@ -403,11 +408,15 @@ class ProfileResourceAPITest(TestCase):
         profile.refresh_from_db()
         self.assertTrue(profile.avatar)
         self.assertTrue(profile.cover)
+        self.assertEqual(profile.avatar.name, 'https://storage.example.com/profiles/avatar.png')
+        self.assertEqual(profile.cover.name, 'https://storage.example.com/profiles/cover.png')
 
         follow_up = self.client.get('/api/auth/profile/me/')
         self.assertEqual(follow_up.status_code, status.HTTP_200_OK)
         self.assertIn('avatar', follow_up.data)
         self.assertIn('cover', follow_up.data)
+        self.assertEqual(follow_up.data['avatar'], 'https://storage.example.com/profiles/avatar.png')
+        self.assertEqual(follow_up.data['cover'], 'https://storage.example.com/profiles/cover.png')
 
 
 class AuthStatusViewTest(TestCase):
