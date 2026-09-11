@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from django.contrib.auth import get_user_model, authenticate
 from django.contrib.auth.tokens import default_token_generator
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.db import IntegrityError, transaction
+from django.db import DataError, IntegrityError, transaction
 from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.core.mail import send_mail
@@ -179,15 +179,26 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         uploaded_file,
                         folder=f"profiles/{request.user.pk}/{image_field}",
                     )
+                    setattr(profile, image_field, image_url)
+                    incoming.pop(image_field, None)
+                    profile.save(update_fields=[image_field])
+                except DataError:
+                    logger.exception("[ProfileUpdate] image URL could not be saved for user=%s", request.user.pk)
+                    return Response(
+                        {
+                            'detail': (
+                                'Image storage is configured, but the latest database migration has not been applied. '
+                                'Run the accounts migrations and try again.'
+                            )
+                        },
+                        status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    )
                 except Exception:
                     logger.exception("[ProfileUpdate] image upload failed for user=%s", request.user.pk)
                     return Response(
                         {'detail': 'Unable to store the image. Please try again.'},
                         status=status.HTTP_502_BAD_GATEWAY,
                     )
-                setattr(profile, image_field, image_url)
-                incoming.pop(image_field, None)
-                profile.save(update_fields=[image_field])
                 logger.info(f"[ProfileUpdate] saved image for {image_field} user={request.user.pk} url={image_url}")
 
         if not incoming.get('resources') and isinstance(incoming.get('onboarding_data'), dict) and incoming['onboarding_data'].get('resources'):
