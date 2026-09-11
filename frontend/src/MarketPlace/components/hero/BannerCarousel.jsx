@@ -38,6 +38,7 @@ export default function BannerCarousel({ campaigns = [], loading = false, error 
   const [[current, direction], setState] = useState([0, 1]);
   const [paused, setPaused] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [selectedCampaign, setSelectedCampaign] = useState(null);
 
   useEffect(() => {
     if (!featuredCampaigns.length) return;
@@ -50,12 +51,24 @@ export default function BannerCarousel({ campaigns = [], loading = false, error 
   const jumpTo = (index) => goTo(index, index > current ? 1 : -1);
 
   useEffect(() => {
-    if (paused || !featuredCampaigns.length || error) return;
+    if (paused || modalOpen || !featuredCampaigns.length || error) return;
     const timer = setInterval(() => {
       setState(([prevIndex]) => [(prevIndex + 1) % featuredCampaigns.length, 1]);
     }, 5500);
     return () => clearInterval(timer);
-  }, [paused, featuredCampaigns.length, error]);
+  }, [paused, modalOpen, featuredCampaigns.length, error]);
+
+  const openCampaignDetails = () => {
+    // Keep the modal tied to the campaign the user chose, not to the
+    // carousel index which continues changing in the background.
+    setSelectedCampaign(featuredCampaigns[current]);
+    setModalOpen(true);
+  };
+
+  const closeCampaignDetails = () => {
+    setModalOpen(false);
+    setSelectedCampaign(null);
+  };
 
   // Reserve the exact same footprint as the real carousel so nothing
   // shifts when data lands — no skeleton = layout jump.
@@ -124,13 +137,13 @@ export default function BannerCarousel({ campaigns = [], loading = false, error 
           transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
           className="absolute inset-0"
         >
-          <BannerSlide campaign={featuredCampaigns[current]} onJoinClick={() => setModalOpen(true)} />
+          <BannerSlide campaign={featuredCampaigns[current]} onJoinClick={openCampaignDetails} />
         </motion.div>
       </AnimatePresence>
 
       <CarouselControls total={featuredCampaigns.length} current={current} next={next} prev={prev} goTo={jumpTo} />
 
-      <CampaignDetailModal isOpen={modalOpen} onClose={() => setModalOpen(false)} campaign={featuredCampaigns[current]} />
+      <CampaignDetailModal isOpen={modalOpen} onClose={closeCampaignDetails} campaign={selectedCampaign} />
     </div>
   );
 }
