@@ -1704,6 +1704,7 @@ class CampaignSubmissionViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = CampaignSubmission.objects.filter(is_deleted=False).select_related(
         'participant__campaign', 'participant__campaign__creator',
         'participant__campaign__creator__profile', 'participant__clipper',
+        'participant__clipper__profile',
     ).order_by('-created_at')
     serializer_class = CampaignSubmissionSerializer
     permission_classes = [IsAdminUser]
@@ -1711,6 +1712,17 @@ class CampaignSubmissionViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        campaign_id = self.request.query_params.get('campaign_id')
+        if campaign_id:
+            queryset = queryset.filter(participant__campaign_id=campaign_id)
+
+        clipper = str(self.request.query_params.get('clipper', '')).strip()
+        if clipper:
+            queryset = queryset.filter(
+                Q(participant__clipper__profile__username__iexact=clipper)
+                | Q(participant__clipper__email__iexact=clipper)
+            )
+
         if self.action in ('list', 'retrieve') and self.request.query_params.get('queue') == 'payouts':
             # Include settled and held records as well as currently pending
             # amounts so the admin UI can filter the full payout history.

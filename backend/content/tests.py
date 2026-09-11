@@ -2397,6 +2397,62 @@ class CampaignViewSetTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
+class AdminCampaignSubmissionDataTests(TestCase):
+    """Regression coverage for the real-data admin drill-down pages."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.admin = User.objects.create_superuser(
+            email='admin-submission-data@test.com', password='testpass123'
+        )
+        owner = User.objects.create_user(
+            email='campaign-owner@test.com', password='testpass123', type='brand'
+        )
+        self.clipper = User.objects.create_user(
+            email='real-clipper@test.com', password='testpass123', type='clipper'
+        )
+        self.clipper.profile.first_name = 'Real'
+        self.clipper.profile.last_name = 'Clipper'
+        self.clipper.profile.username = 'realclipper'
+        self.clipper.profile.save(update_fields=['first_name', 'last_name', 'username'])
+        self.campaign = Campaign.objects.create(
+            creator=owner,
+            name='Real Data Campaign',
+            category='technology',
+            budget=Decimal('12500.00'),
+            reward_per_1k=Decimal('40.00'),
+            max_earnings=Decimal('5000.00'),
+        )
+        participant = CampaignParticipant.objects.create(
+            campaign=self.campaign, clipper=self.clipper
+        )
+        self.submission = CampaignSubmission.objects.create(
+            participant=participant,
+            platform='youtube',
+            platform_username='@realclipper',
+            content_url='https://youtube.com/watch?v=real-data',
+            views=2400,
+        )
+
+    def test_admin_submission_filters_include_campaign_and_clipper_data(self):
+        self.client.force_authenticate(user=self.admin)
+
+        response = self.client.get(
+            f'/api/content/campaign-submissions/?campaign_id={self.campaign.id}&clipper=realclipper'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        item = response.data[0]
+        self.assertEqual(item['id'], self.submission.id)
+        self.assertEqual(item['campaignTitle'], 'Real Data Campaign')
+        self.assertEqual(item['campaignCategory'], 'technology')
+        self.assertEqual(item['campaignBudget'], '12500.00')
+        self.assertEqual(item['campaignRewardPer1k'], '40.00')
+        self.assertEqual(item['clipperName'], 'Real Clipper')
+        self.assertEqual(item['clipperUsername'], 'realclipper')
+
+
 class AdminScraperTests(TestCase):
     def test_admin_scraper_processes_eligible_submissions_in_chunks(self):
         admin = User.objects.create_superuser(

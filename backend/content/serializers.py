@@ -128,9 +128,15 @@ class CampaignSubmissionSerializer(serializers.ModelSerializer):
     pendingEarning = serializers.DecimalField(source='pending_earning', max_digits=10, decimal_places=2, read_only=True)
     campaignId = serializers.IntegerField(source='participant.campaign_id', read_only=True)
     campaignTitle = serializers.CharField(source='participant.campaign.name', read_only=True)
+    campaignType = serializers.CharField(source='participant.campaign.type', read_only=True)
+    campaignStatus = serializers.CharField(source='participant.campaign.status', read_only=True)
+    campaignCategory = serializers.CharField(source='participant.campaign.category', read_only=True)
+    campaignBudget = serializers.DecimalField(source='participant.campaign.budget', max_digits=12, decimal_places=2, read_only=True)
+    campaignRewardPer1k = serializers.DecimalField(source='participant.campaign.reward_per_1k', max_digits=10, decimal_places=2, read_only=True)
     brandName = serializers.SerializerMethodField()
     clipperId = serializers.IntegerField(source='participant.clipper_id', read_only=True)
     clipperEmail = serializers.EmailField(source='participant.clipper.email', read_only=True)
+    clipperName = serializers.SerializerMethodField()
     clipperUsername = serializers.SerializerMethodField()
     isFirstSubmission = serializers.SerializerMethodField()
     reviewChecks = serializers.JSONField(source='review_checks', required=False)
@@ -146,11 +152,13 @@ class CampaignSubmissionSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'platform', 'platformUsername', 'contentUrl',
             'earning', 'pendingEarning', 'views', 'likes', 'status', 'createdAt',
-            'campaignId', 'campaignTitle', 'brandName', 'clipperId', 'clipperEmail',
+            'campaignId', 'campaignTitle', 'campaignType', 'campaignStatus', 'campaignCategory',
+            'campaignBudget', 'campaignRewardPer1k', 'brandName', 'clipperId', 'clipperEmail',
+            'clipperName',
             'isFirstSubmission', 'clipperUsername', 'reviewChecks', 'reviewNotes', 'rejectionReason',
             'payoutReviewStatus', 'payoutReviewNotes', 'payoutReviewedAt', 'campaignMaxEarnings',
         ]
-        read_only_fields = ['status', 'earning', 'pendingEarning', 'views', 'likes', 'createdAt', 'campaignId', 'campaignTitle', 'brandName', 'clipperId', 'clipperEmail', 'clipperUsername', 'isFirstSubmission']
+        read_only_fields = ['status', 'earning', 'pendingEarning', 'views', 'likes', 'createdAt', 'campaignId', 'campaignTitle', 'campaignType', 'campaignStatus', 'campaignCategory', 'campaignBudget', 'campaignRewardPer1k', 'brandName', 'clipperId', 'clipperEmail', 'clipperName', 'clipperUsername', 'isFirstSubmission']
 
     def get_platform(self, obj):
         return obj.get_platform_display()
@@ -168,6 +176,16 @@ class CampaignSubmissionSerializer(serializers.ModelSerializer):
     def get_clipperUsername(self, obj):
         profile = getattr(obj.participant.clipper, 'profile', None)
         return getattr(profile, 'username', '') or obj.participant.clipper.email
+
+    def get_clipperName(self, obj):
+        profile = getattr(obj.participant.clipper, 'profile', None)
+        name = ' '.join(
+            value for value in (
+                getattr(profile, 'first_name', ''),
+                getattr(profile, 'last_name', ''),
+            ) if value and str(value).strip()
+        ).strip()
+        return name or self.get_clipperUsername(obj)
 
 
 class CampaignSerializer(serializers.ModelSerializer):
