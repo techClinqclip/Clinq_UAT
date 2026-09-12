@@ -10,6 +10,11 @@ import {
   X,
   Send,
   Plus,
+  ChevronDown,
+  Flag,
+  Layers3,
+  LoaderCircle,
+  MessageCircle,
 } from "lucide-react";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import useToast from "../../hooks/useToast";
@@ -79,11 +84,55 @@ function mapMessage(message) {
   };
 }
 
+function SelectField({ label, value, onChange, options, icon: Icon }) {
+  return (
+    <label className="block">
+      <span className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-400">
+        <Icon size={13} className="text-violet-400" />
+        {label}
+      </span>
+      <div className="relative">
+        <select
+          value={value}
+          onChange={onChange}
+          className="w-full appearance-none rounded-xl border border-white/10 bg-[#09090f] px-4 py-3 pr-10 text-sm text-white outline-none transition hover:border-white/20 focus:border-violet-400 focus:ring-4 focus:ring-violet-500/10"
+        >
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+      </div>
+    </label>
+  );
+}
+
+function TicketListSkeleton() {
+  return (
+    <div className="mt-4 space-y-3" aria-label="Loading support tickets">
+      {[0, 1, 2].map((index) => (
+        <div key={index} className="animate-pulse rounded-2xl border border-white/[0.07] bg-black/20 p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1 space-y-3">
+              <div className="h-4 w-3/5 rounded bg-white/[0.08]" />
+              <div className="h-3 w-2/5 rounded bg-white/[0.05]" />
+            </div>
+            <div className="h-6 w-16 rounded-full bg-white/[0.06]" />
+          </div>
+          <div className="mt-4 h-3 w-1/3 rounded bg-white/[0.05]" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function UserSupportTickets() {
   const [tickets, setTickets] = useState([]);
   const [form, setForm] = useState({ subject: "", description: "", category: "other", priority: "medium" });
-  const [attachment, setAttachment] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const [messageText, setMessageText] = useState("");
   const { showToast } = useToast();
@@ -125,18 +174,16 @@ function UserSupportTickets() {
 
   const submitTicket = async (event) => {
     event.preventDefault();
-    const body = new FormData();
-    Object.entries(form).forEach(([key, value]) => body.append(key, value));
-    if (attachment) body.append("attachment", attachment);
+    setIsSubmitting(true);
     try {
-      const created = await api("/api/support/tickets/", { method: "POST", body });
+      const created = await api("/api/support/tickets/", { method: "POST", body: form });
       setTickets((previous) => [mapTicket(created), ...previous]);
       setForm({ subject: "", description: "", category: "other", priority: "medium" });
-      setAttachment(null);
-      event.target.reset();
       showToast({ type: "success", message: "Support ticket created." });
     } catch (error) {
       showToast({ type: "error", message: error.message });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -161,31 +208,54 @@ function UserSupportTickets() {
   const selectedTicket = tickets.find((ticket) => ticket.id === selectedId);
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="flex min-h-screen flex-col gap-5 bg-black text-white xl:h-[calc(100dvh-9rem)] xl:min-h-0 xl:overflow-hidden">
       <Breadcrumbs />
-      <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-8">
-        <h1 className="text-3xl font-bold">Help &amp; Support</h1>
-        <p className="mt-2 text-zinc-400">Create a ticket and track responses from the support team.</p>
-      </section>
-      <section className="mt-8 grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-        <form onSubmit={submitTicket} className="rounded-3xl border border-white/10 bg-white/[0.03] p-6">
-          <h2 className="text-xl font-semibold">New ticket</h2>
-          <input required value={form.subject} onChange={(event) => setForm({ ...form, subject: event.target.value })} placeholder="Subject" className="mt-5 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm outline-none focus:border-violet-500" />
-          <textarea required value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="Describe the issue" rows={6} className="mt-3 w-full resize-none rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm outline-none focus:border-violet-500" />
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <select value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })} className="rounded-xl border border-white/10 bg-black px-4 py-3 text-sm outline-none">
-              {USER_CATEGORY_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-            </select>
-            <select value={form.priority} onChange={(event) => setForm({ ...form, priority: event.target.value })} className="rounded-xl border border-white/10 bg-black px-4 py-3 text-sm outline-none">
-              {['low', 'medium', 'high', 'urgent'].map((value) => <option key={value} value={value}>{displayValue(value)}</option>)}
-            </select>
+      <section className="shrink-0 rounded-3xl border border-white/10 bg-gradient-to-r from-violet-500/[0.08] via-white/[0.03] to-transparent px-6 py-5">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/15 text-violet-300">
+            <LifeBuoy size={20} />
           </div>
-          <input type="file" onChange={(event) => setAttachment(event.target.files[0] || null)} className="mt-4 w-full text-sm text-zinc-400" />
-          <button type="submit" className="mt-5 flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold hover:bg-violet-500"><Plus size={16} />Create ticket</button>
+          <div>
+            <h1 className="text-2xl font-bold">Help &amp; Support</h1>
+            <p className="mt-0.5 text-sm text-zinc-400">Create a ticket and track responses from the support team.</p>
+          </div>
+        </div>
+      </section>
+      <section className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(340px,0.9fr)_minmax(0,1.1fr)]">
+        <form onSubmit={submitTicket} className="flex min-h-0 flex-col rounded-3xl border border-white/10 bg-white/[0.03] p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold">New ticket</h2>
+              <p className="mt-1 text-sm text-zinc-500">Tell us what happened and we will take it from there.</p>
+            </div>
+            <MessageCircle size={19} className="text-violet-400" />
+          </div>
+          <label className="mt-5 block">
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-zinc-400">Subject</span>
+            <input required value={form.subject} onChange={(event) => setForm({ ...form, subject: event.target.value })} placeholder="Briefly describe the issue" className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm outline-none transition placeholder:text-zinc-600 focus:border-violet-400 focus:ring-4 focus:ring-violet-500/10" />
+          </label>
+          <label className="mt-4 block">
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-zinc-400">Description</span>
+            <textarea required value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="Include the steps you took and what you expected to happen." rows={5} className="w-full resize-none rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm outline-none transition placeholder:text-zinc-600 focus:border-violet-400 focus:ring-4 focus:ring-violet-500/10" />
+          </label>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <SelectField label="Category" icon={Layers3} value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })} options={USER_CATEGORY_OPTIONS} />
+            <SelectField label="Priority" icon={Flag} value={form.priority} onChange={(event) => setForm({ ...form, priority: event.target.value })} options={['low', 'medium', 'high', 'urgent'].map((value) => ({ value, label: displayValue(value) }))} />
+          </div>
+          <button type="submit" disabled={isSubmitting} className="mt-auto flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-60">
+            {isSubmitting ? <LoaderCircle size={16} className="animate-spin" /> : <Plus size={16} />}
+            {isSubmitting ? "Creating ticket..." : "Create ticket"}
+          </button>
         </form>
-        <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6">
-          <h2 className="text-xl font-semibold">Your tickets</h2>
-          {loading ? <p className="py-10 text-sm text-zinc-500">Loading tickets...</p> : tickets.length === 0 ? <p className="py-10 text-sm text-zinc-500">No support tickets yet.</p> : <div className="mt-5 space-y-3">{tickets.map((ticket) => <button type="button" onClick={() => setSelectedId(ticket.id)} key={ticket.id} className={`w-full rounded-2xl border p-4 text-left ${selectedId === ticket.id ? "border-violet-500" : "border-white/10"}`}><div className="flex items-start justify-between gap-3"><h3 className="font-medium">{ticket.subject}</h3><span className={`rounded-full px-2.5 py-1 text-xs ${STATUS_STYLES[ticket.status] || "bg-white/10 text-zinc-300"}`}>{ticket.status}</span></div><p className="mt-2 text-sm text-zinc-400">{ticket.category} · {ticket.priority}</p><p className="mt-2 text-xs text-zinc-500">{ticket.createdAt}</p></button>)}</div>}
+        <div className="flex min-h-0 flex-col rounded-3xl border border-white/10 bg-white/[0.03] p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-semibold">Your tickets</h2>
+              <p className="mt-1 text-sm text-zinc-500">Open any ticket to continue the conversation.</p>
+            </div>
+            <span className="rounded-full bg-white/[0.06] px-3 py-1.5 text-xs font-medium text-zinc-300">{tickets.length} total</span>
+          </div>
+          {loading ? <TicketListSkeleton /> : tickets.length === 0 ? <div className="flex flex-1 flex-col items-center justify-center py-10 text-center"><LifeBuoy size={34} className="mb-3 text-zinc-600" /><p className="font-medium text-zinc-300">No support tickets yet</p><p className="mt-1 text-sm text-zinc-500">Create a ticket and our team will respond here.</p></div> : <div className="custom-scrollbar mt-4 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">{tickets.map((ticket) => <button type="button" onClick={() => setSelectedId(ticket.id)} key={ticket.id} className={`w-full rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:bg-white/[0.04] ${selectedId === ticket.id ? "border-violet-400 bg-violet-500/[0.08]" : "border-white/[0.08] bg-black/20 hover:border-white/20"}`}><div className="flex items-start justify-between gap-3"><h3 className="min-w-0 truncate font-semibold text-white">{ticket.subject}</h3><span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_STYLES[ticket.status] || "bg-white/10 text-zinc-300"}`}>{ticket.status}</span></div><div className="mt-3 flex flex-wrap items-center gap-2"><span className="rounded-md bg-white/[0.05] px-2 py-1 text-xs text-zinc-300">{ticket.category}</span><span className={`rounded-md px-2 py-1 text-xs font-medium ${PRIORITY_STYLES[ticket.priority] || "bg-white/5 text-zinc-400"}`}>{ticket.priority}</span><span className="ml-auto text-xs text-zinc-500">{ticket.createdAt}</span></div></button>)}</div>}
           {selectedTicket && <div className="fixed bottom-5 right-5 z-50 flex w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#11111A]/95 shadow-2xl shadow-black/50 backdrop-blur-xl">
             <div className="flex items-start justify-between gap-3 border-b border-white/10 px-4 py-3">
               <div className="min-w-0">
