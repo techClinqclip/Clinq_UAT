@@ -69,6 +69,13 @@ const PLATFORM_ICONS = {
     x: { icon: FaXTwitter, badge: "bg-black border border-white/20" },
 };
 
+function getPlatformKey(platform) {
+    const normalized = String(platform || "").trim().toLowerCase();
+
+    // The API exposes the model display label "Twitter/X" for X submissions.
+    return normalized === "x" || normalized.includes("twitter") ? "x" : normalized;
+}
+
 // Indian-style currency shorthand: thousand -> k, lakh -> L, crore -> Cr
 function formatINR(value) {
     const num = Number(value || 0);
@@ -278,7 +285,7 @@ export default function ClipperGigDetails() {
                     campaign: item.campaign || item.name || "Campaign",
                     title: item.handle || item.platformUsername || `Submission ${item.id}`,
                     username: item.handle || item.platformUsername || item.username || "",
-                    platform: String(item.platform || "instagram").toLowerCase(),
+                    platform: getPlatformKey(item.platform || "instagram"),
                     postUrl: item.contentUrl || item.url || "",
                     views: String(item.views ?? "0"),
                     status: String(item.status || "Pending"),
@@ -457,7 +464,7 @@ export default function ClipperGigDetails() {
                 campaign: createdSubmission.campaign || gig?.name || gig?.title || "Campaign",
                 title: createdSubmission.platformUsername || username || "Submission",
                 username: createdSubmission.platformUsername || username || "",
-                platform: String(createdSubmission.platform || platform || "instagram").toLowerCase(),
+                platform: getPlatformKey(createdSubmission.platform || platform || "instagram"),
                 postUrl: createdSubmission.contentUrl || url,
                 views: String(createdSubmission.views ?? "0"),
                 status: String(createdSubmission.status || "Pending"),
