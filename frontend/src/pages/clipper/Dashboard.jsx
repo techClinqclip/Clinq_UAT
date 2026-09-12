@@ -119,7 +119,7 @@ export default function ClipperDashboard() {
                 title: "Pending Reviews",
                 value: pendingReviews,
                 icon: Clock3,
-                link: "/clipper/submissions?status=pending",
+                link: "/clipper/submissions",
             },
         ];
     }, [gigs, submissions]);
