@@ -11,12 +11,15 @@ import {
   Megaphone,
   FilterX,
   Play,
+  Pause,
+  Pencil,
   Maximize2,
   AlertTriangle,
 } from "lucide-react";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import useToast from "../../hooks/useToast";
 import { api } from "../../lib/api";
+import ConfirmModal from "./components/ConfirmModal";
 
 const initialGigs = [];
 
@@ -60,7 +63,7 @@ const formatMoney = (n) => `₹${formatCompact(n)}`;
 
 const FILTERS = ["All", "Active", "Paused", "Closed"];
 
-function GigCard({ gig, onTogglePause, isToggling }) {
+function GigCard({ gig, onRequestAction, isToggling }) {
   const { title, category, icon: Icon, accent, status, thumbnail, views, submissions, budget, paidOut } = gig;
   const navigate = useNavigate();
   const a = ACCENTS[accent];
@@ -215,24 +218,25 @@ function GigCard({ gig, onTogglePause, isToggling }) {
             >
               Open Gig
             </Link>
-            <Link
-              to={`/creator/gigs/${gig.id}/edit`}
+            <button
+              type="button"
               onClick={(e) => {
+                e.stopPropagation();
                 if (actionLocked) {
-                  e.preventDefault();
                   return;
                 }
-                e.stopPropagation();
+                onRequestAction("edit", gig);
               }}
-              className={`rounded-xl border px-4 py-2.5 text-sm transition ${actionLocked ? "pointer-events-none cursor-not-allowed border-white/10 text-zinc-500" : "border-white/10 text-white hover:border-white/30"}`}
+              disabled={actionLocked}
+              className={`rounded-xl border px-4 py-2.5 text-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${actionLocked ? "border-white/10 text-zinc-500" : "border-white/10 text-white hover:border-white/30"}`}
             >
               Edit
-            </Link>
+            </button>
             {!isCompleted && canToggleStatus && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (!actionLocked && !isToggling) onTogglePause(gig);
+                  if (!actionLocked && !isToggling) onRequestAction(isActive ? "pause" : "resume", gig);
                 }}
                 disabled={actionLocked || isToggling}
                 className={`rounded-xl border px-4 py-2.5 text-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${
@@ -307,6 +311,7 @@ function EmptyGigsState({ hasAnyGigs, onClearFilters }) {
 }
 
 export default function CreatorGigs() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const statusFilter = searchParams.get("status");
   const [gigs, setGigs] = useState(initialGigs);
@@ -315,7 +320,32 @@ export default function CreatorGigs() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [togglingGigId, setTogglingGigId] = useState(null);
+  const [confirmation, setConfirmation] = useState(null);
   const { showToast } = useToast();
+
+  const confirmationConfig = {
+    edit: {
+      title: "Edit this Gig?",
+      description: "You will be taken to the edit form to update this gig's details.",
+      icon: Pencil,
+      color: "blue",
+      confirmText: "Continue to Edit",
+    },
+    pause: {
+      title: "Pause this Gig?",
+      description: "Clippers will not be able to submit new clips until you resume this gig.",
+      icon: Pause,
+      color: "yellow",
+      confirmText: "Pause Gig",
+    },
+    resume: {
+      title: "Resume this Gig?",
+      description: "Clippers will be able to submit new clips again.",
+      icon: Play,
+      color: "green",
+      confirmText: "Resume Gig",
+    },
+  };
 
   useEffect(() => {
     setFilter(FILTERS.includes(statusFilter) ? statusFilter : "All");
@@ -388,6 +418,20 @@ export default function CreatorGigs() {
     } finally {
       setTogglingGigId(null);
     }
+  };
+
+  const handleConfirmAction = async () => {
+    const { action, gig } = confirmation || {};
+    if (!action || !gig) return;
+
+    if (action === "edit") {
+      setConfirmation(null);
+      navigate(`/creator/gigs/${gig.accessKey}/edit`);
+      return;
+    }
+
+    await handleTogglePause(gig);
+    setConfirmation(null);
   };
 
   const handleClearFilters = () => {
@@ -464,11 +508,23 @@ export default function CreatorGigs() {
             </div>
           ))
         ) : filtered.length > 0 ? (
-          filtered.map((gig) => <GigCard key={gig.id} gig={gig} onTogglePause={handleTogglePause} isToggling={togglingGigId === gig.id} />)
+          filtered.map((gig) => <GigCard key={gig.id} gig={gig} onRequestAction={(action, selectedGig) => setConfirmation({ action, gig: selectedGig })} isToggling={togglingGigId === gig.id} />)
         ) : (
           <EmptyGigsState hasAnyGigs={gigs.length > 0} onClearFilters={handleClearFilters} />
         )}
       </div>
+
+      <ConfirmModal
+        open={Boolean(confirmation)}
+        title={confirmationConfig[confirmation?.action]?.title}
+        description={confirmationConfig[confirmation?.action]?.description}
+        icon={confirmationConfig[confirmation?.action]?.icon}
+        color={confirmationConfig[confirmation?.action]?.color}
+        confirmText={confirmationConfig[confirmation?.action]?.confirmText}
+        loading={togglingGigId === confirmation?.gig?.id}
+        onCancel={() => setConfirmation(null)}
+        onConfirm={handleConfirmAction}
+      />
     </div>
   );
 }

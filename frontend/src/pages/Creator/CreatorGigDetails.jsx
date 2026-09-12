@@ -401,7 +401,7 @@ export default function CreatorGigDetails() {
       return;
     }
     setConfirmAction(null);
-    navigate(`/creator/gigs/${gig.id}/edit`);
+    navigate(`/creator/gigs/${gig.accessKey || accessKey}/edit`);
   };
 
   return (

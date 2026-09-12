@@ -6,7 +6,7 @@ import { api } from "../../lib/api";
 import ContentLoader from "../../shared/ui/ContentLoader";
 
 export default function EditGig() {
-  const { id } = useParams();
+  const { id: accessKey } = useParams();
   const navigate = useNavigate();
   const [existingGig, setExistingGig] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -17,7 +17,7 @@ export default function EditGig() {
     (async () => {
       try {
         // Use unified campaign endpoint for gigs
-        const data = await api(`/api/content/campaigns/${id}/`);
+        const data = await api(`/api/content/campaigns/${accessKey}/`);
         if (!mounted) return;
 
         const mapped = {
@@ -45,7 +45,7 @@ export default function EditGig() {
       }
     })();
     return () => { mounted = false; };
-  }, [id]);
+  }, [accessKey]);
 
   const handleUpdate = async (formData) => {
     try {
@@ -64,12 +64,12 @@ export default function EditGig() {
         thumbnail: formData.thumbnail || null,  // ✓ Added thumbnail field
       };
 
-      await api(`/api/content/campaigns/${id}/`, {
+      await api(`/api/content/campaigns/${accessKey}/`, {
         method: "PATCH",
         body: payload,
       });
 
-      navigate(`/creator/gigs/${id}`);
+      navigate(`/creator/gigs/${accessKey}`);
     } catch (error) {
       console.error("Update gig failed", error);
       alert(error.message || "Unable to update gig. Please try again.");
@@ -84,7 +84,7 @@ export default function EditGig() {
     return (
       <div className="space-y-4">
         <Link
-          to={`/creator/gigs/${id}`}
+          to={`/creator/gigs/${accessKey}`}
           className="inline-flex items-center gap-2 text-zinc-400 hover:text-white"
         >
           <ArrowLeft size={18} />
@@ -100,7 +100,7 @@ export default function EditGig() {
   return (
     <div className="space-y-8">
       <Link
-        to={`/creator/gigs/${id}`}
+        to={`/creator/gigs/${accessKey}`}
         className="inline-flex items-center gap-2 text-zinc-400 hover:text-white"
       >
         <ArrowLeft size={18} />
