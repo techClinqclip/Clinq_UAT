@@ -2427,6 +2427,26 @@ class CampaignViewSetTest(TestCase):
         self.assertEqual(self.campaign.description, 'Updated description')
         self.assertEqual(self.campaign.status, 'paused')
 
+        resume_response = self.client.patch(
+            f'/api/content/campaigns/{self.campaign.id}/',
+            {'status': 'active'},
+            format='json'
+        )
+        self.assertEqual(resume_response.status_code, status.HTTP_200_OK)
+        self.campaign.refresh_from_db()
+        self.assertEqual(self.campaign.status, 'active')
+
+    def test_non_owner_cannot_update_campaign_status(self):
+        self.client.force_authenticate(user=self.other_creator)
+        response = self.client.patch(
+            f'/api/content/campaigns/{self.campaign.id}/',
+            {'status': 'paused'},
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.campaign.refresh_from_db()
+        self.assertEqual(self.campaign.status, 'active')
+
     def test_delete_campaign(self):
         self.client.force_authenticate(user=self.creator)
         response = self.client.delete(f'/api/content/campaigns/{self.campaign.id}/')

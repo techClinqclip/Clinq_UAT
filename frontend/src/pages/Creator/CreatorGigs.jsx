@@ -15,6 +15,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import Breadcrumbs from "../../components/Breadcrumbs";
+import useToast from "../../hooks/useToast";
 import { api } from "../../lib/api";
 
 const initialGigs = [];
@@ -59,7 +60,7 @@ const formatMoney = (n) => `₹${formatCompact(n)}`;
 
 const FILTERS = ["All", "Active", "Paused", "Closed"];
 
-function GigCard({ gig, onTogglePause }) {
+function GigCard({ gig, onTogglePause, isToggling }) {
   const { title, category, icon: Icon, accent, status, thumbnail, views, submissions, budget, paidOut } = gig;
   const navigate = useNavigate();
   const a = ACCENTS[accent];
@@ -68,6 +69,7 @@ function GigCard({ gig, onTogglePause }) {
   const isCompleted = status === "Completed";
   const isClosed = String(status || "").toLowerCase() === "closed";
   const actionLocked = isClosed;
+  const canToggleStatus = isActive || status === "Paused";
   const needsSettlement = Boolean(gig.needsRemainingSettlement ?? (isClosed && Number(gig.remainingBudget ?? 0) > 0 && !gig.remainingFundsSettled && (gig.closureReason || gig.closure_reason) !== 'budget'));
 
   const openGig = () => navigate(`/creator/gigs/${gig.accessKey}`);
@@ -226,20 +228,20 @@ function GigCard({ gig, onTogglePause }) {
             >
               Edit
             </Link>
-            {!isCompleted && (
+            {!isCompleted && canToggleStatus && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (!actionLocked) onTogglePause(gig.id);
+                  if (!actionLocked && !isToggling) onTogglePause(gig);
                 }}
-                disabled={actionLocked}
+                disabled={actionLocked || isToggling}
                 className={`rounded-xl border px-4 py-2.5 text-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${
                   isActive
                     ? "border-yellow-500/20 text-yellow-400 hover:bg-yellow-500/10"
                     : "border-green-500/20 text-green-400 hover:bg-green-500/10"
                 } ${actionLocked ? "border-white/10 text-zinc-500" : ""}`}
               >
-                {actionLocked ? "Closed" : isActive ? "Pause" : "Resume"}
+                {isToggling ? "Updating..." : actionLocked ? "Closed" : isActive ? "Pause" : "Resume"}
               </button>
             )}
           </div>
@@ -312,6 +314,8 @@ export default function CreatorGigs() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [togglingGigId, setTogglingGigId] = useState(null);
+  const { showToast } = useToast();
 
   useEffect(() => {
     setFilter(FILTERS.includes(statusFilter) ? statusFilter : "All");
@@ -363,8 +367,27 @@ export default function CreatorGigs() {
     };
   }, []);
 
-  const handleTogglePause = (id) => {
-    setGigs((prev) => prev.map((g) => (g.id === id ? { ...g, status: g.status === "Active" ? "Paused" : "Active" } : g)));
+  const handleTogglePause = async (gig) => {
+    if (!gig || togglingGigId === gig.id || !["Active", "Paused"].includes(gig.status)) return;
+
+    const nextStatus = gig.status === "Active" ? "paused" : "active";
+    setTogglingGigId(gig.id);
+    try {
+      const updated = await api(`/api/content/campaigns/${gig.id}/`, {
+        method: "PATCH",
+        body: { status: nextStatus },
+      });
+      const status = String(updated.status || nextStatus);
+      const displayStatus = status.charAt(0).toUpperCase() + status.slice(1);
+      setGigs((previous) => previous.map((item) => (
+        item.id === gig.id ? { ...item, status: displayStatus } : item
+      )));
+      showToast({ type: "success", message: `Gig ${nextStatus === "paused" ? "paused" : "resumed"}.` });
+    } catch (requestError) {
+      showToast({ type: "error", message: requestError.message || "Unable to update this gig right now." });
+    } finally {
+      setTogglingGigId(null);
+    }
   };
 
   const handleClearFilters = () => {
@@ -441,7 +464,7 @@ export default function CreatorGigs() {
             </div>
           ))
         ) : filtered.length > 0 ? (
-          filtered.map((gig) => <GigCard key={gig.id} gig={gig} onTogglePause={handleTogglePause} />)
+          filtered.map((gig) => <GigCard key={gig.id} gig={gig} onTogglePause={handleTogglePause} isToggling={togglingGigId === gig.id} />)
         ) : (
           <EmptyGigsState hasAnyGigs={gigs.length > 0} onClearFilters={handleClearFilters} />
         )}

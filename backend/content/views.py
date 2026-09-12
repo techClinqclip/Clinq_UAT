@@ -8,7 +8,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from rest_framework.exceptions import ValidationError, NotFound
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from supabase import create_client
 from decimal import Decimal
 
@@ -117,6 +117,8 @@ class CampaignViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         previous = self.get_object()
+        if previous.creator_id != self.request.user.id:
+            raise PermissionDenied('Only the event owner can manage this campaign or gig.')
         previous_status = previous.status
         campaign = serializer.save()
         changed_fields = set(serializer.validated_data)
