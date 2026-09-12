@@ -89,7 +89,6 @@ function buildClips(submissions) {
         .map((item) => ({
             id: item.id,
             title: item.title,
-            duration: item.duration || "--:--",
             views: item.views,
             engagement: item.engagement,
             platform: item.platform,
@@ -341,12 +340,6 @@ export default function ClipperAnalytics() {
     const hasPerformanceData = analytics.performance.length > 0;
     const hasPlatformData = analytics.platforms.length > 0;
     const hasClips = sortedClips.length > 0;
-    const latestPerformance = analytics.performance.at(-1);
-    const previousPerformance = analytics.performance.at(-2);
-    const viewsGrowth = previousPerformance?.views
-        ? Math.round(((latestPerformance.views - previousPerformance.views) / previousPerformance.views) * 100)
-        : null;
-
     if (loading) {
         return <MarketplaceLoadingSkeleton />;
     }
@@ -432,7 +425,6 @@ export default function ClipperAnalytics() {
                         icon={<Eye size={20} className="text-sky-400" />}
                         label="Total views"
                         value={fmtCompact(analytics.totalViews)}
-                        delta={viewsGrowth}
                         spark={analytics.performance.map((d) => d.views)}
                         color="#38bdf8"
                     />
@@ -565,14 +557,9 @@ export default function ClipperAnalytics() {
                                     {sortedClips.map((c) => (
                                         <tr key={c.id} className="border-b border-white/5 last:border-0">
                                             <td className="px-4 py-3.5">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="flex h-9 w-14 shrink-0 items-center justify-center rounded-md bg-white/5 font-mono text-[10px] text-zinc-500">
-                                                        {c.duration}
-                                                    </div>
-                                                    <div className="min-w-0">
-                                                        <p className="max-w-[260px] truncate font-medium text-zinc-200">{c.title}</p>
-                                                        <p className="max-w-[260px] truncate font-mono text-[11px] text-zinc-600">{c.id}</p>
-                                                    </div>
+                                                <div className="min-w-0">
+                                                    <p className="max-w-[260px] truncate font-medium text-zinc-200">{c.title}</p>
+                                                    <p className="max-w-[260px] truncate font-mono text-[11px] text-zinc-600">{c.id}</p>
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3.5">
