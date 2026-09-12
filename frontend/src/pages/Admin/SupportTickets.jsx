@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -135,6 +135,8 @@ function UserSupportTickets() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const [messageText, setMessageText] = useState("");
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const messageSendInFlight = useRef(false);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -189,19 +191,28 @@ function UserSupportTickets() {
 
   const sendMessage = async (event) => {
     event.preventDefault();
-    if (!selectedId || !messageText.trim()) return;
+    if (messageSendInFlight.current || !selectedId || !messageText.trim()) return;
+
+    const ticketId = selectedId;
+    const body = messageText.trim();
+    messageSendInFlight.current = true;
+    setIsSendingMessage(true);
+
     try {
-      const message = await api(`/api/support/tickets/${selectedId}/messages/`, {
+      const message = await api(`/api/support/tickets/${ticketId}/messages/`, {
         method: "POST",
-        body: { body: messageText.trim() },
+        body: { body },
       });
-      setTickets((previous) => previous.map((ticket) => ticket.id === selectedId
+      setTickets((previous) => previous.map((ticket) => ticket.id === ticketId
         ? { ...ticket, status: "Open", messages: [...ticket.messages, { from: "user", text: message.body, at: new Date(message.created_at).toLocaleString() }] }
         : ticket));
-      setMessageText("");
+      setMessageText((current) => (current.trim() === body ? "" : current));
       showToast({ type: "success", message: "Message sent to the support team." });
     } catch (error) {
       showToast({ type: "error", message: error.message });
+    } finally {
+      messageSendInFlight.current = false;
+      setIsSendingMessage(false);
     }
   };
 
@@ -267,9 +278,9 @@ function UserSupportTickets() {
               <button type="button" onClick={() => setSelectedId(null)} aria-label="Close support chat" className="rounded-lg p-2 text-zinc-500 transition hover:bg-white/5 hover:text-white"><X size={18} /></button>
             </div>
             <div className="custom-scrollbar min-h-48 flex-1 space-y-3 overflow-y-auto px-6 py-5">
-              {selectedTicket.messages.length === 0 ? <p className="py-10 text-center text-sm text-zinc-500">Loading conversation...</p> : selectedTicket.messages.map((message, index) => <div key={`${message.at}-${index}`} className={`flex ${message.from === "user" ? "justify-end" : "justify-start"}`}><div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${message.from === "user" ? "bg-violet-600 text-white" : "bg-white/[0.06] text-zinc-200"}`}><p>{message.text}</p><p className={`mt-1.5 text-xs ${message.from === "user" ? "text-violet-200" : "text-zinc-500"}`}>{message.at}</p></div></div>)}
+              {selectedTicket.messages.length === 0 ? <p className="py-10 text-center text-sm text-zinc-500">Loading conversation...</p> : selectedTicket.messages.map((message, index) => <div key={`${message.at}-${index}`} className={`flex ${message.from === "user" ? "justify-end" : "justify-start"}`}><div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${message.from === "user" ? "bg-violet-600 text-white" : "bg-white/[0.06] text-zinc-200"}`}><p className={message.from === "user" ? "text-white" : "text-zinc-100"}>{message.text}</p><p className={`mt-1.5 text-xs ${message.from === "user" ? "text-violet-200" : "text-zinc-500"}`}>{message.at}</p></div></div>)}
             </div>
-            <form onSubmit={sendMessage} className="flex gap-2 border-t border-white/10 p-4"><input value={messageText} onChange={(event) => setMessageText(event.target.value)} placeholder="Reply to support" className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-500/10" /><button type="submit" disabled={!messageText.trim()} aria-label="Send message" className="rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold transition hover:bg-violet-500 disabled:opacity-40"><Send size={17} /></button></form>
+            <form onSubmit={sendMessage} className="flex gap-2 border-t border-white/10 p-4"><input value={messageText} onChange={(event) => setMessageText(event.target.value)} disabled={isSendingMessage} placeholder="Reply to support" className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white caret-violet-300 outline-none transition placeholder:text-zinc-500 focus:border-violet-400 focus:ring-4 focus:ring-violet-500/10 disabled:cursor-not-allowed disabled:opacity-60" /><button type="submit" disabled={!messageText.trim() || isSendingMessage} aria-label="Send message" className="rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40">{isSendingMessage ? <LoaderCircle className="animate-spin" size={17} /> : <Send size={17} />}</button></form>
           </div></div>, document.body)}
         </div>
       </section>
