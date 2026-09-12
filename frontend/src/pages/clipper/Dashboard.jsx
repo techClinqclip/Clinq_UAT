@@ -113,13 +113,13 @@ export default function ClipperDashboard() {
                 title: "Submitted Clips",
                 value: submittedClips,
                 icon: FileCheck,
-                link: "/clipper/submissions",
+                link: "/clipper/gigs",
             },
             {
                 title: "Pending Reviews",
                 value: pendingReviews,
                 icon: Clock3,
-                link: "/clipper/submissions",
+                link: "/clipper/gigs",
             },
         ];
     }, [gigs, submissions]);

@@ -125,7 +125,7 @@ export default function Dashboard() {
   const stats = [
     { title: "Total Campaigns", value: String(totalCampaigns), icon: Megaphone, link: "/brand/campaigns" },
     { title: "Views Generated", value: formatCompact(effectiveViews), icon: Eye, link: "/brand/analytics" },
-    { title: "Total Budget", value: formatMoney(totalBudget), icon: IndianRupee, link: "/brand/wallet" },
+    { title: "Total Budget", value: formatMoney(totalBudget), icon: IndianRupee, link: "/brand/earnings" },
     { title: "Creators Worked With", value: String(creatorsWorkedWith || 0), icon: Users, link: "/brand/campaigns" },
   ];
 
