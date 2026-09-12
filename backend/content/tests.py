@@ -1442,6 +1442,19 @@ class CampaignViewSetTest(TestCase):
         queued_submission = next(item for item in refreshed_queue.data if item['id'] == submission.id)
         self.assertEqual(queued_submission['payoutReviewStatus'], 'approved')
 
+        second_approval = self.client.post(
+            f'/api/content/campaign-submissions/{submission.id}/settle-pending/',
+            {'notes': 'Attempted duplicate approval'},
+            format='json',
+        )
+        hold_after_approval = self.client.post(
+            f'/api/content/campaign-submissions/{submission.id}/hold/',
+            {'reason': 'Attempted hold after approval'},
+            format='json',
+        )
+        self.assertEqual(second_approval.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(hold_after_approval.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_admin_can_approve_and_reject_campaign_submissions(self):
         clipper = User.objects.create_user(email='queue-clipper@test.com', password='testpass123', type='clipper')
         participant = CampaignParticipant.objects.create(campaign=self.campaign, clipper=clipper, status='submitted')

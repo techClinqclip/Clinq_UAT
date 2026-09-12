@@ -80,6 +80,7 @@ export default function PendingApprovalReviewModal({ item, onClose, onApprove, o
 
   const viewsDelta = item.liveViews - item.reportedViews;
   const overCap = item.pendingAmount > item.cap;
+  const isPending = item.status === "Pending";
 
   const autoHints = {
     statsMatchCurrent:
@@ -161,11 +162,11 @@ export default function PendingApprovalReviewModal({ item, onClose, onApprove, o
               {item.liveViews.toLocaleString()} live views
             </div>
             <span className="rounded-full bg-white/5 px-2.5 py-1 text-xs text-zinc-300">{item.platform}</span>
-            <span className="text-sm font-semibold text-white">₹{item.pendingAmount.toLocaleString()} pending</span>
+            <span className="text-sm font-semibold text-white">₹{item.pendingAmount.toLocaleString()} {isPending ? "pending" : item.status.toLowerCase()}</span>
             <span className="text-xs text-zinc-500">Submitted {item.submittedAt}</span>
           </div>
 
-          {!holdMode ? (
+          {isPending && !holdMode ? (
             <>
               <div className="mt-6">
                 <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
@@ -206,7 +207,7 @@ export default function PendingApprovalReviewModal({ item, onClose, onApprove, o
                 </button>
               </div>
             </>
-          ) : (
+          ) : isPending ? (
             <div className="mt-6">
               <label className="mb-2 block text-sm font-medium text-white">
                 Reason for hold <span className="text-rose-400">*</span>
@@ -227,6 +228,13 @@ export default function PendingApprovalReviewModal({ item, onClose, onApprove, o
                   Confirm hold
                 </button>
               </div>
+            </div>
+          ) : (
+            <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+              <p className="text-sm font-semibold text-white">{item.status} payout</p>
+              <p className="mt-1 text-sm leading-6 text-zinc-400">
+                This payout is no longer pending review and is read-only. Payout checks and administrative actions are available only while a request is pending.
+              </p>
             </div>
           )}
         </motion.div>

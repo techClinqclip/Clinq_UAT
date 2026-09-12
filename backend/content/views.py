@@ -1805,6 +1805,11 @@ class CampaignSubmissionViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=['post'], url_path='settle-pending', permission_classes=[IsAdminUser])
     def settle_pending(self, request, pk=None):
         submission = self.get_object()
+        if submission.payout_review_status != 'pending':
+            return Response(
+                {'detail': 'Only pending payouts can be approved.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         if submission.status != 'approved':
             return Response(
                 {'detail': 'Submission must be approved before pending earnings can be settled.'},
@@ -1817,8 +1822,6 @@ class CampaignSubmissionViewSet(viewsets.ReadOnlyModelViewSet):
             )
 
         from django.utils import timezone
-        if submission.payout_review_status == 'approved':
-            return Response({'detail': 'Payout is already approved.'}, status=status.HTTP_400_BAD_REQUEST)
         from accounts.models import Profile
         from django.db.models import F
         pending_amount = Decimal(str(submission.pending_earning))
@@ -1856,8 +1859,8 @@ class CampaignSubmissionViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=['post'], url_path='hold', permission_classes=[IsAdminUser])
     def hold(self, request, pk=None):
         submission = self.get_object()
-        if submission.status != 'approved' or not submission.pending_earning:
-            return Response({'detail': 'Only approved submissions with pending earnings can be held.'}, status=status.HTTP_400_BAD_REQUEST)
+        if submission.payout_review_status != 'pending' or submission.status != 'approved' or not submission.pending_earning:
+            return Response({'detail': 'Only pending payouts with pending earnings can be held.'}, status=status.HTTP_400_BAD_REQUEST)
         reason = str(request.data.get('reason') or '').strip()
         if not reason:
             return Response({'detail': 'A hold reason is required.'}, status=status.HTTP_400_BAD_REQUEST)
