@@ -11,8 +11,11 @@ import {
     Play,
     ChevronDown,
     CheckCircle2,
+    Globe2,
     PieChart,
 } from "lucide-react";
+import { FaFacebookF, FaInstagram, FaTiktok, FaYoutube } from "react-icons/fa";
+import { FaXTwitter } from "react-icons/fa6";
 import {
     AreaChart,
     Area,
@@ -44,6 +47,18 @@ const defaultAnalytics = {
 
 const FILTERS = ["30 Days", "3 Months", "6 Months", "All Time"];
 const PLATFORM_COLOR = { Instagram: "#c084fc", YouTube: "#f87171", Facebook: "#5eead4", X: "#a1a1aa" };
+
+function getPlatformIcon(platform) {
+    const key = String(platform || "").trim().toLowerCase();
+
+    if (key.includes("instagram")) return { Icon: FaInstagram, className: "text-pink-500" };
+    if (key.includes("youtube")) return { Icon: FaYoutube, className: "text-red-500" };
+    if (key.includes("tiktok")) return { Icon: FaTiktok, className: "text-white" };
+    if (key.includes("facebook")) return { Icon: FaFacebookF, className: "text-blue-500" };
+    if (key === "x" || key.includes("twitter")) return { Icon: FaXTwitter, className: "text-zinc-100" };
+
+    return { Icon: Globe2, className: "text-zinc-400" };
+}
 
 // Where clippers land once they have nothing to show yet — same route
 // used by every other "browse gigs" CTA across the app.
@@ -563,15 +578,19 @@ export default function ClipperAnalytics() {
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3.5">
-                                                <span
-                                                    className="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium"
-                                                    style={{
-                                                        color: PLATFORM_COLOR[c.platform] || "#a1a1aa",
-                                                        backgroundColor: `${PLATFORM_COLOR[c.platform] || "#a1a1aa"}1a`,
-                                                    }}
-                                                >
-                                                    {c.platform}
-                                                </span>
+                                                {(() => {
+                                                    const { Icon, className } = getPlatformIcon(c.platform);
+
+                                                    return (
+                                                        <span
+                                                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white/5"
+                                                            title={c.platform}
+                                                            aria-label={c.platform}
+                                                        >
+                                                            <Icon size={17} className={className} aria-hidden="true" />
+                                                        </span>
+                                                    );
+                                                })()}
                                             </td>
                                             <td className="px-4 py-3.5 font-mono tabular-nums text-zinc-300">{fmtCompact(c.views)}</td>
                                             <td className="px-4 py-3.5 font-mono tabular-nums text-zinc-300">{c.engagement}%</td>
