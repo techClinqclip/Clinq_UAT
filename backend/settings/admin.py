@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import UserSettings
+from .models import ResourceSampleTemplate, UserSettings
 
 
 @admin.register(UserSettings)
@@ -27,3 +27,9 @@ class UserSettingsAdmin(admin.ModelAdmin):
             'fields': ('preferred_payout_method', 'payout_threshold')
         }),
     )
+
+
+@admin.register(ResourceSampleTemplate)
+class ResourceSampleTemplateAdmin(admin.ModelAdmin):
+    list_display = ['id', 'document', 'updated_by', 'updated_at']
+    readonly_fields = ['updated_at']

@@ -2,9 +2,13 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.views import APIView
+from django.http import FileResponse
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
-from .models import UserSettings
+from .models import ResourceSampleTemplate, UserSettings
 from .serializers import UserSettingsSerializer
 
 
@@ -90,3 +94,70 @@ class SettingsViewSet(viewsets.ModelViewSet):
         if request.method == 'PATCH':
             return self.partial_update(request)
         return self.update(request)
+
+
+class ResourceSampleTemplateView(APIView):
+    """Read the resource sample template, or replace it as a staff user."""
+
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+    allowed_extensions = {'.pdf', '.doc', '.docx', '.xls', '.xlsx', '.csv', '.txt'}
+
+    @staticmethod
+    def _payload(request, template):
+        document_url = None
+        filename = None
+        if template.document:
+            document_url = request.build_absolute_uri(template.document.url)
+            filename = template.document.name.rsplit('/', 1)[-1]
+
+        return {
+            'documentUrl': document_url,
+            'filename': filename,
+            'updatedAt': template.updated_at,
+        }
+
+    @staticmethod
+    def _require_staff(request):
+        if not request.user.is_staff and not request.user.is_superuser:
+            raise PermissionDenied('Only administrators can update the resource sample template.')
+
+    def get(self, request):
+        template, _ = ResourceSampleTemplate.objects.get_or_create(pk=1)
+        return Response(self._payload(request, template))
+
+    def put(self, request):
+        self._require_staff(request)
+        document = request.FILES.get('document')
+        if not document:
+            return Response({'detail': 'A template document is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not any(document.name.lower().endswith(extension) for extension in self.allowed_extensions):
+            return Response(
+                {'detail': 'Upload a PDF, Word, Excel, CSV, or text document.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        template, _ = ResourceSampleTemplate.objects.get_or_create(pk=1)
+        previous_document = template.document
+        template.document = document
+        template.updated_by = request.user
+        template.save()
+
+        if previous_document and previous_document.name != template.document.name:
+            previous_document.delete(save=False)
+
+        return Response(self._payload(request, template))
+
+
+class ResourceSampleTemplateDownloadView(APIView):
+    """Stream the current template as an attachment for authenticated users."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        template = ResourceSampleTemplate.objects.filter(pk=1).first()
+        if not template or not template.document:
+            return Response({'detail': 'No resource sample template is available.'}, status=status.HTTP_404_NOT_FOUND)
+
+        filename = template.document.name.rsplit('/', 1)[-1]
+        return FileResponse(template.document.open('rb'), as_attachment=True, filename=filename)

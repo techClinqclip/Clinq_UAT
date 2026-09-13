@@ -1,9 +1,11 @@
-import { useState } from "react";
-import { Plus, Trash2, ImagePlus, Check } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Plus, Trash2, ImagePlus, Check, Download } from "lucide-react";
 import { FaYoutube, FaInstagram, FaFacebook, FaXTwitter } from "react-icons/fa6";
 import DatePicker from "./DatePicker";
 import useToast from "../hooks/useToast"; // adjust path to match this file's actual location
 import ProcessingModal from "../shared/ui/ProcessingModal"; // adjust path to match this file's actual location
+import { api } from "../lib/api";
+import { downloadResourceSampleTemplate } from "../lib/resourceTemplate";
 
 /*
   CampaignForm — shared by CreateCampaign and EditCampaign so the two
@@ -215,6 +217,7 @@ export default function CampaignForm({ initialData, mode = "create", onSubmit, o
   const [form, setForm] = useState({ ...emptyForm, ...initialData });
   const [resourceName, setResourceName] = useState("");
   const [resourceUrl, setResourceUrl] = useState("");
+  const [resourceTemplate, setResourceTemplate] = useState(null);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [submitStepIndex, setSubmitStepIndex] = useState(-1);
@@ -222,6 +225,23 @@ export default function CampaignForm({ initialData, mode = "create", onSubmit, o
 
   const SUBMIT_STEPS =
     mode === "edit" ? ["Saving your changes"] : ["Creating your campaign"];
+
+  useEffect(() => {
+    if (mode !== "create") return undefined;
+
+    let isMounted = true;
+    api("/api/settings/resource-template/")
+      .then((template) => {
+        if (isMounted) setResourceTemplate(template);
+      })
+      .catch(() => {
+        // The template is optional guidance, so campaign creation remains available.
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [mode]);
 
   const clearFieldError = (key) => {
     setErrors((prev) => {
@@ -245,6 +265,14 @@ export default function CampaignForm({ initialData, mode = "create", onSubmit, o
         : [...f.platforms, name],
     }));
     clearFieldError("platforms");
+  };
+
+  const downloadTemplate = async () => {
+    try {
+      await downloadResourceSampleTemplate(resourceTemplate?.filename);
+    } catch (error) {
+      showToast({ type: "error", message: error.message || "Unable to download the resource sample template." });
+    }
   };
 
   const toggleOrientation = (value) => {
@@ -479,6 +507,22 @@ export default function CampaignForm({ initialData, mode = "create", onSubmit, o
         </Section>
 
         <Section title="Resources">
+          {resourceTemplate?.documentUrl && (
+            <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-violet-500/25 bg-violet-500/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-medium text-white">Need a starting point?</p>
+                <p className="mt-1 text-xs text-zinc-400">Download the approved resource sample template before adding your own links.</p>
+              </div>
+              <button
+                type="button"
+                onClick={downloadTemplate}
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-violet-400/40 px-4 py-2.5 text-sm font-medium text-violet-200 transition hover:border-violet-300 hover:bg-violet-500/10"
+              >
+                <Download size={16} />
+                Download template
+              </button>
+            </div>
+          )}
           <div className="grid gap-4 md:grid-cols-2">
             <input
               value={resourceName}

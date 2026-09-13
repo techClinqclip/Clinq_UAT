@@ -69,3 +69,24 @@ class UserSettings(models.Model):
 
     def __str__(self):
         return f"Settings for {self.user.email}"
+
+
+class ResourceSampleTemplate(models.Model):
+    """The single resource-document template available to campaign owners."""
+
+    document = models.FileField(upload_to='settings/resource_templates/', blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='updated_resource_sample_templates',
+    )
+
+    class Meta:
+        verbose_name = 'Resource Sample Template'
+        verbose_name_plural = 'Resource Sample Template'
+
+    def __str__(self):
+        return self.document.name if self.document else 'Resource sample template (not uploaded)'
