@@ -377,7 +377,10 @@ class CreatorSubmissionViewSet(viewsets.ModelViewSet):
     def _normalize_platform_value(self, platform_value):
         if platform_value is None:
             return None
-        return str(platform_value).strip().lower()
+        normalized = str(platform_value).strip().lower()
+
+        # The UI calls the platform X, but the database choice is twitter.
+        return 'twitter' if normalized in {'x', 'twitter/x', 'twitter / x'} else normalized
 
     @action(detail=True, methods=['post'], url_path='submit-content')
     def submit_content(self, request, *args, **kwargs):
@@ -463,7 +466,7 @@ class CreatorSubmissionViewSet(viewsets.ModelViewSet):
             return Response({'detail': 'This content URL has already been submitted for this campaign.', 'submission_id': existing.id}, status=status.HTTP_400_BAD_REQUEST)
 
         participant.submissions.create(
-            platform=platform,
+            platform=normalized_platform,
             platform_username=platform_username,
             content_url=content_url,
         )

@@ -385,6 +385,31 @@ class CreatorDashboardApiTests(TestCase):
         participant.refresh_from_db()
         self.assertEqual(participant.status, 'submitted')
 
+    def test_submit_content_accepts_x_platform(self):
+        brand = get_user_model().objects.create_user(email='brand-x-submit@example.com', password='pass1234', type='brand')
+        campaign = Campaign.objects.create(
+            creator=brand,
+            name='X Submission Campaign',
+            category='gaming',
+            description='Accepts X submissions',
+            platforms=['x'],
+        )
+        participant = CampaignParticipant.objects.create(campaign=campaign, clipper=self.user, status='pending')
+
+        response = self.client.post(
+            f'/api/creator/submissions/campaign-{campaign.id}/submit-content/',
+            {
+                'platform': 'x',
+                'platformUsername': '@creatoruser',
+                'contentUrl': 'https://x.com/creatoruser/status/123',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(participant.submissions.get().platform, 'twitter')
+        self.assertEqual(response.data['published_submissions'][0]['platform'], 'Twitter/X')
+
     def test_delete_content_removes_campaign_submission(self):
         brand = get_user_model().objects.create_user(email='brand-delete@example.com', password='pass1234', type='brand')
         campaign = Campaign.objects.create(
