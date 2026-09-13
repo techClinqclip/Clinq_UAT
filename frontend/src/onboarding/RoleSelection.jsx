@@ -10,6 +10,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { api, setAuthStorage } from "../lib/api";
+import OnboardingLogout from "./OnboardingLogout";
 
 /*
   Fonts: tuned for a grotesk display face + monospace for timecodes/labels.
@@ -175,7 +176,7 @@ export default function RoleSelection() {
       <div className="pointer-events-none absolute -top-40 left-1/2 h-96 w-[40rem] -translate-x-1/2 rounded-full bg-violet-600/10 blur-[120px]" />
 
       <div className="relative mx-auto max-w-7xl">
-        {/* Top bar: back + HUD timecode */}
+        {/* Top bar: back, session action, and HUD timecode */}
         <div className="mb-4 flex items-center justify-between md:mb-14">
           <button
             onClick={() => navigate(-1)}
@@ -185,14 +186,17 @@ export default function RoleSelection() {
             Back
           </button>
 
-          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 font-mono text-[10px] tracking-widest text-zinc-400 md:px-3 md:py-1.5 md:text-xs">
-            <span className="relative flex h-1.5 w-1.5 md:h-2 md:w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500/60" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500 md:h-2 md:w-2" />
-            </span>
-            REC
-            <span className="hidden text-zinc-600 sm:inline">/</span>
-            <span className="hidden text-zinc-300 sm:inline">{timecode}</span>
+          <div className="flex items-center gap-2">
+            <OnboardingLogout />
+            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 font-mono text-[10px] tracking-widest text-zinc-400 md:px-3 md:py-1.5 md:text-xs">
+              <span className="relative flex h-1.5 w-1.5 md:h-2 md:w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500/60" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500 md:h-2 md:w-2" />
+              </span>
+              REC
+              <span className="hidden text-zinc-600 sm:inline">/</span>
+              <span className="hidden text-zinc-300 sm:inline">{timecode}</span>
+            </div>
           </div>
         </div>
 
