@@ -7,7 +7,7 @@ export default function DashboardLayout({ role }) {
     <div className="min-h-screen bg-[#07070B]">
       <AppSidebar role={role} />
 
-      <main className="ml-64 min-h-screen">
+      <main className="ml-0 min-h-screen md:ml-64">
         <TopNavbar />
         <div className="px-6 py-8 lg:px-8">
           <Outlet />
