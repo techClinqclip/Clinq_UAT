@@ -52,13 +52,13 @@ export default function AppSidebar({ role: propRole }) {
     <>
       {/* Mobile hamburger */}
       <button
-        type="button"
-        onClick={() => setMobileMenuOpen(true)}
-        className="fixed left-4 top-4 z-40 rounded-xl border border-white/10 bg-[#0B0B12] p-3 text-white shadow-lg md:hidden"
-        aria-label="Open navigation"
-      >
-        <Menu size={22} />
-      </button>
+  type="button"
+  onClick={() => setMobileMenuOpen(true)}
+  className="fixed left-4 top-4 z-[100] flex items-center justify-center rounded-xl border border-white/10 bg-[#0B0B12] p-3 text-white shadow-lg md:hidden"
+  aria-label="Open navigation"
+>
+  <Menu size={22} />
+</button>
 
       {/* Mobile overlay */}
       {mobileMenuOpen && (
