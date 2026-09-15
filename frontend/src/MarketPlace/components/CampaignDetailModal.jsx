@@ -192,7 +192,7 @@ const { showToast } = useToast();
               </button>
             </div>
 
-            <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between p-6">
+            <div className="absolute bottom-0 left-0 right-0 flex flex-col gap-3 p-4 sm:flex-row sm:items-end sm:justify-between sm:p-6">
               <div>
                 <span className={`mb-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ${a.chip}`}>
                   <Icon size={12} />
@@ -238,13 +238,13 @@ const { showToast } = useToast();
           ) : (
             <>
               {/* Tabs */}
-              <div className="flex shrink-0 gap-1 border-b border-white/10 px-7 pt-5">
+              <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-white/10 px-4 pt-4 sm:px-7 sm:pt-5">
                 {TABS.map((tab) => (
                   <button
                     key={tab}
                     type="button"
                     onClick={() => setActiveTab(tab)}
-                    className={`relative px-4 pb-3 text-sm font-medium transition ${
+                    className={`relative shrink-0 px-3 pb-3 text-sm font-medium transition sm:px-4 ${
                       activeTab === tab ? "text-white" : "text-zinc-500 hover:text-zinc-300"
                     }`}
                   >
@@ -261,7 +261,7 @@ const { showToast } = useToast();
                 ))}
               </div>
 
-              <div className="space-y-7 overflow-y-auto p-7 custom-scrollbar">
+              <div className="space-y-6 overflow-y-auto p-4 custom-scrollbar sm:space-y-7 sm:p-7">
                 {/* Stats always visible */}
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                   <Stat icon={<Eye size={15} className={a.text} />} iconBg={a.iconBg} label="Views" value={formatCompact(views)} />
@@ -368,11 +368,11 @@ const { showToast } = useToast();
           {!joined && (
             <div className="flex shrink-0 flex-col gap-3 border-t border-white/10 p-7">
               {joinError ? <p className="text-sm text-rose-300">{joinError}</p> : null}
-              <div className="flex justify-end gap-3">
+              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="rounded-xl border border-white/10 px-6 py-3 text-zinc-300 transition hover:bg-white/5"
+                  className="w-full rounded-xl border border-white/10 px-6 py-3 text-zinc-300 transition hover:bg-white/5 sm:w-auto"
                 >
                   Close
                 </button>

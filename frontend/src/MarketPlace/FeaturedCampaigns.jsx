@@ -101,7 +101,7 @@ export default function FeaturedCampaigns({ campaigns = [], loading = false, err
           className="flex gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory custom-scrollbar pb-2"
         >
           {featuredCampaigns.map((campaign) => (
-            <div key={campaign.id} className="min-w-[380px] max-w-[380px] flex-shrink-0 snap-start">
+            <div key={campaign.id} v className="w-[calc(100vw-2rem)] max-w-[380px] min-w-[calc(100vw-2rem)] flex-shrink-0 snap-start sm:min-w-[380px] sm:w-[380px]">
               <CampaignCard campaign={campaign} />
             </div>
           ))}
