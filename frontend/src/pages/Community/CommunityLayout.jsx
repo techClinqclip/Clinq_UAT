@@ -9,10 +9,10 @@ export default function CommunityLayout({ children, role }) {
   ).toLowerCase();
 
   return (
-    <div className="min-h-screen bg-zinc-950">
+    <div className="min-h-screen overflow-x-hidden bg-zinc-950">
       <AppSidebar role={resolvedRole} />
 
-      <main className="ml-64">
+      <main className="min-h-screen md:ml-64">
         <TopNavbar role={resolvedRole} />
         {children}
       </main>

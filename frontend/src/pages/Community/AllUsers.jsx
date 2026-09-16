@@ -18,7 +18,7 @@ function AllUsersBody() {
   );
 
   return (
-    <div className="mx-auto max-w-4xl px-6 py-8">
+    <div className="mx-auto w-full max-w-4xl px-3 py-5 sm:px-6 sm:py-8">
       <Link
         to="/community"
         className="mb-6 inline-flex items-center gap-2 text-sm text-zinc-400 transition hover:text-white"
@@ -66,7 +66,7 @@ function AllUsersBody() {
     filtered.map((user) => (
             <div
               key={user.id}
-              className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 transition hover:border-white/20"
+              className="flex min-w-0 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 transition hover:border-white/20"
             >
               <HoverProfileTrigger user={user}>
                 <button type="button">

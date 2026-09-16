@@ -59,9 +59,9 @@ function CommunityFeed() {
   });
 
   return (
-    <div className="flex gap-8 ml-10 ">
+    <div className="flex min-w-0 gap-8">
       <div className="min-w-0 flex-1 space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="flex items-center gap-2 text-2xl font-bold text-white">
             Townhall
             <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
@@ -143,7 +143,7 @@ export default function Community() {
   return (
     <CommunityProvider>
       <CommunityLayout>
-        <div className="mx-auto max-w-6xl px-6 py-8">
+        <div className="mx-auto w-full max-w-6xl px-3 py-5 sm:px-6 sm:py-8">
           <CommunityFeed />
         </div>
       </CommunityLayout>

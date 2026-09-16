@@ -94,11 +94,11 @@ export default function PostComposer() {
   };
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#11111A] p-5">
+    <div className="min-w-0 rounded-2xl border border-white/10 bg-[#11111A] p-4 sm:p-5">
       <div className="flex gap-3">
         <Avatar src={currentUser.avatar} name={currentUser.name} size={40} />
 
-        <div className="flex-1 space-y-3">
+        <div className="min-w-0 flex-1 space-y-3">
           <textarea
             value={article}
             onChange={(e) => setArticle(e.target.value)}
@@ -109,7 +109,7 @@ export default function PostComposer() {
 
           {/* Media preview */}
           {media.length > 0 && (
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {media.map((item, i) => {
                 const src = typeof item === 'string' ? item : item.preview;
                 return (
@@ -187,7 +187,7 @@ export default function PostComposer() {
           )}
 
           {/* Toolbar */}
-          <div className="flex items-center justify-between border-t border-white/5 pt-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/5 pt-3">
             <div className="flex items-center gap-1">
               <button
                 type="button"
@@ -212,7 +212,7 @@ export default function PostComposer() {
                   GIF
                 </button>
                 {showGif && (
-                  <div className="absolute left-0 top-full z-20 mt-2 grid w-64 grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-[#15151F] p-3 shadow-2xl">
+                  <div className="absolute left-0 top-full z-20 mt-2 grid w-[min(16rem,calc(100vw-2rem))] grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-[#15151F] p-3 shadow-2xl">
                     {MOCK_GIFS.map((gif) => (
                       <button
                         key={gif}
@@ -240,7 +240,7 @@ export default function PostComposer() {
                   <Smile size={17} />
                 </button>
                 {showEmoji && (
-                  <div className="absolute left-0 top-full z-20 mt-2 grid w-56 grid-cols-6 gap-1 rounded-2xl border border-white/10 bg-[#15151F] p-3 shadow-2xl">
+                  <div className="absolute left-0 top-full z-20 mt-2 grid w-[min(14rem,calc(100vw-2rem))] grid-cols-6 gap-1 rounded-2xl border border-white/10 bg-[#15151F] p-3 shadow-2xl">
                     {EMOJIS.map((emoji) => (
                       <button
                         key={emoji}

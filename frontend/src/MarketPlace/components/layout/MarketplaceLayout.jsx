@@ -64,7 +64,7 @@ export default function MarketplaceLayout({
               MOBILE RIGHT SIDEBAR DRAWER
           ========================================================= */}
           {rightSidebarOpen && (
-            <div className="fixed inset-0 z-[60] xl:hidden">
+            <div className="fixed inset-0 z-[120] xl:hidden">
               {/* Backdrop */}
               <button
                 type="button"

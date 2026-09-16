@@ -33,7 +33,7 @@ export default function ThreadCard({ thread }) {
 
   return (
     <>
-      <article className="rounded-2xl border border-white/10 bg-[#11111A] p-5 transition hover:border-white/15">
+      <article className="min-w-0 rounded-2xl border border-white/10 bg-[#11111A] p-4 transition hover:border-white/15 sm:p-5">
         {thread.source && (
           <p className="mb-3 flex items-center gap-1 text-xs text-zinc-500">
             <span className="text-zinc-400">{thread.source.label}</span>
@@ -42,18 +42,18 @@ export default function ThreadCard({ thread }) {
           </p>
         )}
 
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-3">
+        <div className="flex min-w-0 items-start justify-between gap-3">
+          <div className="flex min-w-0 items-start gap-3">
             <HoverProfileTrigger user={user}>
               <button type="button" className="block">
                 <Avatar src={user.avatar} name={user.name} size={40} />
               </button>
             </HoverProfileTrigger>
 
-            <div>
+            <div className="min-w-0">
               <HoverProfileTrigger user={user}>
-                <button type="button" className="flex flex-wrap items-center gap-1.5 text-left">
-                  <span className="font-semibold text-white hover:underline">{user.name}</span>
+                <button type="button" className="flex min-w-0 flex-wrap items-center gap-1.5 text-left">
+                  <span className="max-w-full truncate font-semibold text-white hover:underline">{user.name}</span>
                   <span className="text-sm text-zinc-500">@{user.username}</span>
                 </button>
               </HoverProfileTrigger>
@@ -85,8 +85,8 @@ export default function ThreadCard({ thread }) {
 
         {thread.poll && <PollBlock threadId={thread.id} poll={thread.poll} />}
 
-        <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3">
-          <div className="flex items-center gap-1">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-white/5 pt-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-1">
             <button
               type="button"
               onClick={() => toggleLike(thread.id)}
