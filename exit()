@@ -1,0 +1,192 @@
+[1mdiff --git a/frontend/src/components/Dashboard/Sidebar.jsx b/frontend/src/components/Dashboard/Sidebar.jsx[m
+[1mindex baeb6db..be06c17 100644[m
+[1m--- a/frontend/src/components/Dashboard/Sidebar.jsx[m
+[1m+++ b/frontend/src/components/Dashboard/Sidebar.jsx[m
+[36m@@ -1,4 +1,5 @@[m
+ import { NavLink, useNavigate } from "react-router-dom";[m
+[32m+[m[32mimport { useState } from "react";[m
+ import {[m
+   LayoutDashboard,[m
+   Megaphone,[m
+[36m@@ -8,10 +9,14 @@[m [mimport {[m
+   LogOut,[m
+   FolderOpen,[m
+   BarChart3,[m
+[31m-  IndianRupee ,[m
+[32m+[m[32m  IndianRupee,[m
+[32m+[m[32m  Menu,[m
+[32m+[m[32m  X,[m
+ } from "lucide-react";[m
+[32m+[m
+ export default function Sidebar({ role }) {[m
+   const navigate = useNavigate();[m
+[32m+[m[32m  const [isOpen, setIsOpen] = useState(false);[m
+ [m
+   const links = {[m
+     brand: [[m
+[36m@@ -64,17 +69,17 @@[m [mexport default function Sidebar({ role }) {[m
+         icon: BarChart3,[m
+       },[m
+       {[m
+[31m-        name : "earnings",[m
+[32m+[m[32m        name: "earnings",[m
+         path: "/creator/earnings",[m
+[31m-        icon: IndianRupee[m
+[31m-      }[m
+[31m-      ,[m
+[32m+[m[32m        icon: IndianRupee,[m
+[32m+[m[32m      },[m
+       {[m
+         name: "Profile",[m
+         path: "/creator/profile",[m
+         icon: User,[m
+       },[m
+     ],[m
+[32m+[m
+     // clipper: [[m
+     //   {[m
+     //     name: "Dashboard",[m
+[36m@@ -144,56 +149,92 @@[m [mexport default function Sidebar({ role }) {[m
+   };[m
+ [m
+   return ([m
+[31m-    <aside className="fixed left-0 top-0 z-50 flex h-screen w-64 flex-col border-r border-white/10 bg-[#0B0B12]">[m
+[31m-      {/* Logo */}[m
+[31m-[m
+[31m-      <div className="border-b border-white/10 p-6">[m
+[31m-        <h1 className="text-3xl font-bold text-white">[m
+[31m-          Clinq<span className="text-violet-500">.</span>[m
+[31m-        </h1>[m
+[31m-[m
+[31m-        <p className="mt-2 text-xs uppercase tracking-[0.25em] text-zinc-500">[m
+[31m-          {role}[m
+[31m-        </p>[m
+[31m-      </div>[m
+[31m-[m
+[31m-      {/* Navigation */}[m
+[31m-[m
+[31m-      <nav className="flex-1 overflow-y-auto px-4 py-6">[m
+[31m-        {currentLinks.map((link) => {[m
+[31m-          const Icon = link.icon;[m
+[31m-[m
+[31m-          return ([m
+[31m-            <NavLink[m
+[31m-              key={link.name}[m
+[31m-              to={link.path}[m
+[31m-              end[m
+[31m-              className={({ isActive }) =>[m
+[31m-                `mb-2 flex items-center gap-3 rounded-xl px-4 py-3 transition ${[m
+[31m-                  isActive[m
+[31m-                    ? "bg-violet-600 text-white shadow-lg shadow-violet-600/20"[m
+[31m-                    : "text-zinc-400 hover:bg-white/5 hover:text-white"[m
+[31m-                }`[m
+[31m-              }[m
+[32m+[m[32m    <>[m
+[32m+[m[32m      {/* Mobile Hamburger */}[m
+[32m+[m[32m      <button[m
+[32m+[m[32m        onClick={() => setIsOpen(true)}[m
+[32m+[m[32m        className="fixed left-4 top-4 z-40 rounded-xl border border-white/10 bg-[#0B0B12] p-3 text-white shadow-lg md:hidden"[m
+[32m+[m[32m        aria-label="Open navigation"[m
+[32m+[m[32m      >[m
+[32m+[m[32m        <Menu size={22} />[m
+[32m+[m[32m      </button>[m
+[32m+[m
+[32m+[m[32m      {/* Mobile Overlay */}[m
+[32m+[m[32m      {isOpen && ([m
+[32m+[m[32m        <div[m
+[32m+[m[32m          onClick={() => setIsOpen(false)}[m
+[32m+[m[32m          className="fixed inset-0 z-40 bg-black/60 md:hidden"[m
+[32m+[m[32m        />[m
+[32m+[m[32m      )}[m
+[32m+[m
+[32m+[m[32m      {/* Sidebar */}[m
+[32m+[m[32m      <aside[m
+[32m+[m[32m        className={`fixed left-0 top-0 z-50 flex h-screen w-64 flex-col border-r border-white/10 bg-[#0B0B12] transition-transform duration-300 ${[m
+[32m+[m[32m          isOpen ? "translate-x-0" : "-translate-x-full"[m
+[32m+[m[32m        } md:translate-x-0`}[m
+[32m+[m[32m      >[m
+[32m+[m[32m        {/* Logo */}[m
+[32m+[m
+[32m+[m[32m        <div className="border-b border-white/10 p-6">[m
+[32m+[m[32m          <div className="flex items-center justify-between">[m
+[32m+[m[32m            <h1 className="text-3xl font-bold text-white">[m
+[32m+[m[32m              Clinq<span className="text-violet-500">.</span>[m
+[32m+[m[32m            </h1>[m
+[32m+[m
+[32m+[m[32m            {/* Mobile Close Button */}[m
+[32m+[m[32m            <button[m
+[32m+[m[32m              onClick={() => setIsOpen(false)}[m
+[32m+[m[32m              className="rounded-lg p-2 text-zinc-400 hover:bg-white/5 hover:text-white md:hidden"[m
+[32m+[m[32m              aria-label="Close navigation"[m
+             >[m
+[31m-              <Icon size={20} />[m
+[31m-              {link.name}[m
+[31m-            </NavLink>[m
+[31m-          );[m
+[31m-        })}[m
+[31m-      </nav>[m
+[31m-[m
+[31m-      {/* Footer */}[m
+[31m-[m
+[31m-      <div className="border-t border-white/10 p-4">[m
+[31m-        <button[m
+[31m-          onClick={handleLogout}[m
+[31m-          className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-zinc-400 transition hover:bg-red-500/10 hover:text-red-400"[m
+[31m-        >[m
+[31m-          <LogOut size={20} />[m
+[31m-          Log out[m
+[31m-        </button>[m
+[31m-      </div>[m
+[31m-    </aside>[m
+[32m+[m[32m              <X size={22} />[m
+[32m+[m[32m            </button>[m
+[32m+[m[32m          </div>[m
+[32m+[m
+[32m+[m[32m          <p className="mt-2 text-xs uppercase tracking-[0.25em] text-zinc-500">[m
+[32m+[m[32m            {role}[m
+[32m+[m[32m          </p>[m
+[32m+[m[32m        </div>[m
+[32m+[m
+[32m+[m[32m        {/* Navigation */}[m
+[32m+[m
+[32m+[m[32m        <nav className="flex-1 overflow-y-auto px-4 py-6">[m
+[32m+[m[32m          {currentLinks.map((link) => {[m
+[32m+[m[32m            const Icon = link.icon;[m
+[32m+[m
+[32m+[m[32m            return ([m
+[32m+[m[32m              <NavLink[m
+[32m+[m[32m                key={link.name}[m
+[32m+[m[32m                to={link.path}[m
+[32m+[m[32m                end[m
+[32m+[m[32m                onClick={() => setIsOpen(false)}[m
+[32m+[m[32m                className={({ isActive }) =>[m
+[32m+[m[32m                  `mb-2 flex items-center gap-3 rounded-xl px-4 py-3 transition ${[m
+[32m+[m[32m                    isActive[m
+[32m+[m[32m                      ? "bg-violet-600 text-white shadow-lg shadow-violet-600/20"[m
+[32m+[m[32m                      : "text-zinc-400 hover:bg-white/5 hover:text-white"[m
+[32m+[m[32m                  }`[m
+[32m+[m[32m                }[m
+[32m+[m[32m              >[m
+[32m+[m[32m                <Icon size={20} />[m
+[32m+[m[32m                {link.name}[m
+[32m+[m[32m              </NavLink>[m
+[32m+[m[32m            );[m
+[32m+[m[32m          })}[m
+[32m+[m[32m        </nav>[m
+[32m+[m
+[32m+[m[32m        {/* Footer */}[m
+[32m+[m
+[32m+[m[32m        <div className="border-t border-white/10 p-4">[m
+[32m+[m[32m          <button[m
+[32m+[m[32m            onClick={handleLogout}[m
+[32m+[m[32m            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-zinc-400 transition hover:bg-red-500/10 hover:text-red-400"[m
+[32m+[m[32m          >[m
+[32m+[m[32m            <LogOut size={20} />[m
+[32m+[m[32m            Log out[m
+[32m+[m[32m          </button>[m
+[32m+[m[32m        </div>[m
+[32m+[m[32m      </aside>[m
+[32m+[m[32m    </>[m
+   );[m
+ }[m
+\ No newline at end of file[m

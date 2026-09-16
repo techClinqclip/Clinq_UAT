@@ -10,11 +10,6 @@ import {
 } from "lucide-react";
 import useCurrentUser from "../../hooks/useCurrentUser";
 
-// ----------------------------------------------------------------------
-// Content config — edit copy here, no JSX digging required.
-// GET /api/support/faqs could replace this array later if it needs to
-// be editable without a redeploy.
-// ----------------------------------------------------------------------
 const SUPPORT_EMAIL = "support@cliqn.app";
 
 const FAQS = [
@@ -38,18 +33,24 @@ const FAQS = [
 
 function FaqItem({ faq }) {
   const [open, setOpen] = useState(false);
+
   return (
     <div className="border-b border-white/[0.06] last:border-0">
       <button
+        type="button"
         onClick={() => setOpen((o) => !o)}
         className="flex w-full items-center justify-between gap-3 py-3 text-left text-sm text-zinc-300 transition hover:text-white"
       >
-        {faq.q}
+        <span className="min-w-0">{faq.q}</span>
+
         <ChevronDown
           size={14}
-          className={`shrink-0 text-zinc-500 transition-transform ${open ? "rotate-180" : ""}`}
+          className={`shrink-0 text-zinc-500 transition-transform ${
+            open ? "rotate-180" : ""
+          }`}
         />
       </button>
+
       <AnimatePresence initial={false}>
         {open && (
           <motion.div
@@ -59,7 +60,9 @@ function FaqItem({ faq }) {
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <p className="pb-3 text-xs leading-5 text-zinc-500">{faq.a}</p>
+            <p className="pb-3 text-xs leading-5 text-zinc-500">
+              {faq.a}
+            </p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -73,28 +76,45 @@ export default function SupportPanel() {
   const navigate = useNavigate();
   const user = useCurrentUser();
 
-  // Close on outside click — same pattern as NotificationBell/ProfileMenu.
   useEffect(() => {
     function handleClick(e) {
-      if (ref.current && !ref.current.contains(e.target)) setIsOpen(false);
+      if (ref.current && !ref.current.contains(e.target)) {
+        setIsOpen(false);
+      }
     }
+
     document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+    };
   }, []);
 
   function handleMessageSupport() {
-    const role = String(user?.role || user?.user_type || "").toLowerCase();
-    const supportPath = role === "admin" ? "/admin/support" : role ? `/${role}/support` : "/login";
+    const role = String(
+      user?.role || user?.user_type || ""
+    ).toLowerCase();
+
+    const supportPath =
+      role === "admin"
+        ? "/admin/support"
+        : role
+          ? `/${role}/support`
+          : "/login";
+
     navigate(supportPath);
     setIsOpen(false);
   }
 
   return (
     <div className="relative" ref={ref}>
+      {/* Support button */}
       <button
+        type="button"
         onClick={() => setIsOpen((o) => !o)}
         className="flex h-10 w-10 items-center justify-center rounded-full text-zinc-400 transition hover:bg-white/5 hover:text-white"
         aria-label="Help and support"
+        aria-expanded={isOpen}
       >
         <Headphones size={19} />
       </button>
@@ -106,41 +126,65 @@ export default function SupportPanel() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.97 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 top-full z-50 mt-2 w-96 overflow-hidden rounded-2xl border border-white/10 bg-[#131316] shadow-2xl"
+            className="
+              absolute
+              right-0
+              top-full
+              z-50
+              mt-2
+              w-[calc(100vw-1rem)]
+              max-w-96
+              overflow-hidden
+              rounded-2xl
+              border
+              border-white/10
+              bg-[#131316]
+              shadow-2xl
+              sm:w-96
+            "
           >
             {/* Header */}
-            <div className="border-b border-white/[0.06] p-5">
-              <h3 className="text-base font-semibold text-white">Help &amp; Support</h3>
+            <div className="border-b border-white/[0.06] p-4 sm:p-5">
+              <h3 className="text-base font-semibold text-white">
+                Help &amp; Support
+              </h3>
+
               <p className="mt-1 text-xs text-zinc-500">
                 We usually reply within a few hours.
               </p>
             </div>
 
             {/* Primary actions */}
-            <div className="space-y-2 p-4">
+            <div className="space-y-2 p-3 sm:p-4">
               <button
+                type="button"
                 onClick={handleMessageSupport}
-                className="flex w-full items-center gap-3 rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-500"
+                className="flex min-h-11 w-full items-center gap-3 rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-500"
               >
                 <MessageCircle size={16} />
-                Open Support Chat
+                <span>Open Support Chat</span>
               </button>
 
               <a
                 href={`mailto:${SUPPORT_EMAIL}`}
-                className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-medium text-zinc-300 transition hover:bg-white/[0.06]"
+                className="flex min-h-11 w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-medium text-zinc-300 transition hover:bg-white/[0.06]"
               >
                 <Mail size={16} />
-                Email us
-                <span className="ml-auto text-xs text-zinc-500">{SUPPORT_EMAIL}</span>
+
+                <span>Email us</span>
+
+                <span className="ml-auto max-w-[55%] truncate text-xs text-zinc-500">
+                  {SUPPORT_EMAIL}
+                </span>
               </a>
             </div>
 
             {/* FAQs */}
-            <div className="px-5 pb-2">
+            <div className="max-h-[55vh] overflow-y-auto px-4 pb-2 custom-scrollbar sm:px-5">
               <p className="pb-1 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
                 Common questions
               </p>
+
               {FAQS.map((faq) => (
                 <FaqItem key={faq.q} faq={faq} />
               ))}
