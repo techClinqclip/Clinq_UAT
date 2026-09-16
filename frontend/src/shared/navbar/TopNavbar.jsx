@@ -1,11 +1,9 @@
 import { Link } from "react-router-dom";
-import { Menu, MessageCircle } from "lucide-react";
-
+import { MessageCircle } from "lucide-react";
 import WalletChip from "./WalletChip";
 import NotificationBell from "./NotificationBell";
 import ProfileMenu from "./ProfileMenu";
 import SupportPanel from "./SupportPanel";
-
 import { useMessaging } from "../messaging/MessagingContext";
 import { FEATURES } from "../../config/Features";
 
@@ -15,7 +13,8 @@ function MessagesIconLink() {
   return (
     <Link
       to="/messages"
-      className="relative flex h-10 w-10 items-center justify-center rounded-full text-zinc-400 transition hover:bg-white/5 hover:text-white"
+      aria-label="Messages"
+      className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-zinc-400 transition hover:bg-white/5 hover:text-white"
     >
       <MessageCircle size={19} />
 
@@ -28,33 +27,21 @@ function MessagesIconLink() {
   );
 }
 
-export default function TopNavbar({ onMenuClick }) {
+export default function TopNavbar() {
   return (
-    <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between border-b border-white/10 bg-[#0B0B12]/90 px-4 backdrop-blur-xl sm:px-6 lg:justify-end lg:px-8">
-      {/* Mobile hamburger */}
-      <button
-        type="button"
-        onClick={onMenuClick}
-        aria-label="Open navigation menu"
-        className="flex h-10 w-10 items-center justify-center rounded-xl text-zinc-400 transition hover:bg-white/5 hover:text-white lg:hidden"
-      >
-        <Menu size={22} />
-      </button>
-
-      {/* Right-side actions */}
-      <div className="flex items-center gap-2 sm:gap-3">
+    <header className="sticky top-0 z-40 flex h-16 w-full min-w-0 items-center justify-end gap-2 overflow-visible border-b border-white/10 bg-[#0B0B12]/90 px-4 backdrop-blur-xl sm:gap-3 sm:px-6 lg:px-8">
+      <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
         <WalletChip />
 
-        <div className="mx-1 hidden h-6 w-px bg-white/10 sm:block" />
+        <div className="mx-1 h-6 w-px shrink-0 bg-white/10" />
 
         <NotificationBell />
 
-        {/* Customer support remains available regardless of messaging */}
         <SupportPanel />
 
         {FEATURES.messaging && <MessagesIconLink />}
 
-        <div className="mx-1 hidden h-6 w-px bg-white/10 sm:block" />
+        <div className="mx-1 h-6 w-px shrink-0 bg-white/10" />
 
         <ProfileMenu />
       </div>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -7,9 +7,15 @@ import {
   Mail,
   ChevronDown,
   ArrowUpRight,
+  X,
 } from "lucide-react";
 import useCurrentUser from "../../hooks/useCurrentUser";
 
+// ----------------------------------------------------------------------
+// Content config — edit copy here, no JSX digging required.
+// GET /api/support/faqs could replace this array later if it needs to
+// be editable without a redeploy.
+// ----------------------------------------------------------------------
 const SUPPORT_EMAIL = "support@cliqn.app";
 
 const FAQS = [
@@ -76,6 +82,7 @@ export default function SupportPanel() {
   const navigate = useNavigate();
   const user = useCurrentUser();
 
+  // Close on outside click.
   useEffect(() => {
     function handleClick(e) {
       if (ref.current && !ref.current.contains(e.target)) {
@@ -107,12 +114,14 @@ export default function SupportPanel() {
   }
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative shrink-0" ref={ref}>
+      {/* Support button */}
       <button
         type="button"
         onClick={() => setIsOpen((o) => !o)}
-        className="flex h-10 w-10 items-center justify-center rounded-full text-zinc-400 transition hover:bg-white/5 hover:text-white"
         aria-label="Help and support"
+        aria-expanded={isOpen}
+        className="flex h-10 w-10 items-center justify-center rounded-full text-zinc-400 transition hover:bg-white/5 hover:text-white"
       >
         <Headphones size={19} />
       </button>
@@ -127,8 +136,8 @@ export default function SupportPanel() {
             className="
               fixed
               right-2
-              top-[4.5rem]
-              z-[60]
+              top-[4.25rem]
+              z-[100]
               w-[calc(100vw-1rem)]
               max-w-96
               overflow-hidden
@@ -142,17 +151,31 @@ export default function SupportPanel() {
               sm:right-0
               sm:top-full
               sm:mt-2
+              sm:w-96
+              sm:max-w-none
             "
           >
             {/* Header */}
-            <div className="border-b border-white/[0.06] p-5">
-              <h3 className="text-base font-semibold text-white">
-                Help &amp; Support
-              </h3>
+            <div className="flex items-start justify-between border-b border-white/[0.06] p-5">
+              <div className="min-w-0 pr-3">
+                <h3 className="text-base font-semibold text-white">
+                  Help &amp; Support
+                </h3>
 
-              <p className="mt-1 text-xs text-zinc-500">
-                We usually reply within a few hours.
-              </p>
+                <p className="mt-1 text-xs text-zinc-500">
+                  We usually reply within a few hours.
+                </p>
+              </div>
+
+              {/* Close button */}
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                aria-label="Close support"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-zinc-500 transition hover:bg-white/10 hover:text-white"
+              >
+                <X size={17} />
+              </button>
             </div>
 
             {/* Primary actions */}
@@ -168,13 +191,13 @@ export default function SupportPanel() {
 
               <a
                 href={`mailto:${SUPPORT_EMAIL}`}
-                className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-medium text-zinc-300 transition hover:bg-white/[0.06]"
+                className="flex w-full min-w-0 items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-medium text-zinc-300 transition hover:bg-white/[0.06]"
               >
-                <Mail size={16} />
+                <Mail size={16} className="shrink-0" />
 
-                <span>Email us</span>
+                <span className="shrink-0">Email us</span>
 
-                <span className="ml-auto truncate text-xs text-zinc-500">
+                <span className="ml-auto min-w-0 truncate text-xs text-zinc-500">
                   {SUPPORT_EMAIL}
                 </span>
               </a>
@@ -194,6 +217,7 @@ export default function SupportPanel() {
             {/* Footer */}
             <a
               href="/help"
+              onClick={() => setIsOpen(false)}
               className="flex items-center justify-center gap-1.5 border-t border-white/[0.06] py-3 text-xs font-medium text-zinc-500 transition hover:text-violet-300"
             >
               @clinq

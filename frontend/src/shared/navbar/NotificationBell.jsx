@@ -6,6 +6,7 @@ import {
   UserPlus,
   Trophy,
   CheckCircle2,
+  X,
 } from "lucide-react";
 import { useNotifications } from "../notifications/NotificationContext";
 
@@ -15,42 +16,34 @@ const ICONS = {
   follow: { icon: UserPlus, className: "text-violet-400" },
   rank: { icon: Trophy, className: "text-amber-400" },
   submission: { icon: CheckCircle2, className: "text-emerald-400" },
-
   "support.ticket_response": {
     icon: MessageCircle,
     className: "text-sky-400",
   },
-
   "content.campaign_published": {
     icon: CheckCircle2,
     className: "text-emerald-400",
   },
-
   "content.joined_campaign_changed": {
     icon: MessageCircle,
     className: "text-amber-400",
   },
-
   "content.joined_campaign_closed": {
     icon: CheckCircle2,
     className: "text-rose-400",
   },
-
   "earnings.withdrawal_requested": {
     icon: CheckCircle2,
     className: "text-amber-400",
   },
-
   "earnings.withdrawal_status": {
     icon: CheckCircle2,
     className: "text-amber-400",
   },
-
   "earnings.payment_received": {
     icon: CheckCircle2,
     className: "text-emerald-400",
   },
-
   "earnings.pending_payout_approved": {
     icon: CheckCircle2,
     className: "text-emerald-400",
@@ -65,19 +58,14 @@ function formatTime(ts) {
   if (mins < 60) return `${mins}m`;
 
   const hrs = Math.floor(mins / 60);
-
   if (hrs < 24) return `${hrs}h`;
 
   return `${Math.floor(hrs / 24)}d`;
 }
 
 export default function NotificationBell() {
-  const {
-    notifications,
-    unreadCount,
-    markRead,
-    markAllRead,
-  } = useNotifications();
+  const { notifications, unreadCount, markRead, markAllRead } =
+    useNotifications();
 
   const unseenNotifications = notifications.filter(
     (notification) => !notification.read
@@ -95,18 +83,18 @@ export default function NotificationBell() {
 
     document.addEventListener("mousedown", handleClickOutside);
 
-    return () => {
+    return () =>
       document.removeEventListener("mousedown", handleClickOutside);
-    };
   }, []);
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative shrink-0" ref={ref}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="relative flex h-10 w-10 items-center justify-center rounded-full text-zinc-400 transition hover:bg-white/5 hover:text-white"
         aria-label="Notifications"
+        aria-expanded={open}
+        className="relative flex h-10 w-10 items-center justify-center rounded-full text-zinc-400 transition hover:bg-white/5 hover:text-white"
       >
         <Bell size={19} />
 
@@ -122,8 +110,8 @@ export default function NotificationBell() {
           className="
             fixed
             right-2
-            top-[4.5rem]
-            z-[60]
+            top-[4.25rem]
+            z-[100]
             w-[calc(100vw-1rem)]
             max-w-80
             overflow-hidden
@@ -132,12 +120,12 @@ export default function NotificationBell() {
             border-white/10
             bg-[#15151F]
             shadow-2xl
-
             sm:absolute
             sm:right-0
             sm:top-full
             sm:mt-2
             sm:w-80
+            sm:max-w-none
           "
         >
           <div className="flex items-center justify-between border-b border-white/10 p-4">
@@ -145,18 +133,30 @@ export default function NotificationBell() {
               Notifications
             </p>
 
-            {unreadCount > 0 && (
+            <div className="flex items-center gap-3">
+              {unreadCount > 0 && (
+                <button
+                  type="button"
+                  onClick={markAllRead}
+                  className="text-xs font-medium text-violet-400 transition hover:text-violet-300"
+                >
+                  Mark all read
+                </button>
+              )}
+
+              {/* Mobile + desktop close */}
               <button
                 type="button"
-                onClick={markAllRead}
-                className="text-xs font-medium text-violet-400 transition hover:text-violet-300"
+                onClick={() => setOpen(false)}
+                aria-label="Close notifications"
+                className="flex h-7 w-7 items-center justify-center rounded-full text-zinc-500 transition hover:bg-white/10 hover:text-white"
               >
-                Mark all read
+                <X size={16} />
               </button>
-            )}
+            </div>
           </div>
 
-          <div className="max-h-[70dvh] overflow-y-auto custom-scrollbar">
+          <div className="max-h-[70vh] overflow-y-auto custom-scrollbar">
             {unseenNotifications.length > 0 ? (
               unseenNotifications.map((n) => {
                 const meta = ICONS[n.type] || ICONS.like;
