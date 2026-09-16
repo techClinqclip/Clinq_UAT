@@ -93,6 +93,7 @@ function CampaignCard({ campaign, onTogglePause }) {
   const numericPaidOut = Number(paidOut) || 0;
   const progress = numericBudget ? Math.min(100, Math.round((numericPaidOut / numericBudget) * 100)) : 0;
   const isActive = String(status).toLowerCase() === "active";
+  const isClosed = String(status).toLowerCase() === "closed";
   const statusLabel = capitalize(status);
   const title = name || "Untitled campaign";
   const remainingBudget = Number(
@@ -238,38 +239,67 @@ function CampaignCard({ campaign, onTogglePause }) {
       </div>
 
       <div className="grid grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-out lg:grid-rows-[0fr] lg:group-hover:grid-rows-[1fr] lg:group-focus-within:grid-rows-[1fr]">
-        <div className="overflow-hidden">
-          <div className="mt-5 flex flex-wrap gap-2 border-t border-white/5 p-5 pt-5">
-            <Link
-              to={`/brand/campaigns/${campaign.accessKey}`}
-              onClick={(e) => e.stopPropagation()}
-              className={`flex-1 rounded-xl px-4 py-2.5 text-center text-sm font-medium text-white transition ${a.solidBtn}`}
-            >
-              Open Campaign
-            </Link>
-            <Link
-              to={`/brand/campaigns/${campaign.id}/edit`}
-              onClick={(e) => e.stopPropagation()}
-              className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white transition hover:border-white/30"
-            >
-              Edit
-            </Link>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onTogglePause(campaign.id);
-              }}
-              className={`rounded-xl border px-4 py-2.5 text-sm transition ${
-                isActive
-                  ? "border-yellow-500/20 text-yellow-400 hover:bg-yellow-500/10"
-                  : "border-green-500/20 text-green-400 hover:bg-green-500/10"
-              }`}
-            >
-              {isActive ? "Pause" : "Resume"}
-            </button>
-          </div>
-        </div>
-      </div>
+  <div className="overflow-hidden">
+    <div className="mt-5 flex flex-wrap gap-2 border-t border-white/5 p-5 pt-5">
+      
+      {/* Open Campaign */}
+      <Link
+        to={`/brand/campaigns/${campaign.accessKey}`}
+        onClick={(e) => e.stopPropagation()}
+        className={`flex-1 rounded-xl px-4 py-2.5 text-center text-sm font-medium text-white transition ${a.solidBtn}`}
+      >
+        Open Campaign
+      </Link>
+
+      {/* Edit */}
+      {isClosed ? (
+        <button
+          type="button"
+          disabled
+          className="cursor-not-allowed rounded-xl border border-white/5 px-4 py-2.5 text-sm text-zinc-600 opacity-60"
+          title="Closed campaigns cannot be edited"
+        >
+          Edit
+        </button>
+      ) : (
+        <Link
+          to={`/brand/campaigns/${campaign.id}/edit`}
+          onClick={(e) => e.stopPropagation()}
+          className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white transition hover:border-white/30"
+        >
+          Edit
+        </Link>
+      )}
+
+      {/* Pause / Resume */}
+      {isClosed ? (
+        <button
+          type="button"
+          disabled
+          className="cursor-not-allowed rounded-xl border border-white/5 px-4 py-2.5 text-sm text-zinc-600 opacity-60"
+          title="Closed campaigns cannot be resumed"
+        >
+          Resume
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onTogglePause(campaign.id);
+          }}
+          className={`rounded-xl border px-4 py-2.5 text-sm transition ${
+            isActive
+              ? "border-yellow-500/20 text-yellow-400 hover:bg-yellow-500/10"
+              : "border-green-500/20 text-green-400 hover:bg-green-500/10"
+          }`}
+        >
+          {isActive ? "Pause" : "Resume"}
+        </button>
+      )}
+    </div>
+  </div>
+</div>
     </div>
   );
 }

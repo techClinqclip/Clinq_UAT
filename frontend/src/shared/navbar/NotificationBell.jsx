@@ -15,34 +15,42 @@ const ICONS = {
   follow: { icon: UserPlus, className: "text-violet-400" },
   rank: { icon: Trophy, className: "text-amber-400" },
   submission: { icon: CheckCircle2, className: "text-emerald-400" },
+
   "support.ticket_response": {
     icon: MessageCircle,
     className: "text-sky-400",
   },
+
   "content.campaign_published": {
     icon: CheckCircle2,
     className: "text-emerald-400",
   },
+
   "content.joined_campaign_changed": {
     icon: MessageCircle,
     className: "text-amber-400",
   },
+
   "content.joined_campaign_closed": {
     icon: CheckCircle2,
     className: "text-rose-400",
   },
+
   "earnings.withdrawal_requested": {
     icon: CheckCircle2,
     className: "text-amber-400",
   },
+
   "earnings.withdrawal_status": {
     icon: CheckCircle2,
     className: "text-amber-400",
   },
+
   "earnings.payment_received": {
     icon: CheckCircle2,
     className: "text-emerald-400",
   },
+
   "earnings.pending_payout_approved": {
     icon: CheckCircle2,
     className: "text-emerald-400",
@@ -94,13 +102,11 @@ export default function NotificationBell() {
 
   return (
     <div className="relative" ref={ref}>
-      {/* Bell button */}
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="relative flex h-10 w-10 items-center justify-center rounded-full text-zinc-400 transition hover:bg-white/5 hover:text-white"
         aria-label="Notifications"
-        aria-expanded={open}
       >
         <Bell size={19} />
 
@@ -114,11 +120,10 @@ export default function NotificationBell() {
       {open && (
         <div
           className="
-            absolute
-            right-0
-            top-full
-            z-50
-            mt-2
+            fixed
+            right-2
+            top-[4.5rem]
+            z-[60]
             w-[calc(100vw-1rem)]
             max-w-80
             overflow-hidden
@@ -127,11 +132,15 @@ export default function NotificationBell() {
             border-white/10
             bg-[#15151F]
             shadow-2xl
+
+            sm:absolute
+            sm:right-0
+            sm:top-full
+            sm:mt-2
             sm:w-80
           "
         >
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-white/10 p-3 sm:p-4">
+          <div className="flex items-center justify-between border-b border-white/10 p-4">
             <p className="text-sm font-semibold text-white">
               Notifications
             </p>
@@ -147,8 +156,7 @@ export default function NotificationBell() {
             )}
           </div>
 
-          {/* Notification list */}
-          <div className="max-h-[65vh] overflow-y-auto custom-scrollbar">
+          <div className="max-h-[70dvh] overflow-y-auto custom-scrollbar">
             {unseenNotifications.length > 0 ? (
               unseenNotifications.map((n) => {
                 const meta = ICONS[n.type] || ICONS.like;
@@ -159,7 +167,7 @@ export default function NotificationBell() {
                     key={n.id}
                     type="button"
                     onClick={() => markRead(n.id)}
-                    className={`flex w-full items-start gap-3 border-b border-white/5 p-3 text-left transition hover:bg-white/[0.03] sm:p-4 ${
+                    className={`flex w-full items-start gap-3 border-b border-white/5 p-4 text-left transition hover:bg-white/[0.03] ${
                       !n.read ? "bg-violet-500/[0.04]" : ""
                     }`}
                   >

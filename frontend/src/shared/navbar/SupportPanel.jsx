@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -41,7 +41,7 @@ function FaqItem({ faq }) {
         onClick={() => setOpen((o) => !o)}
         className="flex w-full items-center justify-between gap-3 py-3 text-left text-sm text-zinc-300 transition hover:text-white"
       >
-        <span className="min-w-0">{faq.q}</span>
+        {faq.q}
 
         <ChevronDown
           size={14}
@@ -108,13 +108,11 @@ export default function SupportPanel() {
 
   return (
     <div className="relative" ref={ref}>
-      {/* Support button */}
       <button
         type="button"
         onClick={() => setIsOpen((o) => !o)}
         className="flex h-10 w-10 items-center justify-center rounded-full text-zinc-400 transition hover:bg-white/5 hover:text-white"
         aria-label="Help and support"
-        aria-expanded={isOpen}
       >
         <Headphones size={19} />
       </button>
@@ -127,11 +125,10 @@ export default function SupportPanel() {
             exit={{ opacity: 0, y: -8, scale: 0.97 }}
             transition={{ duration: 0.15 }}
             className="
-              absolute
-              right-0
-              top-full
-              z-50
-              mt-2
+              fixed
+              right-2
+              top-[4.5rem]
+              z-[60]
               w-[calc(100vw-1rem)]
               max-w-96
               overflow-hidden
@@ -140,11 +137,15 @@ export default function SupportPanel() {
               border-white/10
               bg-[#131316]
               shadow-2xl
-              sm:w-96
+
+              sm:absolute
+              sm:right-0
+              sm:top-full
+              sm:mt-2
             "
           >
             {/* Header */}
-            <div className="border-b border-white/[0.06] p-4 sm:p-5">
+            <div className="border-b border-white/[0.06] p-5">
               <h3 className="text-base font-semibold text-white">
                 Help &amp; Support
               </h3>
@@ -155,32 +156,32 @@ export default function SupportPanel() {
             </div>
 
             {/* Primary actions */}
-            <div className="space-y-2 p-3 sm:p-4">
+            <div className="space-y-2 p-4">
               <button
                 type="button"
                 onClick={handleMessageSupport}
-                className="flex min-h-11 w-full items-center gap-3 rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-500"
+                className="flex w-full items-center gap-3 rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-500"
               >
                 <MessageCircle size={16} />
-                <span>Open Support Chat</span>
+                Open Support Chat
               </button>
 
               <a
                 href={`mailto:${SUPPORT_EMAIL}`}
-                className="flex min-h-11 w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-medium text-zinc-300 transition hover:bg-white/[0.06]"
+                className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-medium text-zinc-300 transition hover:bg-white/[0.06]"
               >
                 <Mail size={16} />
 
                 <span>Email us</span>
 
-                <span className="ml-auto max-w-[55%] truncate text-xs text-zinc-500">
+                <span className="ml-auto truncate text-xs text-zinc-500">
                   {SUPPORT_EMAIL}
                 </span>
               </a>
             </div>
 
             {/* FAQs */}
-            <div className="max-h-[55vh] overflow-y-auto px-4 pb-2 custom-scrollbar sm:px-5">
+            <div className="px-5 pb-2">
               <p className="pb-1 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
                 Common questions
               </p>
