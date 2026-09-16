@@ -7,7 +7,7 @@ import CTACard from "./CTACard";
 
 export default function RightSidebar({ campaigns = [] }) {
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       <PlatformStats campaigns={campaigns} />
       <TopEarners campaigns={campaigns} />
       <TrendingCategories campaigns={campaigns} />

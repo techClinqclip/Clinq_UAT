@@ -32,6 +32,11 @@ const ROUTES = [
   },
 
   {
+    test: /^\/brand\/earnings\/?$/,
+    crumbs: () => [{ label: "Wallet" }],
+  },
+
+  {
     test: /^\/brand\/messages\/?$/,
     crumbs: () => [{ label: "Messages" }],
   },
@@ -125,6 +130,11 @@ const ROUTES = [
   },
 
   {
+    test: /^\/creator\/earnings\/?$/,
+    crumbs: () => [{ label: "Wallet" }],
+  },
+
+  {
     test: /^\/creator\/messages\/?$/,
     crumbs: () => [{ label: "Messages" }],
   },
@@ -185,6 +195,13 @@ const ROUTES = [
     test: /^\/creator\/submissions\/?$/,
     crumbs: () => [
       { label: "My Submissions" },
+    ],
+  },
+
+  {
+    test: /^\/creator\/analytics\/?$/,
+    crumbs: () => [
+      { label: "Analytics" },
     ],
   },
 

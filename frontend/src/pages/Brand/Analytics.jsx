@@ -18,6 +18,7 @@ import { FaYoutube, FaInstagram, FaFacebook, FaXTwitter } from "react-icons/fa6"
 import { Link } from "react-router-dom";
 import ViewsChart from "./Components/ViewsChart";
 import PayoutChart from "./Components/PayoutChart";
+import Breadcrumbs from "../../components/Breadcrumbs";
 import { api } from "../../lib/api";
 
 /*
@@ -177,6 +178,8 @@ export default function Analytics() {
 
   return (
     <div className="space-y-8">
+      <Breadcrumbs />
+
       <div>
         <h1 className="text-4xl font-bold text-white">Analytics</h1>
         <p className="mt-2 text-zinc-400">Track campaign performance and audience growth.</p>

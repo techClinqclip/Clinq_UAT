@@ -12,11 +12,11 @@ export default function MarketplaceLayout({
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-zinc-950">
+    <div className="min-h-screen overflow-x-hidden bg-zinc-950">
       <AppSidebar />
 
       {/* Main application area */}
-      <main className="min-h-screen lg:ml-64">
+      <main className="min-h-screen md:ml-64">
         <TopNavbar role={role} />
 
         <div className="relative">
@@ -37,7 +37,7 @@ export default function MarketplaceLayout({
               On desktop, reserve ONLY the actual sidebar width.
               No artificial huge gap.
           ========================================================= */}
-          <div className="px-4 py-6 sm:px-6 sm:py-8 lg:px-8 xl:pr-[21rem]">
+          <div className="w-full px-3 py-5 sm:px-6 sm:py-8 lg:px-8 xl:pr-[21rem]">
             <div className="min-w-0">
               {children}
             </div>
@@ -74,7 +74,7 @@ export default function MarketplaceLayout({
               />
 
               {/* Drawer */}
-              <aside className="absolute right-0 top-0 flex h-[100dvh] w-[min(88vw,380px)] flex-col border-l border-white/10 bg-[#0B0B12] shadow-2xl">
+              <aside className="absolute inset-y-0 right-0 flex h-dvh w-full max-w-[380px] flex-col border-l border-white/10 bg-[#0B0B12] shadow-2xl sm:w-[min(88vw,380px)]">
                 {/* Drawer header */}
                 <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/10 px-5">
                   <div>
@@ -97,7 +97,7 @@ export default function MarketplaceLayout({
                 </div>
 
                 {/* Drawer content */}
-                <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 custom-scrollbar">
+                <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] custom-scrollbar">
                   <RightSidebar campaigns={campaigns} />
                 </div>
               </aside>
