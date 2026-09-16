@@ -29,22 +29,20 @@ function MessagesIconLink() {
 
 export default function TopNavbar() {
   return (
-    <header className="sticky top-0 z-40 flex h-16 w-full min-w-0 items-center justify-end gap-2 overflow-visible border-b border-white/10 bg-[#0B0B12]/90 px-4 backdrop-blur-xl sm:gap-3 sm:px-6 lg:px-8">
-      <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
-        <WalletChip />
+    <header className="sticky top-0 z-50 flex h-16 shrink-0 items-center justify-end gap-1.5 border-b border-white/10 bg-[#0B0B12]/95 px-3 backdrop-blur-xl sm:gap-3 sm:px-6 lg:px-8">
+      <WalletChip />
 
-        <div className="mx-1 h-6 w-px shrink-0 bg-white/10" />
+      <div className="mx-0.5 h-6 w-px shrink-0 bg-white/10 sm:mx-1" />
 
-        <NotificationBell />
+      <NotificationBell />
 
-        <SupportPanel />
+      <SupportPanel />
 
-        {FEATURES.messaging && <MessagesIconLink />}
+      {FEATURES.messaging && <MessagesIconLink />}
 
-        <div className="mx-1 h-6 w-px shrink-0 bg-white/10" />
+      <div className="mx-0.5 h-6 w-px shrink-0 bg-white/10 sm:mx-1" />
 
-        <ProfileMenu />
-      </div>
+      <ProfileMenu />
     </header>
   );
 }

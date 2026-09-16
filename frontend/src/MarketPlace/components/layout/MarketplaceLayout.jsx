@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { ChevronLeft, X } from "lucide-react";
 import AppSidebar from "../../../components/navigation/AppSidebar";
 import RightSidebar from "../rightSidebar/RightSidebar";
 import TopNavbar from "../../../shared/navbar/TopNavbar";
@@ -7,29 +9,100 @@ export default function MarketplaceLayout({
   role = "creator",
   campaigns = [],
 }) {
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
+
   return (
-    <div className="min-h-screen overflow-x-hidden bg-zinc-950">
+    <div className="min-h-screen bg-zinc-950">
       <AppSidebar />
 
-      <main className="min-w-0 lg:ml-64">
+      {/* Main application area */}
+      <main className="min-h-screen lg:ml-64">
         <TopNavbar role={role} />
 
-        <div className="px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-          <div className="grid min-w-0 grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_320px]">
-            
-            {/* Main marketplace content */}
-            <div className="min-w-0">
-              {children}
-            </div>
-
-            {/* Desktop right sidebar */}
-            <aside className="hidden min-w-0 xl:block">
-              <div className="sticky top-24 max-h-[calc(100vh-6rem)] overflow-y-auto custom-scrollbar">
+        <div className="relative">
+          {/* =========================================================
+              DESKTOP
+              Right sidebar remains sticky while main content scrolls.
+          ========================================================= */}
+          <div className="hidden xl:block">
+            <aside className="fixed right-0 top-16 bottom-0 z-30 w-80 border-l border-white/5 bg-[#0B0B12]">
+              <div className="h-full overflow-y-auto px-4 py-6 custom-scrollbar">
                 <RightSidebar campaigns={campaigns} />
               </div>
             </aside>
-
           </div>
+
+          {/* =========================================================
+              MAIN CONTENT
+              On desktop, reserve ONLY the actual sidebar width.
+              No artificial huge gap.
+          ========================================================= */}
+          <div className="px-4 py-6 sm:px-6 sm:py-8 lg:px-8 xl:pr-[21rem]">
+            <div className="min-w-0">
+              {children}
+            </div>
+          </div>
+
+          {/* =========================================================
+              MOBILE RIGHT SIDEBAR HANDLE
+              Small drawer tab in the middle-right.
+          ========================================================= */}
+          <button
+            type="button"
+            onClick={() => setRightSidebarOpen(true)}
+            aria-label="Open marketplace sidebar"
+            className={`fixed right-0 top-1/2 z-40 flex h-12 w-7 -translate-y-1/2 items-center justify-center rounded-l-xl border border-r-0 border-white/10 bg-[#15151F]/95 text-zinc-400 shadow-xl backdrop-blur-xl transition-all duration-300 hover:text-white xl:hidden ${
+              rightSidebarOpen
+                ? "pointer-events-none translate-x-full opacity-0"
+                : "translate-x-0 opacity-100"
+            }`}
+          >
+            <ChevronLeft size={16} />
+          </button>
+
+          {/* =========================================================
+              MOBILE RIGHT SIDEBAR DRAWER
+          ========================================================= */}
+          {rightSidebarOpen && (
+            <div className="fixed inset-0 z-[60] xl:hidden">
+              {/* Backdrop */}
+              <button
+                type="button"
+                aria-label="Close marketplace sidebar"
+                onClick={() => setRightSidebarOpen(false)}
+                className="absolute inset-0 bg-black/65 backdrop-blur-[2px]"
+              />
+
+              {/* Drawer */}
+              <aside className="absolute right-0 top-0 flex h-[100dvh] w-[min(88vw,380px)] flex-col border-l border-white/10 bg-[#0B0B12] shadow-2xl">
+                {/* Drawer header */}
+                <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/10 px-5">
+                  <div>
+                    <p className="text-sm font-semibold text-white">
+                      Marketplace
+                    </p>
+                    <p className="text-[11px] text-zinc-500">
+                      Insights &amp; activity
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setRightSidebarOpen(false)}
+                    aria-label="Close marketplace sidebar"
+                    className="flex h-9 w-9 items-center justify-center rounded-full text-zinc-400 transition hover:bg-white/5 hover:text-white"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                {/* Drawer content */}
+                <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 custom-scrollbar">
+                  <RightSidebar campaigns={campaigns} />
+                </div>
+              </aside>
+            </div>
+          )}
         </div>
       </main>
     </div>
