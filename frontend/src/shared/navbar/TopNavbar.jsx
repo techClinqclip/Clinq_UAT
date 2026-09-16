@@ -29,7 +29,7 @@ function MessagesIconLink() {
 
 export default function TopNavbar() {
   return (
-    <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-end gap-1.5 border-b border-white/10 bg-[#0B0B12]/95 px-3 backdrop-blur-xl sm:gap-3 sm:px-6 lg:px-8">
+    <header className="fixed inset-x-0 top-0 z-50 flex h-16 shrink-0 items-center justify-end gap-1.5 border-b border-white/10 bg-[#0B0B12]/95 px-3 backdrop-blur-xl sm:gap-3 sm:px-6 lg:left-64 lg:px-8">
       <WalletChip />
 
       <div className="mx-0.5 h-6 w-px shrink-0 bg-white/10 sm:mx-1" />
