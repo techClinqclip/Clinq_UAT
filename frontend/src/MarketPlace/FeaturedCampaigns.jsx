@@ -1,5 +1,5 @@
-import { useRef, useMemo } from "react";
-import { ChevronLeft, ChevronRight, AlertCircle, RotateCcw, Sparkles } from "lucide-react";
+import { useMemo } from "react";
+import { AlertCircle, RotateCcw, Sparkles } from "lucide-react";
 import CampaignCard from "./components/CampaignCard";
 import MarketplaceLoadingSkeleton from "../components/MarketplaceLoadingSkeleton";
 
@@ -10,53 +10,15 @@ function normalizeCampaignList(data) {
 }
 
 export default function FeaturedCampaigns({ campaigns = [], loading = false, error = null, onRetry }) {
-  const sliderRef = useRef(null);
-
   const featuredCampaigns = useMemo(() => {
     return normalizeCampaignList(campaigns).slice(0, 8);
   }, [campaigns]);
 
-  const scrollLeft = () => {
-    sliderRef.current?.scrollBy({
-      left: -420,
-      behavior: "smooth",
-    });
-  };
-
-  const scrollRight = () => {
-    sliderRef.current?.scrollBy({
-      left: 420,
-      behavior: "smooth",
-    });
-  };
-
-  const showArrows = !loading && !error && featuredCampaigns.length > 0;
-
   return (
     <section className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold text-white">Featured Campaigns</h2>
-          <p className="mt-2 text-zinc-400">Hand-picked campaigns from top brands.</p>
-        </div>
-
-        {showArrows && (
-          <div className="flex items-center gap-3">
-            <button
-              onClick={scrollLeft}
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-[#16161F] text-white transition hover:border-violet-500 hover:bg-violet-500/10"
-            >
-              <ChevronLeft size={20} />
-            </button>
-
-            <button
-              onClick={scrollRight}
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-[#16161F] text-white transition hover:border-violet-500 hover:bg-violet-500/10"
-            >
-              <ChevronRight size={20} />
-            </button>
-          </div>
-        )}
+      <div>
+        <h2 className="text-3xl font-bold text-white">Featured Campaigns</h2>
+        <p className="mt-2 text-zinc-400">Hand-picked campaigns from top brands.</p>
       </div>
 
       {loading ? (
@@ -96,14 +58,9 @@ export default function FeaturedCampaigns({ campaigns = [], loading = false, err
           </div>
         </div>
       ) : (
-        <div
-          ref={sliderRef}
-          className="flex gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory custom-scrollbar pb-2"
-        >
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {featuredCampaigns.map((campaign) => (
-            <div key={campaign.id} v className="w-[calc(100vw-2rem)] max-w-[380px] min-w-[calc(100vw-2rem)] flex-shrink-0 snap-start sm:min-w-[380px] sm:w-[380px]">
-              <CampaignCard campaign={campaign} />
-            </div>
+            <CampaignCard key={campaign.id} campaign={campaign} />
           ))}
         </div>
       )}

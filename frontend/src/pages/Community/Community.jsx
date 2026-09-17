@@ -143,7 +143,7 @@ export default function Community() {
   return (
     <CommunityProvider>
       <CommunityLayout>
-        <div className="mx-auto w-full max-w-6xl px-3 py-5 sm:px-6 sm:py-8">
+        <div className="mx-auto w-full max-w-6xl px-3 pb-5 pt-20 sm:px-6 sm:pb-8 sm:pt-24">
           <CommunityFeed />
         </div>
       </CommunityLayout>
