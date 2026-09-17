@@ -103,6 +103,7 @@ export default function Signup() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -139,6 +140,7 @@ export default function Signup() {
       next.password = "Include uppercase, lowercase, a number, and a special character.";
     if (!confirmPassword) next.confirmPassword = "Please confirm your password.";
     else if (confirmPassword !== password) next.confirmPassword = "Passwords don't match.";
+    if (!agreedToTerms) next.agreedToTerms = "Please agree to the Privacy Policy and Terms & Conditions.";
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -403,6 +405,47 @@ export default function Signup() {
                     </button>
                   </div>
                   {errors.confirmPassword && <p className="mt-1.5 text-xs text-red-400">{errors.confirmPassword}</p>}
+                </div>
+
+                <div>
+                  <label className="flex items-start gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-3.5 py-3 text-xs leading-5 text-zinc-400">
+                    <input
+                      type="checkbox"
+                      checked={agreedToTerms}
+                      onChange={(e) => {
+                        setAgreedToTerms(e.target.checked);
+                        if (errors.agreedToTerms) {
+                          setErrors((prev) => ({
+                            ...prev,
+                            agreedToTerms: "",
+                          }));
+                        }
+                      }}
+                      className={`mt-0.5 h-4 w-4 shrink-0 rounded border-white/20 bg-white/[0.03] ${a.badgeText}`}
+                    />
+                    <span>
+                      By signing up, you agree to our{" "}
+                      <Link
+                        to="/privacy"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`${a.badgeText} font-medium hover:opacity-80`}
+                      >
+                        Privacy Policy
+                      </Link>{" "}
+                      and{" "}
+                      <Link
+                        to="/terms"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`${a.badgeText} font-medium hover:opacity-80`}
+                      >
+                        Terms & Conditions
+                      </Link>
+                      .
+                    </span>
+                  </label>
+                  {errors.agreedToTerms && <p className="mt-1.5 text-xs text-red-400">{errors.agreedToTerms}</p>}
                 </div>
 
                 <button

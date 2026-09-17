@@ -52,11 +52,23 @@ export default function Withdraw() {
 
     const quickSelect = (value) => {
         if (value === "all") {
-            setAmount(String(Math.floor(availableBalance)));
+            setAmount(String(Math.max(0, Math.floor(availableBalance))));
             return;
         }
 
-        setAmount(value.toString());
+        setAmount(String(Math.max(0, value)));
+    };
+
+    const handleAmountChange = (event) => {
+        const nextAmount = event.target.value;
+        if (nextAmount === "") {
+            setAmount("");
+            return;
+        }
+
+        const nextValue = Number(nextAmount);
+        if (Number.isNaN(nextValue)) return;
+        setAmount(String(Math.max(0, nextValue)));
     };
 
     const receiveAmount = useMemo(() => withdrawalAmount, [withdrawalAmount]);
@@ -269,9 +281,11 @@ export default function Withdraw() {
 
                         <input
                             type="number"
+                            min="0"
                             placeholder="Enter amount"
                             value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
+                            onChange={handleAmountChange}
+                            onWheel={(e) => e.currentTarget.blur()}
                             className="w-full rounded-xl border border-white/10 bg-black/40 px-5 py-4 text-2xl outline-none transition focus:border-violet-500"
                         />
 

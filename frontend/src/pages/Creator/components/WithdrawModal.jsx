@@ -53,10 +53,22 @@ export default function WithdrawModal({ isOpen, onClose, availableBalance, minim
 
   const quickSelect = (val) => {
     if (val === "all") {
-      setAmount(String(availableBalance));
+      setAmount(String(Math.max(0, availableBalance)));
       return;
     }
-    setAmount(String(val));
+    setAmount(String(Math.max(0, val)));
+  };
+
+  const handleAmountChange = (e) => {
+    const nextAmount = e.target.value;
+    if (nextAmount === "") {
+      setAmount("");
+      return;
+    }
+
+    const nextValue = Number(nextAmount);
+    if (Number.isNaN(nextValue)) return;
+    setAmount(String(Math.max(0, nextValue)));
   };
 
   const handleSubmit = (e) => {
@@ -118,7 +130,8 @@ export default function WithdrawModal({ isOpen, onClose, availableBalance, minim
                   min="0"
                   placeholder="0"
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  onChange={handleAmountChange}
+                  onWheel={(e) => e.currentTarget.blur()}
                   className="w-full bg-transparent text-lg font-semibold text-white outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
               </div>
