@@ -37,7 +37,7 @@ export default function MarketplaceLayout({
               On desktop, reserve ONLY the actual sidebar width.
               No artificial huge gap.
           ========================================================= */}
-          <div className="w-full px-3 py-5 sm:px-6 sm:py-8 lg:px-8 xl:pr-[21rem]">
+          <div className="w-full px-3 pb-5 pt-5 sm:px-6 sm:pb-8 sm:pt-8 md:pt-24 lg:px-8 xl:pr-[21rem]">
             <div className="min-w-0">
               {children}
             </div>

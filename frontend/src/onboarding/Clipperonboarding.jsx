@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sparkles, Wrench, Camera, Video, Music2, AtSign, Globe, UserRound, Check, X, Loader2 } from "lucide-react";
 
-import { FaInstagram, FaYoutube, FaTiktok } from "react-icons/fa6";
+import { FaFacebook, FaInstagram, FaYoutube } from "react-icons/fa6";
 import OnboardingLayout, {
   Field,
   Input,
@@ -63,7 +63,7 @@ const INTERESTS = [
 const SOCIAL_PLATFORMS = [
   { key: "instagram", label: "Instagram", icon: FaInstagram, placeholder: "@handle" },
   { key: "youtube", label: "YouTube", icon: FaYoutube, placeholder: "channel URL or @handle" },
-  { key: "tiktok", label: "TikTok", icon: FaTiktok, placeholder: "@handle" },
+  { key: "facebook", label: "Facebook", icon: FaFacebook, placeholder: "profile or page URL" },
   { key: "twitter", label: "X / Twitter", icon: XLogoIcon, placeholder: "@handle" },
 ];
 
@@ -72,7 +72,7 @@ const emptyForm = {
   lastName: "",
   username: "",
   experience: "",
-  handles: { instagram: "", youtube: "", tiktok: "", twitter: "" },
+  handles: { instagram: "", youtube: "", facebook: "", twitter: "" },
   portfolioUrl: "",
   tools: [],
   skills: [],
