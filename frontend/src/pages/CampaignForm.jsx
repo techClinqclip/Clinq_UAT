@@ -544,7 +544,7 @@ export default function CampaignForm({ initialData, mode = "create", onSubmit, o
             className="mt-4 flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-white transition hover:bg-violet-500"
           >
             <Plus size={16} />
-            Add Resource
+            Save Resource
           </button>
 
           {errors.resources && <p className="mt-3 text-xs text-red-400">{errors.resources}</p>}
