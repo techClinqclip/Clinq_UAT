@@ -74,7 +74,11 @@ export default function Marketplace() {
       )}
 
       {!showLoader && (
-        <MarketplaceLayout role={user?.role || "creator"} campaigns={campaigns}>
+       <MarketplaceLayout
+       role={user?.role || "creator"}
+       campaigns={campaigns}
+       loading={loading}
+     >
          <HeroSection campaigns={campaigns} loading={loading} />
           <DiscoveryToolbar filters={filters} onFilterChange={updateFilter} />
 

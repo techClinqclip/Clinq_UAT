@@ -3,11 +3,11 @@ import { ChevronLeft, X } from "lucide-react";
 import AppSidebar from "../../../components/navigation/AppSidebar";
 import RightSidebar from "../rightSidebar/RightSidebar";
 import TopNavbar from "../../../shared/navbar/TopNavbar";
-
 export default function MarketplaceLayout({
   children,
   role = "creator",
   campaigns = [],
+  loading = false,
 }) {
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
 
@@ -98,7 +98,7 @@ export default function MarketplaceLayout({
 
                 {/* Drawer content */}
                 <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] custom-scrollbar">
-                  <RightSidebar campaigns={campaigns} />
+                <RightSidebar campaigns={campaigns} loading={loading} />
                 </div>
               </aside>
             </div>
