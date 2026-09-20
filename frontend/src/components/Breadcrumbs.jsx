@@ -258,6 +258,13 @@ const ROUTES = [
   },
 
   {
+    test: /^\/clipper\/analytics\/?$/,
+    crumbs: () => [
+      { label: "Analytics" },
+    ],
+  },
+  
+  {
     test: /^\/clipper\/profile\/?$/,
     crumbs: () => [
       { label: "Profile" },
