@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { FaFacebookF, FaInstagram, FaTiktok, FaYoutube } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
+import Breadcrumbs from "../../components/Breadcrumbs";
 import {
     AreaChart,
     Area,
@@ -370,9 +371,7 @@ export default function ClipperAnalytics() {
 
             <div className="space-y-8">
                 {/* Breadcrumb placeholder — replace with real breadcrumbs */}
-                <div className="mb-6 text-xs tracking-wide text-zinc-500">
-                    Clipper <span className="mx-1.5 text-zinc-700">/</span> Analytics
-                </div>
+                <Breadcrumbs />
                 {error ? (
                     <div className="rounded-3xl border border-rose-500/20 bg-rose-500/5 p-5 text-sm text-rose-200">
                         <strong>Unable to load analytics:</strong> {error}
