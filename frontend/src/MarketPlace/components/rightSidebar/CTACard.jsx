@@ -41,32 +41,44 @@ export default function CTACard() {
 
       {showGate && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
           onClick={() => setShowGate(false)}
         >
+          {/* Modal */}
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-sm rounded-3xl border border-white/10 bg-[#11111A] p-6 text-center shadow-2xl"
+            className="relative z-[10000] w-full max-w-sm rounded-3xl border border-white/10 bg-[#11111A] p-6 text-center shadow-2xl"
           >
+            {/* Close */}
             <button
               type="button"
               onClick={() => setShowGate(false)}
-              className="absolute right-4 top-4 rounded-xl p-1.5 text-zinc-500 transition hover:bg-white/5 hover:text-white"
+              aria-label="Close"
+              className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-xl text-zinc-500 transition hover:bg-white/5 hover:text-white"
             >
               <X size={16} />
             </button>
 
+            {/* Icon */}
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10">
               <ShieldAlert size={22} className="text-amber-400" />
             </div>
 
-            <h3 className="mt-4 text-lg font-semibold text-white">Brands &amp; Creators only</h3>
+            {/* Content */}
+            <h3 className="mt-4 text-lg font-semibold text-white">
+              Brands &amp; Creators only
+            </h3>
+
             <p className="mt-2 text-sm leading-6 text-zinc-400">
               Creating a campaign is only available for Brand and Creator accounts.
               Your account is currently set up as a{" "}
-              <span className="font-medium capitalize text-zinc-200">{user.role}</span>.
+              <span className="font-medium capitalize text-zinc-200">
+                {user?.role || "different account type"}
+              </span>
+              .
             </p>
 
+            {/* Action */}
             <button
               type="button"
               onClick={() => setShowGate(false)}
