@@ -72,9 +72,14 @@ class UserSettings(models.Model):
 
 
 class ResourceSampleTemplate(models.Model):
-    """The single resource-document template available to campaign owners."""
+    """The single resource-document template available to campaign owners.
 
-    document = models.FileField(upload_to='settings/resource_templates/', blank=True, null=True)
+    The file itself lives in Supabase Storage; Postgres only keeps the public
+    URL and original filename so Render's ephemeral disk is not required.
+    """
+
+    document_url = models.CharField(max_length=500, blank=True)
+    filename = models.CharField(max_length=255, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -89,4 +94,4 @@ class ResourceSampleTemplate(models.Model):
         verbose_name_plural = 'Resource Sample Template'
 
     def __str__(self):
-        return self.document.name if self.document else 'Resource sample template (not uploaded)'
+        return self.filename or self.document_url or 'Resource sample template (not uploaded)'

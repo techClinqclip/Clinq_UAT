@@ -31,5 +31,5 @@ class UserSettingsAdmin(admin.ModelAdmin):
 
 @admin.register(ResourceSampleTemplate)
 class ResourceSampleTemplateAdmin(admin.ModelAdmin):
-    list_display = ['id', 'document', 'updated_by', 'updated_at']
+    list_display = ['id', 'filename', 'document_url', 'updated_by', 'updated_at']
     readonly_fields = ['updated_at']

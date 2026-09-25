@@ -1,12 +1,19 @@
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.parsers import FormParser, MultiPartParser
-from rest_framework.exceptions import PermissionDenied
-from rest_framework.views import APIView
-from django.http import FileResponse
+from pathlib import Path
+from urllib.error import URLError
+from urllib.request import Request, urlopen
+
+from django.core.exceptions import ImproperlyConfigured
+from django.http import FileResponse, HttpResponseRedirect
 from drf_spectacular.utils import extend_schema, extend_schema_view
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from core.media_storage import upload_public_media
 
 from .models import ResourceSampleTemplate, UserSettings
 from .serializers import UserSettingsSerializer
@@ -104,12 +111,11 @@ class ResourceSampleTemplateView(APIView):
     allowed_extensions = {'.pdf', '.doc', '.docx', '.xls', '.xlsx', '.csv', '.txt'}
 
     @staticmethod
-    def _payload(request, template):
-        document_url = None
-        filename = None
-        if template.document:
-            document_url = request.build_absolute_uri(template.document.url)
-            filename = template.document.name.rsplit('/', 1)[-1]
+    def _payload(template):
+        document_url = (template.document_url or '').strip() or None
+        filename = (template.filename or '').strip() or None
+        if document_url and not filename:
+            filename = Path(document_url.split('?', 1)[0]).name or None
 
         return {
             'documentUrl': document_url,
@@ -124,7 +130,7 @@ class ResourceSampleTemplateView(APIView):
 
     def get(self, request):
         template, _ = ResourceSampleTemplate.objects.get_or_create(pk=1)
-        return Response(self._payload(request, template))
+        return Response(self._payload(template))
 
     def put(self, request):
         self._require_staff(request)
@@ -137,16 +143,30 @@ class ResourceSampleTemplateView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        original_filename = Path(document.name).name
+        try:
+            document_url = upload_public_media(
+                document,
+                folder='settings/resource_templates',
+            )
+        except ImproperlyConfigured:
+            return Response(
+                {'detail': 'Document storage is not configured. Please contact support.'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        except Exception:
+            return Response(
+                {'detail': 'Unable to store the template document. Please try again.'},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
         template, _ = ResourceSampleTemplate.objects.get_or_create(pk=1)
-        previous_document = template.document
-        template.document = document
+        template.document_url = document_url or ''
+        template.filename = original_filename
         template.updated_by = request.user
-        template.save()
+        template.save(update_fields=['document_url', 'filename', 'updated_by', 'updated_at'])
 
-        if previous_document and previous_document.name != template.document.name:
-            previous_document.delete(save=False)
-
-        return Response(self._payload(request, template))
+        return Response(self._payload(template))
 
 
 class ResourceSampleTemplateDownloadView(APIView):
@@ -156,8 +176,26 @@ class ResourceSampleTemplateDownloadView(APIView):
 
     def get(self, request):
         template = ResourceSampleTemplate.objects.filter(pk=1).first()
-        if not template or not template.document:
+        document_url = (getattr(template, 'document_url', '') or '').strip() if template else ''
+        if not template or not document_url:
             return Response({'detail': 'No resource sample template is available.'}, status=status.HTTP_404_NOT_FOUND)
 
-        filename = template.document.name.rsplit('/', 1)[-1]
-        return FileResponse(template.document.open('rb'), as_attachment=True, filename=filename)
+        filename = (template.filename or '').strip() or Path(document_url.split('?', 1)[0]).name or 'resource-sample-template'
+
+        # Absolute Supabase (or other) URLs: stream through the API so the
+        # existing authenticated frontend download helper keeps working.
+        if document_url.startswith(('https://', 'http://')):
+            try:
+                remote = urlopen(Request(document_url, method='GET'), timeout=30)
+            except (URLError, TimeoutError, ValueError, OSError):
+                return Response(
+                    {'detail': 'Unable to download the resource sample template.'},
+                    status=status.HTTP_502_BAD_GATEWAY,
+                )
+            return FileResponse(remote, as_attachment=True, filename=filename)
+
+        # Local /media fallback used in DEBUG without Supabase.
+        if document_url.startswith('/'):
+            return HttpResponseRedirect(document_url)
+
+        return Response({'detail': 'No resource sample template is available.'}, status=status.HTTP_404_NOT_FOUND)

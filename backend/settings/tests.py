@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import status
 from rest_framework.test import APITestCase
+from unittest.mock import MagicMock, patch
 
 from .models import ResourceSampleTemplate
 
@@ -37,16 +38,32 @@ class ResourceSampleTemplateApiTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+        upload = SimpleUploadedFile(
+            'resource-sample.docx', b'resource template content',
+            content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        )
+        public_url = 'https://storage.example.com/settings/resource_templates/abc.docx'
         self.client.force_authenticate(self.admin)
-        response = self.client.put(self.endpoint, {'document': upload}, format='multipart')
+        with patch('settings.views.upload_public_media', return_value=public_url) as upload_mock:
+            response = self.client.put(self.endpoint, {'document': upload}, format='multipart')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        upload_mock.assert_called_once()
+        self.assertEqual(upload_mock.call_args.kwargs['folder'], 'settings/resource_templates')
         self.assertEqual(response.data['filename'], 'resource-sample.docx')
-        self.assertIn('resource-sample.docx', response.data['documentUrl'])
-        self.assertEqual(ResourceSampleTemplate.objects.get().updated_by, self.admin)
+        self.assertEqual(response.data['documentUrl'], public_url)
 
-        response = self.client.get(f'{self.endpoint}download/')
+        template = ResourceSampleTemplate.objects.get()
+        self.assertEqual(template.updated_by, self.admin)
+        self.assertEqual(template.document_url, public_url)
+        self.assertEqual(template.filename, 'resource-sample.docx')
+
+        remote = MagicMock()
+        remote.read = MagicMock(return_value=b'resource template content')
+        with patch('settings.views.urlopen', return_value=remote) as urlopen_mock:
+            response = self.client.get(f'{self.endpoint}download/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        urlopen_mock.assert_called_once()
         self.assertIn('attachment;', response['Content-Disposition'])
         self.assertIn('resource-sample.docx', response['Content-Disposition'])
