@@ -153,18 +153,16 @@ class ResourceSampleTemplateView(APIView):
                 document,
                 folder='settings/resource_templates',
             )
-        except ImproperlyConfigured as exc:
+        except ImproperlyConfigured:
             logger.exception('Resource template upload blocked: Supabase is not configured.')
             return Response(
-                {'detail': f'Document storage is not configured: {exc}'},
+                {'detail': 'Document storage is not configured. Please contact support.'},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
-        except Exception as exc:
+        except Exception:
             logger.exception('Resource template upload to Supabase Storage failed.')
-            # Staff-only endpoint: surface the storage error so Network/Logs are not required.
-            detail = str(exc).strip() or exc.__class__.__name__
             return Response(
-                {'detail': f'Unable to store the template document: {detail}'},
+                {'detail': 'Unable to store the template document. Please try again.'},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 
@@ -174,7 +172,7 @@ class ResourceSampleTemplateView(APIView):
             template.filename = original_filename
             template.updated_by = request.user
             template.save(update_fields=['document_url', 'filename', 'updated_by', 'updated_at'])
-        except DatabaseError as exc:
+        except DatabaseError:
             logger.exception(
                 'Resource template uploaded to Supabase but database save failed. '
                 'Confirm settings migration 0003 has been applied.'
@@ -182,8 +180,8 @@ class ResourceSampleTemplateView(APIView):
             return Response(
                 {
                     'detail': (
-                        'Template was uploaded, but saving failed. '
-                        f'Confirm settings migration 0003 is applied. ({exc.__class__.__name__})'
+                        'Template was uploaded, but the database schema is missing '
+                        'document_url/filename. Run the settings migration and try again.'
                     )
                 },
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,

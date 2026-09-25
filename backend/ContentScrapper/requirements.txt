@@ -1,0 +1,3 @@
+python-dotenv
+apify-client
+google-api-python-client

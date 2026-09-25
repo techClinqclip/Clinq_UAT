@@ -10,9 +10,16 @@ BATCH_SIZE = 20
 
 
 def _load_engine():
-    project_root = Path(__file__).resolve().parents[2]
-    if str(project_root) not in sys.path:
-        sys.path.insert(0, str(project_root))
+    # Prefer backend/ContentScrapper (included in the Render Docker image).
+    # Also support the repo-root ContentScrapper used in local monorepo layouts.
+    candidates = [
+        Path(__file__).resolve().parents[1],  # backend/
+        Path(__file__).resolve().parents[2],  # repo root
+    ]
+    for root in candidates:
+        root_str = str(root)
+        if (root / 'ContentScrapper' / 'insights_engine.py').exists() and root_str not in sys.path:
+            sys.path.insert(0, root_str)
     from ContentScrapper.insights_engine import SocialInsightsEngine
     return SocialInsightsEngine()
 
