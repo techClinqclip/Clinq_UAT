@@ -1,11 +1,19 @@
 import { useEffect, useState } from "react";
-import { Plus, Trash2, ImagePlus, Check, Download } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  ImagePlus,
+  Check,
+  Download,
+  AlertTriangle,
+} from "lucide-react";
 import { FaYoutube, FaInstagram, FaFacebook, FaXTwitter } from "react-icons/fa6";
 import DatePicker from "./DatePicker";
 import useToast from "../hooks/useToast"; // adjust path to match this file's actual location
 import ProcessingModal from "../shared/ui/ProcessingModal"; // adjust path to match this file's actual location
 import { api } from "../lib/api";
 import { downloadResourceSampleTemplate } from "../lib/resourceTemplate";
+import ConfirmModal from "./clipper/components/ConfirmModal";
 
 /*
   CampaignForm — shared by CreateCampaign and EditCampaign so the two
@@ -286,6 +294,7 @@ export default function CampaignForm({
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [submitStepIndex, setSubmitStepIndex] = useState(-1);
+  const [showDiscardModal, setShowDiscardModal] = useState(false);
 
   const { showToast } = useToast();
 
@@ -433,15 +442,14 @@ export default function CampaignForm({
       resources: f.resources.filter((r) => r.id !== id),
     }));
 
-  const handleDiscard = () => {
-    const confirmed = window.confirm(
-      "Discard your changes? Any unsaved changes will be lost."
-    );
-
-    if (!confirmed) return;
-
-    window.history.back();
-  };
+    const handleDiscard = () => {
+      setShowDiscardModal(true);
+    };
+    
+    const confirmDiscard = () => {
+      setShowDiscardModal(false);
+      window.history.back();
+    };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -832,49 +840,61 @@ export default function CampaignForm({
         </Section>
 
         <div className="flex justify-end gap-3">
-          {mode === "edit" && (
-            <button
-              type="button"
-              onClick={handleDiscard}
-              disabled={submitting}
-              className="rounded-2xl border border-white/10 bg-white/5 px-6 py-3 font-medium text-zinc-300 transition hover:border-white/20 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Discard
-            </button>
-          )}
+  {mode === "edit" && (
+    <button
+      type="button"
+      onClick={handleDiscard}
+      disabled={submitting}
+      className="rounded-2xl border border-white/10 bg-white/5 px-6 py-3 font-medium text-zinc-300 transition hover:border-white/20 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      Discard
+    </button>
+  )}
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="rounded-2xl bg-violet-600 px-6 py-3 font-medium text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {submitting
-              ? mode === "edit"
-                ? "Saving…"
-                : "Creating…"
-              : mode === "edit"
-              ? "Save Changes"
-              : "Create Campaign"}
-          </button>
-        </div>
-      </form>
+  <button
+    type="submit"
+    disabled={submitting}
+    className="rounded-2xl bg-violet-600 px-6 py-3 font-medium text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-60"
+  >
+    {submitting
+      ? mode === "edit"
+        ? "Saving…"
+        : "Creating…"
+      : mode === "edit"
+      ? "Save Changes"
+      : "Create Campaign"}
+  </button>
+</div>
+</form>
 
-      <ProcessingModal
-        isOpen={submitting}
-        mode="controlled"
-        title={
-          mode === "edit"
-            ? "Saving your changes"
-            : "Creating your campaign"
-        }
-        steps={SUBMIT_STEPS}
-        currentStepIndex={submitStepIndex}
-        onComplete={() => {
-          setSubmitting(false);
-          setSubmitStepIndex(-1);
-          onSuccess?.();
-        }}
-      />
+<ConfirmModal
+  open={showDiscardModal}
+  title="Discard changes?"
+  description="Are you sure you want to discard your changes? Any unsaved changes will be lost."
+  icon={AlertTriangle}
+  color="red"
+  confirmText="Discard Changes"
+  cancelText="Keep Editing"
+  onCancel={() => setShowDiscardModal(false)}
+  onConfirm={confirmDiscard}
+/>
+
+<ProcessingModal
+  isOpen={submitting}
+  mode="controlled"
+  title={
+    mode === "edit"
+      ? "Saving your changes"
+      : "Creating your campaign"
+  }
+  steps={SUBMIT_STEPS}
+  currentStepIndex={submitStepIndex}
+  onComplete={() => {
+    setSubmitting(false);
+    setSubmitStepIndex(-1);
+    onSuccess?.();
+  }}
+/>
     </>
   );
 }
