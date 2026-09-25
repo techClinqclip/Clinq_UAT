@@ -428,10 +428,9 @@ export default function Signup() {
                       By signing up, you agree to our{" "}
                       <button
                         type="button"
-                        onClick={async (event) => {
-                          event.preventDefault();
+                        onClick={() => {
                           try {
-                            await openLegalDocument(LEGAL_DOCUMENT_KEYS.privacyPolicy);
+                            openLegalDocument(LEGAL_DOCUMENT_KEYS.privacyPolicy);
                           } catch (error) {
                             showToast({
                               type: "error",
@@ -446,10 +445,9 @@ export default function Signup() {
                       and{" "}
                       <button
                         type="button"
-                        onClick={async (event) => {
-                          event.preventDefault();
+                        onClick={() => {
                           try {
-                            await openLegalDocument(LEGAL_DOCUMENT_KEYS.termsConditions);
+                            openLegalDocument(LEGAL_DOCUMENT_KEYS.termsConditions);
                           } catch (error) {
                             showToast({
                               type: "error",

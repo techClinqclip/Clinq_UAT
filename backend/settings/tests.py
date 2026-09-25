@@ -42,7 +42,7 @@ class ResourceSampleTemplateApiTests(APITestCase):
             'resource-sample.docx', b'resource template content',
             content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         )
-        public_url = 'https://storage.example.com/settings/resource_templates/abc.docx'
+        public_url = 'https://storage.example.com/settings/resource_templates/Clinq_Event_Resourse_Template.docx'
         self.client.force_authenticate(self.admin)
         with patch('settings.views.upload_public_media', return_value=public_url) as upload_mock:
             response = self.client.put(self.endpoint, {'document': upload}, format='multipart')
@@ -50,13 +50,17 @@ class ResourceSampleTemplateApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         upload_mock.assert_called_once()
         self.assertEqual(upload_mock.call_args.kwargs['folder'], 'settings/resource_templates')
-        self.assertEqual(response.data['filename'], 'resource-sample.docx')
+        self.assertEqual(
+            upload_mock.call_args.kwargs['stored_filename'],
+            'Clinq_Event_Resourse_Template.docx',
+        )
+        self.assertEqual(response.data['filename'], 'Clinq_Event_Resourse_Template.docx')
         self.assertEqual(response.data['documentUrl'], public_url)
 
         template = ResourceSampleTemplate.objects.get()
         self.assertEqual(template.updated_by, self.admin)
         self.assertEqual(template.document_url, public_url)
-        self.assertEqual(template.filename, 'resource-sample.docx')
+        self.assertEqual(template.filename, 'Clinq_Event_Resourse_Template.docx')
 
         remote = MagicMock()
         remote.read = MagicMock(return_value=b'resource template content')
@@ -66,7 +70,7 @@ class ResourceSampleTemplateApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         urlopen_mock.assert_called_once()
         self.assertIn('attachment;', response['Content-Disposition'])
-        self.assertIn('resource-sample.docx', response['Content-Disposition'])
+        self.assertIn('Clinq_Event_Resourse_Template.docx', response['Content-Disposition'])
 
 
 class LegalDocumentApiTests(APITestCase):
@@ -101,7 +105,7 @@ class LegalDocumentApiTests(APITestCase):
             'privacy.pdf', b'%PDF-1.4 privacy',
             content_type='application/pdf',
         )
-        public_url = 'https://storage.example.com/settings/legal_documents/privacy_policy/abc.pdf'
+        public_url = 'https://storage.example.com/settings/legal_documents/privacy_policy/Clinq_Privacy_and_Policy.pdf'
         self.client.force_authenticate(self.admin)
         with patch('settings.views.upload_public_media', return_value=public_url) as upload_mock:
             response = self.client.put(self.privacy_endpoint, {'document': upload}, format='multipart')
@@ -112,12 +116,17 @@ class LegalDocumentApiTests(APITestCase):
             upload_mock.call_args.kwargs['folder'],
             'settings/legal_documents/privacy_policy',
         )
-        self.assertEqual(response.data['filename'], 'privacy.pdf')
+        self.assertEqual(
+            upload_mock.call_args.kwargs['stored_filename'],
+            'Clinq_Privacy_and_Policy.pdf',
+        )
+        self.assertEqual(response.data['filename'], 'Clinq_Privacy_and_Policy.pdf')
         self.assertEqual(response.data['documentUrl'], public_url)
 
         document = LegalDocument.objects.get(key=LegalDocument.PRIVACY_POLICY)
         self.assertEqual(document.updated_by, self.admin)
         self.assertEqual(document.document_url, public_url)
+        self.assertEqual(document.filename, 'Clinq_Privacy_and_Policy.pdf')
 
         remote = MagicMock()
         remote.read = MagicMock(return_value=b'%PDF-1.4 privacy')
@@ -125,7 +134,7 @@ class LegalDocumentApiTests(APITestCase):
             response = self.client.get(f'{self.privacy_endpoint}download/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('privacy.pdf', response['Content-Disposition'])
+        self.assertIn('Clinq_Privacy_and_Policy.pdf', response['Content-Disposition'])
 
     def test_unknown_legal_document_key_returns_404(self):
         response = self.client.get('/api/settings/legal-documents/unknown_doc/')

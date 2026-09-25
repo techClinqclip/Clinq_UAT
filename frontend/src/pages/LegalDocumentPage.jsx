@@ -1,14 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Download, FileText, Loader2 } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import Navbar from "../components/Hero/Navbar";
 import Footer from "../components/Footer/Footer";
 import { API_BASE_URL } from "../lib/api";
-import { downloadLegalDocument } from "../lib/resourceTemplate";
-
-function isPdfDocument(documentMeta) {
-  const name = String(documentMeta?.filename || documentMeta?.documentUrl || "").toLowerCase();
-  return name.includes(".pdf");
-}
+import { downloadLegalDocument, getInlineDocumentViewerUrl } from "../lib/resourceTemplate";
 
 export default function LegalDocumentPage({
   documentKey,
@@ -51,8 +46,8 @@ export default function LegalDocumentPage({
     };
   }, [documentKey, title]);
 
-  const canEmbedPdf = useMemo(
-    () => Boolean(documentMeta?.documentUrl) && isPdfDocument(documentMeta),
+  const viewerUrl = useMemo(
+    () => getInlineDocumentViewerUrl(documentMeta?.documentUrl, documentMeta?.filename),
     [documentMeta],
   );
 
@@ -85,7 +80,7 @@ export default function LegalDocumentPage({
                 type="button"
                 onClick={handleDownload}
                 disabled={isDownloading}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isDownloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                 {isDownloading ? "Downloading..." : "Download"}
@@ -105,39 +100,12 @@ export default function LegalDocumentPage({
               <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 px-4 py-6 text-sm text-amber-200">
                 This document has not been uploaded yet. Please check back soon.
               </div>
-            ) : canEmbedPdf ? (
+            ) : (
               <iframe
                 title={title}
-                src={documentMeta.documentUrl}
-                className="h-[75vh] w-full rounded-2xl border border-white/10 bg-black"
+                src={viewerUrl}
+                className="h-[75vh] w-full rounded-2xl border border-white/10 bg-white"
               />
-            ) : (
-              <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-8 text-center">
-                <FileText className="mx-auto text-violet-300" size={28} />
-                <p className="mt-3 text-sm text-zinc-300">
-                  Preview is available for PDF files. Open or download{" "}
-                  <span className="font-medium text-white">{documentMeta.filename}</span> to review this document.
-                </p>
-                <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-                  <a
-                    href={documentMeta.documentUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-violet-500"
-                  >
-                    Open document
-                  </a>
-                  <button
-                    type="button"
-                    onClick={handleDownload}
-                    disabled={isDownloading}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isDownloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-                    Download
-                  </button>
-                </div>
-              </div>
             )}
           </div>
         </div>

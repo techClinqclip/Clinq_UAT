@@ -26,14 +26,23 @@ LEGAL_DOCUMENT_CONFIG = {
     LegalDocument.PRIVACY_POLICY: {
         'label': 'Privacy Policy',
         'folder': 'settings/legal_documents/privacy_policy',
-        'default_filename': 'privacy-policy',
+        'stored_basename': 'Clinq_Privacy_and_Policy',
+        'default_filename': 'Clinq_Privacy_and_Policy',
     },
     LegalDocument.TERMS_CONDITIONS: {
         'label': 'Terms & Conditions',
         'folder': 'settings/legal_documents/terms_conditions',
-        'default_filename': 'terms-and-conditions',
+        'stored_basename': 'Clinq_Terms_and_Conditions',
+        'default_filename': 'Clinq_Terms_and_Conditions',
     },
 }
+
+RESOURCE_TEMPLATE_STORED_BASENAME = 'Clinq_Event_Resourse_Template'
+
+
+def _stored_filename(basename, uploaded_name):
+    suffix = Path(str(uploaded_name or '')).suffix.lower() or '.pdf'
+    return f'{basename}{suffix}'
 
 
 def _document_payload(document, *, include_key=False):
@@ -188,10 +197,13 @@ class ResourceSampleTemplateView(APIView):
             )
 
         original_filename = Path(document.name).name
+        stored_filename = _stored_filename(RESOURCE_TEMPLATE_STORED_BASENAME, original_filename)
         try:
             document_url = upload_public_media(
                 document,
                 folder='settings/resource_templates',
+                stored_filename=stored_filename,
+                inline=True,
             )
         except ImproperlyConfigured:
             logger.exception('Resource template upload blocked: Supabase is not configured.')
@@ -209,7 +221,7 @@ class ResourceSampleTemplateView(APIView):
         try:
             template, _ = ResourceSampleTemplate.objects.get_or_create(pk=1)
             template.document_url = document_url or ''
-            template.filename = original_filename
+            template.filename = stored_filename
             template.updated_by = request.user
             template.save(update_fields=['document_url', 'filename', 'updated_by', 'updated_at'])
         except DatabaseError:
@@ -292,10 +304,13 @@ class LegalDocumentView(APIView):
             )
 
         original_filename = Path(document_file.name).name
+        stored_filename = _stored_filename(config['stored_basename'], original_filename)
         try:
             document_url = upload_public_media(
                 document_file,
                 folder=config['folder'],
+                stored_filename=stored_filename,
+                inline=True,
             )
         except ImproperlyConfigured:
             logger.exception('%s upload blocked: Supabase is not configured.', config['label'])
@@ -313,7 +328,7 @@ class LegalDocumentView(APIView):
         try:
             document, _ = LegalDocument.objects.get_or_create(key=key)
             document.document_url = document_url or ''
-            document.filename = original_filename
+            document.filename = stored_filename
             document.updated_by = request.user
             document.save(update_fields=['document_url', 'filename', 'updated_by', 'updated_at'])
         except DatabaseError:
