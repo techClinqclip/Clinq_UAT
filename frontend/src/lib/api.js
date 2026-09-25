@@ -341,6 +341,7 @@ export async function loginWithGoogle(type = null, next = '/dashboard') {
 
 export async function finishGoogleAuth(type = null) {
   const supabaseClient = await getSupabaseClient();
+
   if (!supabaseClient) {
     throw new Error('Supabase auth is not configured.');
   }
@@ -348,18 +349,25 @@ export async function finishGoogleAuth(type = null) {
   const normalizedType = normalizeUserType(type) || null;
 
   const { data, error } = await supabaseClient.auth.getSession();
+
   if (error) {
     throw error;
   }
 
   let accessToken = data?.session?.access_token;
+
   if (!accessToken) {
-    const hash = typeof window !== 'undefined' ? window.location.hash : '';
+    const hash =
+      typeof window !== 'undefined' ? window.location.hash : '';
+
     const params = new URLSearchParams(hash.replace(/^#/, ''));
     const tokenFromHash = params.get('access_token');
 
     if (tokenFromHash) {
-      const { data: sessionData, error: sessionError } = await supabaseClient.auth.setSession({
+      const {
+        data: sessionData,
+        error: sessionError,
+      } = await supabaseClient.auth.setSession({
         access_token: tokenFromHash,
         refresh_token: params.get('refresh_token') || '',
       });
@@ -376,7 +384,7 @@ export async function finishGoogleAuth(type = null) {
     throw new Error('Google sign-in session was not found.');
   }
 
-  return api('/api/auth/google/', {
+  const payload = await api('/api/auth/google/', {
     method: 'POST',
     body: {
       access_token: accessToken,
@@ -384,6 +392,10 @@ export async function finishGoogleAuth(type = null) {
       ...(normalizedType ? { type: normalizedType } : {}),
     },
   });
+
+  setAuthStorage(payload);
+
+  return payload;
 }
 
 function formatErrorMessage(data) {

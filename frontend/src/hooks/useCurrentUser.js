@@ -35,9 +35,6 @@ export default function useCurrentUser() {
       const storedUser = getStoredUser();
 
       if (!token) {
-        if (active) {
-          setUser({ role: "", name: "User" });
-        }
         return;
       }
 
