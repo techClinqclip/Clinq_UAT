@@ -253,7 +253,7 @@ export default function CampaignDetails() {
       return;
     }
     setIsEditConfirmOpen(false);
-    navigate(`/brand/campaigns/${campaign.id}/edit`);
+    navigate(`/brand/campaigns/${campaign.accessKey || accessKey}/edit`);
   };
 
   const handleExport = () => {

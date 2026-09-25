@@ -6,7 +6,7 @@ import { api } from "../lib/api";
 import ContentLoader from "../shared/ui/ContentLoader";
 
 export default function EditCampaign() {
-  const { id } = useParams();
+  const { id: accessKey } = useParams();
   const navigate = useNavigate();
   const [existingCampaign, setExistingCampaign] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -20,7 +20,7 @@ export default function EditCampaign() {
       setLoadError("");
 
       try {
-        const data = await api(`/api/content/campaigns/${id}/`);
+        const data = await api(`/api/content/campaigns/${accessKey}/`);
         if (!mounted) return;
 
         const mapped = {
@@ -52,7 +52,7 @@ export default function EditCampaign() {
     return () => {
       mounted = false;
     };
-  }, [id]);
+  }, [accessKey]);
 
   const handleUpdate = async (formData) => {
     try {
@@ -71,12 +71,12 @@ export default function EditCampaign() {
         thumbnail: formData.thumbnail || null,
       };
 
-      await api(`/api/content/campaigns/${id}/`, {
+      await api(`/api/content/campaigns/${accessKey}/`, {
         method: "PATCH",
         body: payload,
       });
 
-      navigate(`/brand/campaigns/${id}`);
+      navigate(`/brand/campaigns/${accessKey}`);
     } catch (error) {
       console.error("Update campaign failed", error);
       alert(error.message || "Unable to update campaign. Please try again.");
@@ -86,7 +86,7 @@ export default function EditCampaign() {
   if (isLoading) {
     return (
       <div className="space-y-8">
-        <Link to={`/brand/campaigns/${id}`} className="inline-flex items-center gap-2 text-zinc-400 hover:text-white">
+        <Link to={`/brand/campaigns/${accessKey}`} className="inline-flex items-center gap-2 text-zinc-400 hover:text-white">
           <ArrowLeft size={18} />
           Back to Campaign
         </Link>
@@ -99,7 +99,7 @@ export default function EditCampaign() {
     return (
       <div className="space-y-4">
         <Link
-          to={`/brand/campaigns/${id}`}
+          to={`/brand/campaigns/${accessKey}`}
           className="inline-flex items-center gap-2 text-zinc-400 hover:text-white"
         >
           <ArrowLeft size={18} />
@@ -115,7 +115,7 @@ export default function EditCampaign() {
   return (
     <div className="space-y-8">
       <Link
-        to={`/brand/campaigns/${id}`}
+        to={`/brand/campaigns/${accessKey}`}
         className="inline-flex items-center gap-2 text-zinc-400 hover:text-white"
       >
         <ArrowLeft size={18} />

@@ -263,7 +263,7 @@ function CampaignCard({ campaign, onTogglePause }) {
         </button>
       ) : (
         <Link
-          to={`/brand/campaigns/${campaign.id}/edit`}
+          to={`/brand/campaigns/${campaign.accessKey}/edit`}
           onClick={(e) => e.stopPropagation()}
           className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white transition hover:border-white/30"
         >
