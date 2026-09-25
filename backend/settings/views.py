@@ -1,8 +1,10 @@
+import logging
 from pathlib import Path
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
 from django.core.exceptions import ImproperlyConfigured
+from django.db import DatabaseError
 from django.http import FileResponse, HttpResponseRedirect
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status, viewsets
@@ -17,6 +19,8 @@ from core.media_storage import upload_public_media
 
 from .models import ResourceSampleTemplate, UserSettings
 from .serializers import UserSettingsSerializer
+
+logger = logging.getLogger(__name__)
 
 
 @extend_schema_view(
@@ -150,21 +154,38 @@ class ResourceSampleTemplateView(APIView):
                 folder='settings/resource_templates',
             )
         except ImproperlyConfigured:
+            logger.exception('Resource template upload blocked: Supabase is not configured.')
             return Response(
                 {'detail': 'Document storage is not configured. Please contact support.'},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
         except Exception:
+            logger.exception('Resource template upload to Supabase Storage failed.')
             return Response(
                 {'detail': 'Unable to store the template document. Please try again.'},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 
-        template, _ = ResourceSampleTemplate.objects.get_or_create(pk=1)
-        template.document_url = document_url or ''
-        template.filename = original_filename
-        template.updated_by = request.user
-        template.save(update_fields=['document_url', 'filename', 'updated_by', 'updated_at'])
+        try:
+            template, _ = ResourceSampleTemplate.objects.get_or_create(pk=1)
+            template.document_url = document_url or ''
+            template.filename = original_filename
+            template.updated_by = request.user
+            template.save(update_fields=['document_url', 'filename', 'updated_by', 'updated_at'])
+        except DatabaseError:
+            logger.exception(
+                'Resource template uploaded to Supabase but database save failed. '
+                'Confirm settings migration 0003 has been applied.'
+            )
+            return Response(
+                {
+                    'detail': (
+                        'Template was uploaded, but the database schema is missing '
+                        'document_url/filename. Run the settings migration and try again.'
+                    )
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
 
         return Response(self._payload(template))
 
