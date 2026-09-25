@@ -371,11 +371,11 @@ class CampaignViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'], url_path='admin-scrape-insights', permission_classes=[IsAdminUser])
     def admin_scrape_insights(self, request):
-        """Start the insights scraper without blocking the HTTP request.
+        """Start the insights scraper in a background thread on the API process.
 
-        Prefers Celery when Redis/worker are healthy. If queueing fails (common
-        on free-tier Redis reconnect issues), falls back to an in-process
-        background thread so scraping still runs.
+        This avoids Redis/Celery so free-tier Render Redis outages cannot block
+        scraping. The HTTP response returns immediately; Apify work continues
+        in-process and the admin is notified when finished.
         """
         import logging
         import threading
@@ -384,7 +384,6 @@ class CampaignViewSet(viewsets.ModelViewSet):
         logger = logging.getLogger(__name__)
 
         try:
-            from .tasks import scrape_campaign_insights_task
             from .scraper_service import _load_engine, scrape_active_campaign_submissions
             _load_engine()
         except (ImportError, ModuleNotFoundError) as error:
@@ -401,29 +400,6 @@ class CampaignViewSet(viewsets.ModelViewSet):
             )
 
         requested_by_user_id = request.user.id
-
-        try:
-            async_result = scrape_campaign_insights_task.delay(
-                requested_by_user_id=requested_by_user_id,
-            )
-            return Response(
-                {
-                    'detail': (
-                        'Scraper started in the background. '
-                        'You will get a notification when it finishes.'
-                    ),
-                    'status': 'queued',
-                    'mode': 'celery',
-                    'taskId': async_result.id,
-                },
-                status=status.HTTP_202_ACCEPTED,
-            )
-        except Exception as celery_error:
-            logger.warning(
-                'Celery queue failed for scraper; falling back to in-process thread: %s',
-                celery_error,
-            )
-
         run_id = str(uuid.uuid4())
 
         def _run_inline_scraper():
@@ -448,14 +424,30 @@ class CampaignViewSet(viewsets.ModelViewSet):
                 )
             except Exception:
                 logger.exception('Inline scraper run failed for admin user %s', requested_by_user_id)
+                try:
+                    from notifications.helpers import notify_user_event
+                    notify_user_event(
+                        user_id=requested_by_user_id,
+                        event_type='content.scraper_failed',
+                        title='Content scraper failed',
+                        message='The content scraper failed while running. Check API logs for details.',
+                        category='content',
+                        entity_type='scraper_run',
+                        entity_id=None,
+                        payload={'run_id': run_id},
+                        priority='high',
+                        idempotency_key=f'content.scraper_failed:{requested_by_user_id}:{run_id}',
+                    )
+                except Exception:
+                    logger.exception('Failed to notify admin about scraper failure.')
 
         threading.Thread(target=_run_inline_scraper, name=f'scraper-{run_id}', daemon=True).start()
 
         return Response(
             {
                 'detail': (
-                    'Scraper started in the background on the API service '
-                    '(Celery/Redis unavailable). You will get a notification when it finishes.'
+                    'Scraper started in the background. '
+                    'You will get a notification when it finishes.'
                 ),
                 'status': 'queued',
                 'mode': 'inline',

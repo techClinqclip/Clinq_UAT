@@ -77,36 +77,3 @@ def process_uploaded_video(content_id, file_path):
     # 3. Generate a thumbnail
     # 4. Mark Content as 'available'
     pass
-
-
-@shared_task(bind=True, ignore_result=True, soft_time_limit=60 * 30, time_limit=60 * 35)
-def scrape_campaign_insights_task(self, requested_by_user_id=None):
-    """Run the Apify/YouTube insights scrape off the web request path."""
-    from .scraper_service import scrape_active_campaign_submissions
-
-    result = scrape_active_campaign_submissions()
-
-    if requested_by_user_id:
-        try:
-            from notifications.helpers import notify_user_event
-            task_id = getattr(getattr(self, 'request', None), 'id', None) or 'inline'
-            notify_user_event(
-                user_id=requested_by_user_id,
-                event_type='content.scraper_completed',
-                title='Content scraper finished',
-                message=(
-                    f"Scraper finished: {result.get('updated', 0)} submissions updated, "
-                    f"{result.get('notified', 0)} participants notified, "
-                    f"{result.get('failed', 0)} failed."
-                ),
-                category='content',
-                entity_type='scraper_run',
-                entity_id=None,
-                payload=result,
-                priority='normal',
-                idempotency_key=f"content.scraper_completed:{requested_by_user_id}:{task_id}",
-            )
-        except Exception as exc:
-            print(f"Failed to notify admin about scraper completion: {exc}")
-
-    return result

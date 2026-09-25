@@ -296,7 +296,7 @@ export default function AdminSettings() {
           <div className="min-w-0 flex-1">
             <h2 className="text-lg font-semibold">Content insights scraper</h2>
             <p className="mt-2 text-sm leading-6 text-zinc-400">
-              Fetch views and likes for pending or approved submissions belonging to active campaigns and gigs. URLs are sent to the scraper in batches of 20, and results are saved to the database.
+              Fetch views and likes for pending or approved submissions belonging to active campaigns and gigs. URLs are scraped in batches of 20 in the background on the API (no Redis/Celery required), then results are saved and participants are notified.
             </p>
             <button
               type="button"

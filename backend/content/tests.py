@@ -2599,30 +2599,7 @@ class AdminScraperTests(TestCase):
         self.client = APIClient()
         self.client.force_authenticate(user=admin)
 
-        class FakeAsyncResult:
-            id = 'task-123'
-
         with patch('content.scraper_service._load_engine', return_value=fake_engine), \
-             patch('content.tasks.scrape_campaign_insights_task.delay', return_value=FakeAsyncResult()) as delay_mock:
-            response = self.client.post('/api/content/campaigns/admin-scrape-insights/')
-
-        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-        self.assertEqual(response.data['status'], 'queued')
-        self.assertEqual(response.data['mode'], 'celery')
-        self.assertEqual(response.data['taskId'], 'task-123')
-        delay_mock.assert_called_once_with(requested_by_user_id=admin.id)
-        self.assertEqual(fake_engine.calls, [])
-
-    def test_admin_scraper_falls_back_to_inline_thread_when_celery_unavailable(self):
-        admin = User.objects.create_superuser(
-            email='scraper-fallback-admin@test.com',
-            password='testpass123',
-        )
-        self.client = APIClient()
-        self.client.force_authenticate(user=admin)
-
-        with patch('content.scraper_service._load_engine', return_value=object()), \
-             patch('content.tasks.scrape_campaign_insights_task.delay', side_effect=RuntimeError('redis down')), \
              patch('threading.Thread') as thread_mock:
             thread_mock.return_value.start = MagicMock()
             response = self.client.post('/api/content/campaigns/admin-scrape-insights/')
@@ -2630,5 +2607,21 @@ class AdminScraperTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
         self.assertEqual(response.data['status'], 'queued')
         self.assertEqual(response.data['mode'], 'inline')
+        self.assertTrue(response.data['taskId'])
         thread_mock.assert_called_once()
         thread_mock.return_value.start.assert_called_once()
+        self.assertEqual(fake_engine.calls, [])
+
+    def test_admin_scraper_rejects_missing_engine_config(self):
+        admin = User.objects.create_superuser(
+            email='scraper-config-admin@test.com',
+            password='testpass123',
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(user=admin)
+
+        with patch('content.scraper_service._load_engine', side_effect=ValueError('Missing APIFY_TOKEN in .env file')):
+            response = self.client.post('/api/content/campaigns/admin-scrape-insights/')
+
+        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+        self.assertIn('APIFY_TOKEN', response.data['error'])
