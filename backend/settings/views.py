@@ -11,16 +11,65 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.parsers import FormParser, MultiPartParser
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from core.media_storage import upload_public_media
 
-from .models import ResourceSampleTemplate, UserSettings
+from .models import LegalDocument, ResourceSampleTemplate, UserSettings
 from .serializers import UserSettingsSerializer
 
 logger = logging.getLogger(__name__)
+
+LEGAL_DOCUMENT_CONFIG = {
+    LegalDocument.PRIVACY_POLICY: {
+        'label': 'Privacy Policy',
+        'folder': 'settings/legal_documents/privacy_policy',
+        'default_filename': 'privacy-policy',
+    },
+    LegalDocument.TERMS_CONDITIONS: {
+        'label': 'Terms & Conditions',
+        'folder': 'settings/legal_documents/terms_conditions',
+        'default_filename': 'terms-and-conditions',
+    },
+}
+
+
+def _document_payload(document, *, include_key=False):
+    document_url = (getattr(document, 'document_url', '') or '').strip() or None
+    filename = (getattr(document, 'filename', '') or '').strip() or None
+    if document_url and not filename:
+        filename = Path(document_url.split('?', 1)[0]).name or None
+
+    payload = {
+        'documentUrl': document_url,
+        'filename': filename,
+        'updatedAt': getattr(document, 'updated_at', None),
+    }
+    if include_key:
+        payload['key'] = getattr(document, 'key', None)
+    return payload
+
+
+def _stream_remote_document(document_url, *, filename, missing_detail, download_error_detail):
+    document_url = (document_url or '').strip()
+    if not document_url:
+        return Response({'detail': missing_detail}, status=status.HTTP_404_NOT_FOUND)
+
+    filename = (filename or '').strip() or Path(document_url.split('?', 1)[0]).name or 'document'
+
+    if document_url.startswith(('https://', 'http://')):
+        try:
+            remote = urlopen(Request(document_url, method='GET'), timeout=30)
+        except (URLError, TimeoutError, ValueError, OSError):
+            return Response({'detail': download_error_detail}, status=status.HTTP_502_BAD_GATEWAY)
+        return FileResponse(remote, as_attachment=True, filename=filename)
+
+    if document_url.startswith('/'):
+        return HttpResponseRedirect(document_url)
+
+    return Response({'detail': missing_detail}, status=status.HTTP_404_NOT_FOUND)
 
 
 @extend_schema_view(
@@ -116,16 +165,7 @@ class ResourceSampleTemplateView(APIView):
 
     @staticmethod
     def _payload(template):
-        document_url = (template.document_url or '').strip() or None
-        filename = (template.filename or '').strip() or None
-        if document_url and not filename:
-            filename = Path(document_url.split('?', 1)[0]).name or None
-
-        return {
-            'documentUrl': document_url,
-            'filename': filename,
-            'updatedAt': template.updated_at,
-        }
+        return _document_payload(template)
 
     @staticmethod
     def _require_staff(request):
@@ -198,25 +238,119 @@ class ResourceSampleTemplateDownloadView(APIView):
     def get(self, request):
         template = ResourceSampleTemplate.objects.filter(pk=1).first()
         document_url = (getattr(template, 'document_url', '') or '').strip() if template else ''
-        if not template or not document_url:
-            return Response({'detail': 'No resource sample template is available.'}, status=status.HTTP_404_NOT_FOUND)
+        filename = (getattr(template, 'filename', '') or '').strip() if template else ''
+        return _stream_remote_document(
+            document_url,
+            filename=filename or 'resource-sample-template',
+            missing_detail='No resource sample template is available.',
+            download_error_detail='Unable to download the resource sample template.',
+        )
 
-        filename = (template.filename or '').strip() or Path(document_url.split('?', 1)[0]).name or 'resource-sample-template'
 
-        # Absolute Supabase (or other) URLs: stream through the API so the
-        # existing authenticated frontend download helper keeps working.
-        if document_url.startswith(('https://', 'http://')):
-            try:
-                remote = urlopen(Request(document_url, method='GET'), timeout=30)
-            except (URLError, TimeoutError, ValueError, OSError):
-                return Response(
-                    {'detail': 'Unable to download the resource sample template.'},
-                    status=status.HTTP_502_BAD_GATEWAY,
-                )
-            return FileResponse(remote, as_attachment=True, filename=filename)
+class LegalDocumentView(APIView):
+    """Read a legal document publicly, or replace it as a staff user."""
 
-        # Local /media fallback used in DEBUG without Supabase.
-        if document_url.startswith('/'):
-            return HttpResponseRedirect(document_url)
+    parser_classes = [MultiPartParser, FormParser]
+    allowed_extensions = {'.pdf', '.doc', '.docx', '.txt'}
 
-        return Response({'detail': 'No resource sample template is available.'}, status=status.HTTP_404_NOT_FOUND)
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
+    @staticmethod
+    def _require_staff(request):
+        if not request.user.is_staff and not request.user.is_superuser:
+            raise PermissionDenied('Only administrators can update legal documents.')
+
+    def _resolve_key(self, document_key):
+        if document_key not in LEGAL_DOCUMENT_CONFIG:
+            return None
+        return document_key
+
+    def get(self, request, document_key):
+        key = self._resolve_key(document_key)
+        if not key:
+            return Response({'detail': 'Unknown legal document.'}, status=status.HTTP_404_NOT_FOUND)
+        document, _ = LegalDocument.objects.get_or_create(key=key)
+        return Response(_document_payload(document, include_key=True))
+
+    def put(self, request, document_key):
+        self._require_staff(request)
+        key = self._resolve_key(document_key)
+        if not key:
+            return Response({'detail': 'Unknown legal document.'}, status=status.HTTP_404_NOT_FOUND)
+
+        config = LEGAL_DOCUMENT_CONFIG[key]
+        document_file = request.FILES.get('document')
+        if not document_file:
+            return Response({'detail': 'A document is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not any(document_file.name.lower().endswith(extension) for extension in self.allowed_extensions):
+            return Response(
+                {'detail': 'Upload a PDF, Word, or text document.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        original_filename = Path(document_file.name).name
+        try:
+            document_url = upload_public_media(
+                document_file,
+                folder=config['folder'],
+            )
+        except ImproperlyConfigured:
+            logger.exception('%s upload blocked: Supabase is not configured.', config['label'])
+            return Response(
+                {'detail': 'Document storage is not configured. Please contact support.'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        except Exception:
+            logger.exception('%s upload to Supabase Storage failed.', config['label'])
+            return Response(
+                {'detail': 'Unable to store the document. Please try again.'},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        try:
+            document, _ = LegalDocument.objects.get_or_create(key=key)
+            document.document_url = document_url or ''
+            document.filename = original_filename
+            document.updated_by = request.user
+            document.save(update_fields=['document_url', 'filename', 'updated_by', 'updated_at'])
+        except DatabaseError:
+            logger.exception(
+                '%s uploaded to Supabase but database save failed. '
+                'Confirm settings migration 0004 has been applied.',
+                config['label'],
+            )
+            return Response(
+                {
+                    'detail': (
+                        'Document was uploaded, but the database schema is missing. '
+                        'Run the settings migration and try again.'
+                    )
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        return Response(_document_payload(document, include_key=True))
+
+
+class LegalDocumentDownloadView(APIView):
+    """Stream a legal document publicly for signup and footer links."""
+
+    permission_classes = [AllowAny]
+
+    def get(self, request, document_key):
+        config = LEGAL_DOCUMENT_CONFIG.get(document_key)
+        if not config:
+            return Response({'detail': 'Unknown legal document.'}, status=status.HTTP_404_NOT_FOUND)
+
+        document = LegalDocument.objects.filter(key=document_key).first()
+        document_url = (getattr(document, 'document_url', '') or '').strip() if document else ''
+        filename = (getattr(document, 'filename', '') or '').strip() if document else ''
+        return _stream_remote_document(
+            document_url,
+            filename=filename or config['default_filename'],
+            missing_detail=f"No {config['label']} document is available.",
+            download_error_detail=f"Unable to download the {config['label']} document.",
+        )

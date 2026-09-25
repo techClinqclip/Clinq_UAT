@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from unittest.mock import MagicMock, patch
 
-from .models import ResourceSampleTemplate
+from .models import LegalDocument, ResourceSampleTemplate
 
 
 class ResourceSampleTemplateApiTests(APITestCase):
@@ -67,3 +67,66 @@ class ResourceSampleTemplateApiTests(APITestCase):
         urlopen_mock.assert_called_once()
         self.assertIn('attachment;', response['Content-Disposition'])
         self.assertIn('resource-sample.docx', response['Content-Disposition'])
+
+
+class LegalDocumentApiTests(APITestCase):
+    privacy_endpoint = '/api/settings/legal-documents/privacy_policy/'
+    terms_endpoint = '/api/settings/legal-documents/terms_conditions/'
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            email='legal-user@example.com', password='pass1234', type='brand'
+        )
+        self.admin = get_user_model().objects.create_superuser(
+            email='legal-admin@example.com', password='pass1234'
+        )
+
+    def test_public_users_can_read_legal_documents(self):
+        response = self.client.get(self.privacy_endpoint)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['key'], 'privacy_policy')
+        self.assertIsNone(response.data['documentUrl'])
+
+    def test_only_staff_can_replace_legal_documents(self):
+        upload = SimpleUploadedFile(
+            'privacy.pdf', b'%PDF-1.4 privacy',
+            content_type='application/pdf',
+        )
+        self.client.force_authenticate(self.user)
+        response = self.client.put(self.privacy_endpoint, {'document': upload}, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        upload = SimpleUploadedFile(
+            'privacy.pdf', b'%PDF-1.4 privacy',
+            content_type='application/pdf',
+        )
+        public_url = 'https://storage.example.com/settings/legal_documents/privacy_policy/abc.pdf'
+        self.client.force_authenticate(self.admin)
+        with patch('settings.views.upload_public_media', return_value=public_url) as upload_mock:
+            response = self.client.put(self.privacy_endpoint, {'document': upload}, format='multipart')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        upload_mock.assert_called_once()
+        self.assertEqual(
+            upload_mock.call_args.kwargs['folder'],
+            'settings/legal_documents/privacy_policy',
+        )
+        self.assertEqual(response.data['filename'], 'privacy.pdf')
+        self.assertEqual(response.data['documentUrl'], public_url)
+
+        document = LegalDocument.objects.get(key=LegalDocument.PRIVACY_POLICY)
+        self.assertEqual(document.updated_by, self.admin)
+        self.assertEqual(document.document_url, public_url)
+
+        remote = MagicMock()
+        remote.read = MagicMock(return_value=b'%PDF-1.4 privacy')
+        with patch('settings.views.urlopen', return_value=remote):
+            response = self.client.get(f'{self.privacy_endpoint}download/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('privacy.pdf', response['Content-Disposition'])
+
+    def test_unknown_legal_document_key_returns_404(self):
+        response = self.client.get('/api/settings/legal-documents/unknown_doc/')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

@@ -14,6 +14,8 @@ import Leaderboard from "../../pages/Leaderboard";
 import Messages from "../../pages/Messages";
 import ComingSoon from "../../pages/ComingSoon";
 import About from "../../pages/About";
+import PrivacyPolicy from "../../pages/PrivacyPolicy";
+import TermsAndConditions from "../../pages/TermsAndConditions";
 
 /* Admin */
 import AdminDashboard from "../../pages/Admin/Dashboard";
@@ -97,6 +99,14 @@ export const router = createBrowserRouter([
       {
         path: "about",
         element: <About />,
+      },
+      {
+        path: "privacy",
+        element: <PrivacyPolicy />,
+      },
+      {
+        path: "terms",
+        element: <TermsAndConditions />,
       },
       
 

@@ -95,3 +95,38 @@ class ResourceSampleTemplate(models.Model):
 
     def __str__(self):
         return self.filename or self.document_url or 'Resource sample template (not uploaded)'
+
+
+class LegalDocument(models.Model):
+    """Platform legal documents shown on signup and public pages.
+
+    Files are stored in Supabase Storage; Postgres keeps the public URL and
+    original filename. One row per document key.
+    """
+
+    PRIVACY_POLICY = 'privacy_policy'
+    TERMS_CONDITIONS = 'terms_conditions'
+    KEY_CHOICES = (
+        (PRIVACY_POLICY, 'Privacy Policy'),
+        (TERMS_CONDITIONS, 'Terms & Conditions'),
+    )
+
+    key = models.CharField(max_length=64, unique=True, choices=KEY_CHOICES)
+    document_url = models.CharField(max_length=500, blank=True)
+    filename = models.CharField(max_length=255, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='updated_legal_documents',
+    )
+
+    class Meta:
+        verbose_name = 'Legal Document'
+        verbose_name_plural = 'Legal Documents'
+
+    def __str__(self):
+        label = dict(self.KEY_CHOICES).get(self.key, self.key)
+        return self.filename or f'{label} (not uploaded)'
