@@ -1247,3 +1247,52 @@ def notify_user_mention(
         logger.error(f"Failed to send mention notification: {e}")
         return None
 
+
+def notify_submission_views_updated(
+    user_id,
+    *,
+    updated_count: int,
+    total_views: int,
+    campaign_names: Optional[List[str]] = None,
+    run_id: Optional[str] = None,
+) -> Optional[uuid.UUID]:
+    """Notify a participant that scraper-refreshed submission views are ready."""
+    if not user_id or updated_count <= 0:
+        return None
+
+    names = [name for name in (campaign_names or []) if name]
+    unique_names = list(dict.fromkeys(names))
+    if len(unique_names) == 1:
+        campaign_phrase = f' for "{unique_names[0]}"'
+    elif len(unique_names) > 1:
+        campaign_phrase = f' across {len(unique_names)} campaigns'
+    else:
+        campaign_phrase = ''
+
+    submission_label = 'submission' if updated_count == 1 else 'submissions'
+    title = 'Submission views updated'
+    message = (
+        f'Views for {updated_count} of your {submission_label}{campaign_phrase} '
+        f'were refreshed. Combined views are now {int(total_views):,}.'
+    )
+
+    return notify_user_event(
+        user_id=user_id,
+        event_type='content.submission_views_updated',
+        title=title,
+        message=message,
+        category='content',
+        entity_type='campaign_submission',
+        entity_id=None,
+        payload={
+            'updated_count': updated_count,
+            'total_views': int(total_views),
+            'campaign_names': unique_names[:5],
+            'run_id': str(run_id or ''),
+        },
+        priority='normal',
+        idempotency_key=(
+            f'content.submission_views_updated:{user_id}:{run_id or uuid.uuid4()}'
+        ),
+    )
+

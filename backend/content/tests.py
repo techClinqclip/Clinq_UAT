@@ -2598,15 +2598,20 @@ class AdminScraperTests(TestCase):
         fake_engine = FakeEngine()
         self.client = APIClient()
         self.client.force_authenticate(user=admin)
-        with patch('content.scraper_service._load_engine', return_value=fake_engine):
+        with patch('content.scraper_service._load_engine', return_value=fake_engine), \
+             patch('notifications.helpers.notify_submission_views_updated', return_value='event-id') as notify_mock:
             response = self.client.post('/api/content/campaigns/admin-scrape-insights/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['eligible'], 21)
         self.assertEqual(response.data['processed'], 21)
         self.assertEqual(response.data['updated'], 21)
+        self.assertEqual(response.data['notified'], 1)
         self.assertEqual(len(fake_engine.calls), 2)
         self.assertEqual([len(call) for call in fake_engine.calls], [20, 1])
         eligible[0].refresh_from_db()
         self.assertEqual(eligible[0].views, 100)
         self.assertEqual(eligible[0].likes, 10)
+        notify_mock.assert_called_once()
+        self.assertEqual(notify_mock.call_args.args[0], clipper.id)
+        self.assertEqual(notify_mock.call_args.kwargs['updated_count'], 21)
