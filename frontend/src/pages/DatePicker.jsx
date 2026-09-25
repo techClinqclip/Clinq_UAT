@@ -43,8 +43,15 @@ const buildMonthGrid = (viewDate) => {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
   const cells = [];
-  for (let i = 0; i < firstWeekday; i++) cells.push(null);
-  for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(year, month, d));
+
+  for (let i = 0; i < firstWeekday; i++) {
+    cells.push(null);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    cells.push(new Date(year, month, d));
+  }
+
   return cells;
 };
 
@@ -56,38 +63,71 @@ export default function DatePicker({
   placeholder = "Select date",
 }) {
   const [isOpen, setIsOpen] = useState(false);
+
   const selected = parseISO(value);
-  const [viewDate, setViewDate] = useState(selected || new Date());
+
+  const [viewDate, setViewDate] = useState(
+    selected || new Date()
+  );
+
   const containerRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target)
+      ) {
         setIsOpen(false);
       }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+
+    return () =>
+      document.removeEventListener(
+        "mousedown",
+        handleClickOutside
+      );
   }, []);
 
   const today = new Date();
   const min = parseISO(minDate);
   const cells = buildMonthGrid(viewDate);
 
-  const isDisabled = (day) => min && day < new Date(min.getFullYear(), min.getMonth(), min.getDate());
+  const isDisabled = (day) =>
+    min &&
+    day <
+      new Date(
+        min.getFullYear(),
+        min.getMonth(),
+        min.getDate()
+      );
 
   const selectDay = (day) => {
     if (isDisabled(day)) return;
+
     onChange(toISO(day));
     setIsOpen(false);
   };
 
   const changeMonth = (delta) => {
-    setViewDate((d) => new Date(d.getFullYear(), d.getMonth() + delta, 1));
+    setViewDate(
+      (d) =>
+        new Date(
+          d.getFullYear(),
+          d.getMonth() + delta,
+          1
+        )
+    );
   };
 
   const displayValue = selected
-    ? selected.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    ? selected.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
     : "";
 
   return (
@@ -97,10 +137,21 @@ export default function DatePicker({
         onClick={() => setIsOpen((o) => !o)}
         className="flex w-full items-center justify-between gap-2 rounded-2xl border border-white/10 bg-[#0B0B12] px-4 py-3 text-left text-white outline-none transition focus:border-violet-500"
       >
-        <span className={`flex items-center gap-2 ${displayValue ? "text-white" : "text-zinc-500"}`}>
-          <Calendar size={16} className="text-zinc-500" />
+        <span
+          className={`flex items-center gap-2 ${
+            displayValue
+              ? "text-white"
+              : "text-zinc-500"
+          }`}
+        >
+          <Calendar
+            size={16}
+            className="text-zinc-500"
+          />
+
           {displayValue || placeholder}
         </span>
+
         {clearable && value && (
           <span
             role="button"
@@ -116,7 +167,7 @@ export default function DatePicker({
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-2 w-72 rounded-2xl border border-white/10 bg-[#11111A] p-4 shadow-2xl">
+        <div className="absolute bottom-full left-0 z-50 mb-2 w-72 rounded-2xl border border-white/10 bg-[#11111A] p-4 shadow-2xl">
           <div className="flex items-center justify-between">
             <button
               type="button"
@@ -125,9 +176,14 @@ export default function DatePicker({
             >
               <ChevronLeft size={16} />
             </button>
+
             <p className="text-sm font-semibold text-white">
-              {viewDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+              {viewDate.toLocaleDateString("en-US", {
+                month: "long",
+                year: "numeric",
+              })}
             </p>
+
             <button
               type="button"
               onClick={() => changeMonth(1)}
@@ -148,6 +204,7 @@ export default function DatePicker({
           <div className="grid grid-cols-7 gap-1">
             {cells.map((day, i) => {
               if (!day) return <div key={i} />;
+
               const disabled = isDisabled(day);
               const isSelected = isSameDay(day, selected);
               const isToday = isSameDay(day, today);
