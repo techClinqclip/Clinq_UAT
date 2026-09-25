@@ -6,7 +6,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from .models import Campaign, CampaignParticipant, CampaignResource, CampaignSubmission, Content, Bid, ClipSubmission
 from .serializers import CampaignSerializer
@@ -2608,7 +2608,27 @@ class AdminScraperTests(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
         self.assertEqual(response.data['status'], 'queued')
+        self.assertEqual(response.data['mode'], 'celery')
         self.assertEqual(response.data['taskId'], 'task-123')
         delay_mock.assert_called_once_with(requested_by_user_id=admin.id)
-        # Engine is only imported/validated at queue time; actual scrape runs in Celery.
         self.assertEqual(fake_engine.calls, [])
+
+    def test_admin_scraper_falls_back_to_inline_thread_when_celery_unavailable(self):
+        admin = User.objects.create_superuser(
+            email='scraper-fallback-admin@test.com',
+            password='testpass123',
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(user=admin)
+
+        with patch('content.scraper_service._load_engine', return_value=object()), \
+             patch('content.tasks.scrape_campaign_insights_task.delay', side_effect=RuntimeError('redis down')), \
+             patch('threading.Thread') as thread_mock:
+            thread_mock.return_value.start = MagicMock()
+            response = self.client.post('/api/content/campaigns/admin-scrape-insights/')
+
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        self.assertEqual(response.data['status'], 'queued')
+        self.assertEqual(response.data['mode'], 'inline')
+        thread_mock.assert_called_once()
+        thread_mock.return_value.start.assert_called_once()

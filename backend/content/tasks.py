@@ -79,7 +79,7 @@ def process_uploaded_video(content_id, file_path):
     pass
 
 
-@shared_task(bind=True, soft_time_limit=60 * 30, time_limit=60 * 35)
+@shared_task(bind=True, ignore_result=True, soft_time_limit=60 * 30, time_limit=60 * 35)
 def scrape_campaign_insights_task(self, requested_by_user_id=None):
     """Run the Apify/YouTube insights scrape off the web request path."""
     from .scraper_service import scrape_active_campaign_submissions
@@ -89,6 +89,7 @@ def scrape_campaign_insights_task(self, requested_by_user_id=None):
     if requested_by_user_id:
         try:
             from notifications.helpers import notify_user_event
+            task_id = getattr(getattr(self, 'request', None), 'id', None) or 'inline'
             notify_user_event(
                 user_id=requested_by_user_id,
                 event_type='content.scraper_completed',
@@ -103,7 +104,7 @@ def scrape_campaign_insights_task(self, requested_by_user_id=None):
                 entity_id=None,
                 payload=result,
                 priority='normal',
-                idempotency_key=f"content.scraper_completed:{requested_by_user_id}:{self.request.id}",
+                idempotency_key=f"content.scraper_completed:{requested_by_user_id}:{task_id}",
             )
         except Exception as exc:
             print(f"Failed to notify admin about scraper completion: {exc}")

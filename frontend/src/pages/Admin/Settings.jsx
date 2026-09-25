@@ -313,6 +313,7 @@ export default function AdminSettings() {
                 {lastRun.status === "queued" ? (
                   <p>
                     Status: <span className="font-semibold text-emerald-400">Queued</span>
+                    {lastRun.mode ? <> · Mode: <span className="text-zinc-400">{lastRun.mode}</span></> : null}
                     {lastRun.taskId ? <> · Task ID: <span className="text-zinc-400">{lastRun.taskId}</span></> : null}
                   </p>
                 ) : (

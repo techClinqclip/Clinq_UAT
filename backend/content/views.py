@@ -371,11 +371,21 @@ class CampaignViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'], url_path='admin-scrape-insights', permission_classes=[IsAdminUser])
     def admin_scrape_insights(self, request):
-        """Queue the insights scraper in the background (Apify runs can exceed HTTP timeouts)."""
+        """Start the insights scraper without blocking the HTTP request.
+
+        Prefers Celery when Redis/worker are healthy. If queueing fails (common
+        on free-tier Redis reconnect issues), falls back to an in-process
+        background thread so scraping still runs.
+        """
+        import logging
+        import threading
+        import uuid
+
+        logger = logging.getLogger(__name__)
+
         try:
             from .tasks import scrape_campaign_insights_task
-            # Import-time check so missing scraper deps fail fast before queueing.
-            from .scraper_service import _load_engine
+            from .scraper_service import _load_engine, scrape_active_campaign_submissions
             _load_engine()
         except (ImportError, ModuleNotFoundError) as error:
             return Response(
@@ -390,27 +400,66 @@ class CampaignViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 
+        requested_by_user_id = request.user.id
+
         try:
-            async_result = scrape_campaign_insights_task.delay(requested_by_user_id=request.user.id)
-        except Exception as error:
+            async_result = scrape_campaign_insights_task.delay(
+                requested_by_user_id=requested_by_user_id,
+            )
             return Response(
                 {
-                    'error': (
-                        'Unable to queue the scraper background job. '
-                        f'Confirm Redis/Celery worker is running. ({error})'
-                    )
+                    'detail': (
+                        'Scraper started in the background. '
+                        'You will get a notification when it finishes.'
+                    ),
+                    'status': 'queued',
+                    'mode': 'celery',
+                    'taskId': async_result.id,
                 },
-                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                status=status.HTTP_202_ACCEPTED,
             )
+        except Exception as celery_error:
+            logger.warning(
+                'Celery queue failed for scraper; falling back to in-process thread: %s',
+                celery_error,
+            )
+
+        run_id = str(uuid.uuid4())
+
+        def _run_inline_scraper():
+            try:
+                result = scrape_active_campaign_submissions()
+                from notifications.helpers import notify_user_event
+                notify_user_event(
+                    user_id=requested_by_user_id,
+                    event_type='content.scraper_completed',
+                    title='Content scraper finished',
+                    message=(
+                        f"Scraper finished: {result.get('updated', 0)} submissions updated, "
+                        f"{result.get('notified', 0)} participants notified, "
+                        f"{result.get('failed', 0)} failed."
+                    ),
+                    category='content',
+                    entity_type='scraper_run',
+                    entity_id=None,
+                    payload=result,
+                    priority='normal',
+                    idempotency_key=f'content.scraper_completed:{requested_by_user_id}:{run_id}',
+                )
+            except Exception:
+                logger.exception('Inline scraper run failed for admin user %s', requested_by_user_id)
+
+        threading.Thread(target=_run_inline_scraper, name=f'scraper-{run_id}', daemon=True).start()
 
         return Response(
             {
                 'detail': (
-                    'Scraper started in the background. '
-                    'You will get a notification when it finishes.'
+                    'Scraper started in the background on the API service '
+                    '(Celery/Redis unavailable). You will get a notification when it finishes.'
                 ),
                 'status': 'queued',
-                'taskId': async_result.id,
+                'mode': 'inline',
+                'taskId': run_id,
             },
             status=status.HTTP_202_ACCEPTED,
         )

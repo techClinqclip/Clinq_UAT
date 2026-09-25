@@ -220,13 +220,24 @@ REST_FRAMEWORK = {
     },
 }
 
-# Celerly/ Redis Conffiguration
+# Celery / Redis Configuration
+import ssl
+
 CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-CELERY_RESULT_BACKEND = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+# Prefer broker-only operation so a flaky Redis result backend cannot block task queueing.
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", CELERY_BROKER_URL)
+CELERY_TASK_IGNORE_RESULT = os.getenv("CELERY_TASK_IGNORE_RESULT", "True").lower() in {"1", "true", "yes", "on"}
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
+# Render Key Value uses rediss:// and requires TLS options for Celery/redis-py.
+if str(CELERY_BROKER_URL).startswith("rediss://"):
+    _redis_ssl = {"ssl_cert_reqs": ssl.CERT_NONE}
+    CELERY_BROKER_USE_SSL = _redis_ssl
+    CELERY_REDIS_BACKEND_USE_SSL = _redis_ssl
 """
 CACHES = {
     "default": {
