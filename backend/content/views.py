@@ -371,10 +371,12 @@ class CampaignViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'], url_path='admin-scrape-insights', permission_classes=[IsAdminUser])
     def admin_scrape_insights(self, request):
-        """Scrape and persist insights for active campaign submissions in batches of 20."""
+        """Queue the insights scraper in the background (Apify runs can exceed HTTP timeouts)."""
         try:
-            from .scraper_service import scrape_active_campaign_submissions
-            result = scrape_active_campaign_submissions()
+            from .tasks import scrape_campaign_insights_task
+            # Import-time check so missing scraper deps fail fast before queueing.
+            from .scraper_service import _load_engine
+            _load_engine()
         except (ImportError, ModuleNotFoundError) as error:
             return Response(
                 {'error': f'Scraper dependencies are not installed: {error}'},
@@ -384,10 +386,34 @@ class CampaignViewSet(viewsets.ModelViewSet):
             return Response({'error': str(error)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         except Exception as error:
             return Response(
-                {'error': f'Insight extraction failed: {error}'},
+                {'error': f'Unable to start the scraper: {error}'},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
-        return Response(result, status=status.HTTP_200_OK)
+
+        try:
+            async_result = scrape_campaign_insights_task.delay(requested_by_user_id=request.user.id)
+        except Exception as error:
+            return Response(
+                {
+                    'error': (
+                        'Unable to queue the scraper background job. '
+                        f'Confirm Redis/Celery worker is running. ({error})'
+                    )
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        return Response(
+            {
+                'detail': (
+                    'Scraper started in the background. '
+                    'You will get a notification when it finishes.'
+                ),
+                'status': 'queued',
+                'taskId': async_result.id,
+            },
+            status=status.HTTP_202_ACCEPTED,
+        )
 
     @action(detail=False, methods=['get'], url_path='my-gigs')
     def my_gigs(self, request):

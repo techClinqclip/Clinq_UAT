@@ -158,7 +158,9 @@ export default function AdminSettings() {
       setLastRun(result);
       showToast({
         type: "success",
-        message: `Scraper completed: ${result.updated} submission${result.updated === 1 ? "" : "s"} updated.`,
+        message:
+          result.detail
+          || "Scraper started in the background. You will be notified when it finishes.",
       });
     } catch (error) {
       showToast({ type: "error", message: error.message || "Unable to run the content scraper." });
@@ -307,12 +309,21 @@ export default function AdminSettings() {
             </button>
 
             {lastRun && (
-              <div className="mt-6 grid gap-3 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm sm:grid-cols-5">
-                <div><p className="text-zinc-500">Eligible</p><p className="mt-1 font-semibold">{lastRun.eligible}</p></div>
-                <div><p className="text-zinc-500">Processed</p><p className="mt-1 font-semibold">{lastRun.processed}</p></div>
-                <div><p className="text-zinc-500">Updated</p><p className="mt-1 font-semibold text-emerald-400">{lastRun.updated}</p></div>
-                <div><p className="text-zinc-500">Notified</p><p className="mt-1 font-semibold text-sky-400">{lastRun.notified ?? 0}</p></div>
-                <div><p className="text-zinc-500">Failed</p><p className="mt-1 font-semibold text-amber-400">{lastRun.failed}</p></div>
+              <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-zinc-300">
+                {lastRun.status === "queued" ? (
+                  <p>
+                    Status: <span className="font-semibold text-emerald-400">Queued</span>
+                    {lastRun.taskId ? <> · Task ID: <span className="text-zinc-400">{lastRun.taskId}</span></> : null}
+                  </p>
+                ) : (
+                  <div className="grid gap-3 sm:grid-cols-5">
+                    <div><p className="text-zinc-500">Eligible</p><p className="mt-1 font-semibold">{lastRun.eligible}</p></div>
+                    <div><p className="text-zinc-500">Processed</p><p className="mt-1 font-semibold">{lastRun.processed}</p></div>
+                    <div><p className="text-zinc-500">Updated</p><p className="mt-1 font-semibold text-emerald-400">{lastRun.updated}</p></div>
+                    <div><p className="text-zinc-500">Notified</p><p className="mt-1 font-semibold text-sky-400">{lastRun.notified ?? 0}</p></div>
+                    <div><p className="text-zinc-500">Failed</p><p className="mt-1 font-semibold text-amber-400">{lastRun.failed}</p></div>
+                  </div>
+                )}
               </div>
             )}
           </div>
