@@ -80,6 +80,8 @@ export default function AdminSettings() {
   const { showToast } = useToast();
   const [isRunning, setIsRunning] = useState(false);
   const [lastRun, setLastRun] = useState(null);
+  const [scrapeProgress, setScrapeProgress] = useState(0);
+  const [scrapeMessage, setScrapeMessage] = useState("");
 
   const [resourceTemplate, setResourceTemplate] = useState(null);
   const [templateFile, setTemplateFile] = useState(null);
@@ -153,16 +155,49 @@ export default function AdminSettings() {
   const runScraper = async () => {
     setIsRunning(true);
     setLastRun(null);
+    setScrapeProgress(0);
+    setScrapeMessage("Starting scraper...");
     try {
-      const result = await api("/api/content/campaigns/admin-scrape-insights/", { method: "POST" });
-      setLastRun(result);
+      const started = await api("/api/content/campaigns/admin-scrape-insights/", { method: "POST" });
+      const taskId = started.taskId;
+      if (!taskId) {
+        throw new Error("Scraper started without a task id.");
+      }
+
+      setScrapeProgress(Number(started.progress || 0));
+      setScrapeMessage(started.detail || "Scraper running...");
+
+      let finalStatus = null;
+      for (let attempt = 0; attempt < 900; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        const statusPayload = await api(
+          `/api/content/campaigns/admin-scrape-insights-status/?taskId=${encodeURIComponent(taskId)}`,
+        );
+        setScrapeProgress(Number(statusPayload.progress || 0));
+        setScrapeMessage(statusPayload.message || "Scraper running...");
+
+        if (statusPayload.status === "completed") {
+          finalStatus = statusPayload;
+          break;
+        }
+        if (statusPayload.status === "failed") {
+          throw new Error(statusPayload.error || "Scraper failed.");
+        }
+      }
+
+      if (!finalStatus) {
+        throw new Error("Timed out while waiting for scraper results.");
+      }
+
+      setLastRun(finalStatus);
+      setScrapeProgress(100);
+      setScrapeMessage("Scraper completed.");
       showToast({
         type: "success",
-        message:
-          result.detail
-          || "Scraper started in the background. You will be notified when it finishes.",
+        message: `Scraper completed: ${finalStatus.updated || 0} submission${finalStatus.updated === 1 ? "" : "s"} updated.`,
       });
     } catch (error) {
+      setScrapeMessage(error.message || "Unable to run the content scraper.");
       showToast({ type: "error", message: error.message || "Unable to run the content scraper." });
     } finally {
       setIsRunning(false);
@@ -308,22 +343,37 @@ export default function AdminSettings() {
               {isRunning ? "Running scraper..." : "Run content scraper"}
             </button>
 
-            {lastRun && (
-              <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-zinc-300">
-                {lastRun.status === "queued" ? (
-                  <p>
-                    Status: <span className="font-semibold text-emerald-400">Queued</span>
-                    {lastRun.mode ? <> · Mode: <span className="text-zinc-400">{lastRun.mode}</span></> : null}
-                    {lastRun.taskId ? <> · Task ID: <span className="text-zinc-400">{lastRun.taskId}</span></> : null}
-                  </p>
-                ) : (
-                  <div className="grid gap-3 sm:grid-cols-5">
-                    <div><p className="text-zinc-500">Eligible</p><p className="mt-1 font-semibold">{lastRun.eligible}</p></div>
-                    <div><p className="text-zinc-500">Processed</p><p className="mt-1 font-semibold">{lastRun.processed}</p></div>
-                    <div><p className="text-zinc-500">Updated</p><p className="mt-1 font-semibold text-emerald-400">{lastRun.updated}</p></div>
-                    <div><p className="text-zinc-500">Notified</p><p className="mt-1 font-semibold text-sky-400">{lastRun.notified ?? 0}</p></div>
-                    <div><p className="text-zinc-500">Failed</p><p className="mt-1 font-semibold text-amber-400">{lastRun.failed}</p></div>
+            {(isRunning || lastRun) && (
+              <div className="mt-6 space-y-4 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-zinc-300">
+                {isRunning && (
+                  <div>
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <p className="text-zinc-400">{scrapeMessage || "Scraper running..."}</p>
+                      <p className="font-semibold text-white">{Math.round(scrapeProgress)}%</p>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-violet-500 transition-all duration-500"
+                        style={{ width: `${Math.max(2, Math.min(100, scrapeProgress))}%` }}
+                      />
+                    </div>
                   </div>
+                )}
+
+                {lastRun && !isRunning && (
+                  <>
+                    <p className="text-emerald-400">
+                      {lastRun.message || "Scraper completed."}
+                      {typeof lastRun.progress === "number" ? ` (${lastRun.progress}%)` : ""}
+                    </p>
+                    <div className="grid gap-3 sm:grid-cols-5">
+                      <div><p className="text-zinc-500">Eligible</p><p className="mt-1 font-semibold">{lastRun.eligible ?? 0}</p></div>
+                      <div><p className="text-zinc-500">Processed</p><p className="mt-1 font-semibold">{lastRun.processed ?? 0}</p></div>
+                      <div><p className="text-zinc-500">Updated</p><p className="mt-1 font-semibold text-emerald-400">{lastRun.updated ?? 0}</p></div>
+                      <div><p className="text-zinc-500">Notified</p><p className="mt-1 font-semibold text-sky-400">{lastRun.notified ?? 0}</p></div>
+                      <div><p className="text-zinc-500">Failed</p><p className="mt-1 font-semibold text-amber-400">{lastRun.failed ?? 0}</p></div>
+                    </div>
+                  </>
                 )}
               </div>
             )}

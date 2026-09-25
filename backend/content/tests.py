@@ -2612,6 +2612,14 @@ class AdminScraperTests(TestCase):
         thread_mock.return_value.start.assert_called_once()
         self.assertEqual(fake_engine.calls, [])
 
+        status_response = self.client.get(
+            f"/api/content/campaigns/admin-scrape-insights-status/?taskId={response.data['taskId']}"
+        )
+        self.assertEqual(status_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(status_response.data['taskId'], response.data['taskId'])
+        self.assertEqual(status_response.data['status'], 'queued')
+        self.assertEqual(status_response.data['progress'], 0)
+
     def test_admin_scraper_rejects_missing_engine_config(self):
         admin = User.objects.create_superuser(
             email='scraper-config-admin@test.com',

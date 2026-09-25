@@ -6,6 +6,7 @@ import uuid
 
 from django.db import transaction
 
+from . import scrape_jobs
 from .models import CampaignSubmission
 
 logger = logging.getLogger(__name__)
@@ -67,7 +68,7 @@ def _notify_participants(updated_by_user, *, run_id):
     return notified
 
 
-def scrape_active_campaign_submissions():
+def scrape_active_campaign_submissions(job_id=None):
     queryset = CampaignSubmission.objects.filter(
         is_deleted=False,
         status__in=['pending', 'approved'],
@@ -78,14 +79,32 @@ def scrape_active_campaign_submissions():
     )
 
     submissions = list(queryset.order_by('id'))
+    eligible = len(submissions)
+    if job_id:
+        scrape_jobs.mark_running(job_id, eligible=eligible, batch_size=BATCH_SIZE)
+
     engine = _load_engine()
     processed = 0
     updated = 0
     failed_urls = []
-    run_id = str(uuid.uuid4())
+    run_id = job_id or str(uuid.uuid4())
     updated_by_user = defaultdict(list)
 
-    for start in range(0, len(submissions), BATCH_SIZE):
+    if eligible == 0:
+        result = {
+            'eligible': 0,
+            'processed': 0,
+            'updated': 0,
+            'notified': 0,
+            'failed': 0,
+            'failed_urls': [],
+            'batch_size': BATCH_SIZE,
+        }
+        if job_id:
+            scrape_jobs.mark_completed(job_id, result)
+        return result
+
+    for start in range(0, eligible, BATCH_SIZE):
         chunk = submissions[start:start + BATCH_SIZE]
         urls = [submission.content_url for submission in chunk]
         processed += len(chunk)
@@ -93,6 +112,15 @@ def scrape_active_campaign_submissions():
             report = engine.get_metrics_report(urls)
         except Exception:
             failed_urls.extend(urls)
+            if job_id:
+                scrape_jobs.mark_progress(
+                    job_id,
+                    eligible=eligible,
+                    processed=processed,
+                    updated=updated,
+                    failed=len(failed_urls),
+                    failed_urls=failed_urls,
+                )
             continue
 
         metrics_by_url = {
@@ -129,10 +157,20 @@ def scrape_active_campaign_submissions():
                     'campaign_name': campaign_name,
                 })
 
+        if job_id:
+            scrape_jobs.mark_progress(
+                job_id,
+                eligible=eligible,
+                processed=processed,
+                updated=updated,
+                failed=len(failed_urls),
+                failed_urls=failed_urls,
+            )
+
     notified = _notify_participants(updated_by_user, run_id=run_id)
 
-    return {
-        'eligible': len(submissions),
+    result = {
+        'eligible': eligible,
         'processed': processed,
         'updated': updated,
         'notified': notified,
@@ -140,3 +178,6 @@ def scrape_active_campaign_submissions():
         'failed_urls': failed_urls[:20],
         'batch_size': BATCH_SIZE,
     }
+    if job_id:
+        scrape_jobs.mark_completed(job_id, result)
+    return result

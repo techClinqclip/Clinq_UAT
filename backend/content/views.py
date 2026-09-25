@@ -373,9 +373,7 @@ class CampaignViewSet(viewsets.ModelViewSet):
     def admin_scrape_insights(self, request):
         """Start the insights scraper in a background thread on the API process.
 
-        This avoids Redis/Celery so free-tier Render Redis outages cannot block
-        scraping. The HTTP response returns immediately; Apify work continues
-        in-process and the admin is notified when finished.
+        Progress can be polled via admin-scrape-insights-status. No Redis/Celery.
         """
         import logging
         import threading
@@ -384,6 +382,7 @@ class CampaignViewSet(viewsets.ModelViewSet):
         logger = logging.getLogger(__name__)
 
         try:
+            from . import scrape_jobs
             from .scraper_service import _load_engine, scrape_active_campaign_submissions
             _load_engine()
         except (ImportError, ModuleNotFoundError) as error:
@@ -401,10 +400,11 @@ class CampaignViewSet(viewsets.ModelViewSet):
 
         requested_by_user_id = request.user.id
         run_id = str(uuid.uuid4())
+        scrape_jobs.create_job(run_id, requested_by_user_id=requested_by_user_id)
 
         def _run_inline_scraper():
             try:
-                result = scrape_active_campaign_submissions()
+                result = scrape_active_campaign_submissions(job_id=run_id)
                 from notifications.helpers import notify_user_event
                 notify_user_event(
                     user_id=requested_by_user_id,
@@ -422,8 +422,9 @@ class CampaignViewSet(viewsets.ModelViewSet):
                     priority='normal',
                     idempotency_key=f'content.scraper_completed:{requested_by_user_id}:{run_id}',
                 )
-            except Exception:
+            except Exception as exc:
                 logger.exception('Inline scraper run failed for admin user %s', requested_by_user_id)
+                scrape_jobs.mark_failed(run_id, str(exc) or exc.__class__.__name__)
                 try:
                     from notifications.helpers import notify_user_event
                     notify_user_event(
@@ -445,16 +446,29 @@ class CampaignViewSet(viewsets.ModelViewSet):
 
         return Response(
             {
-                'detail': (
-                    'Scraper started in the background. '
-                    'You will get a notification when it finishes.'
-                ),
+                'detail': 'Scraper started. Progress will update on this page.',
                 'status': 'queued',
                 'mode': 'inline',
                 'taskId': run_id,
+                'progress': 0,
             },
             status=status.HTTP_202_ACCEPTED,
         )
+
+    @action(detail=False, methods=['get'], url_path='admin-scrape-insights-status', permission_classes=[IsAdminUser])
+    def admin_scrape_insights_status(self, request):
+        """Poll progress/result for an in-process scraper job."""
+        from . import scrape_jobs
+
+        task_id = (request.query_params.get('taskId') or request.query_params.get('task_id') or '').strip()
+        if not task_id:
+            return Response({'error': 'taskId is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        job = scrape_jobs.get_job(task_id)
+        if not job:
+            return Response({'error': 'Scraper job not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response(job, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'], url_path='my-gigs')
     def my_gigs(self, request):
