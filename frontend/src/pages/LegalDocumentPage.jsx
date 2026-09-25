@@ -115,17 +115,28 @@ export default function LegalDocumentPage({
               <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-8 text-center">
                 <FileText className="mx-auto text-violet-300" size={28} />
                 <p className="mt-3 text-sm text-zinc-300">
-                  Preview is available for PDF files. Download <span className="font-medium text-white">{documentMeta.filename}</span> to review this document.
+                  Preview is available for PDF files. Open or download{" "}
+                  <span className="font-medium text-white">{documentMeta.filename}</span> to review this document.
                 </p>
-                <button
-                  type="button"
-                  onClick={handleDownload}
-                  disabled={isDownloading}
-                  className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {isDownloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-                  Download document
-                </button>
+                <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+                  <a
+                    href={documentMeta.documentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-violet-500"
+                  >
+                    Open document
+                  </a>
+                  <button
+                    type="button"
+                    onClick={handleDownload}
+                    disabled={isDownloading}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isDownloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                    Download
+                  </button>
+                </div>
               </div>
             )}
           </div>

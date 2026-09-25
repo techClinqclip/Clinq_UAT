@@ -7,6 +7,7 @@ import {
   getOnboardingRedirectPath,
   getRoleFromPayload,
 } from "../lib/auth";
+import { LEGAL_DOCUMENT_KEYS, openLegalDocument } from "../lib/resourceTemplate";
 
 const roleConfig = {
   clipper: { title: "Creating a Clipper Account", description: "Start earning rewards by creating engaging clips.", accent: "amber" },
@@ -425,23 +426,41 @@ export default function Signup() {
                     />
                     <span>
                       By signing up, you agree to our{" "}
-                      <Link
-                        to="/privacy"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`${a.badgeText} font-medium hover:opacity-80`}
+                      <button
+                        type="button"
+                        onClick={async (event) => {
+                          event.preventDefault();
+                          try {
+                            await openLegalDocument(LEGAL_DOCUMENT_KEYS.privacyPolicy);
+                          } catch (error) {
+                            showToast({
+                              type: "error",
+                              message: error.message || "Unable to open the Privacy Policy.",
+                            });
+                          }
+                        }}
+                        className={`${a.badgeText} font-medium hover:opacity-80 underline-offset-2 hover:underline`}
                       >
                         Privacy Policy
-                      </Link>{" "}
+                      </button>{" "}
                       and{" "}
-                      <Link
-                        to="/terms"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`${a.badgeText} font-medium hover:opacity-80`}
+                      <button
+                        type="button"
+                        onClick={async (event) => {
+                          event.preventDefault();
+                          try {
+                            await openLegalDocument(LEGAL_DOCUMENT_KEYS.termsConditions);
+                          } catch (error) {
+                            showToast({
+                              type: "error",
+                              message: error.message || "Unable to open the Terms & Conditions.",
+                            });
+                          }
+                        }}
+                        className={`${a.badgeText} font-medium hover:opacity-80 underline-offset-2 hover:underline`}
                       >
                         Terms & Conditions
-                      </Link>
+                      </button>
                       .
                     </span>
                   </label>
