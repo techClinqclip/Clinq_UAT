@@ -102,7 +102,7 @@ def create_wallet_topup_order(*, user, amount: Decimal) -> dict:
             transaction_type='deposit',
             status='pending',
             payment_method='razorpay',
-            payment_details='Wallet top-up via Razorpay',
+            payment_details='Money added to wallet',
             external_ref='',
         )
 
@@ -166,7 +166,7 @@ def _credit_wallet_for_deposit(deposit: Transaction, *, payment_id: str = '') ->
     notes = (deposit.bot_notes or '').strip()
     payment_note = f'payment_id={payment_id}' if payment_id else ''
     deposit.status = 'completed'
-    deposit.payment_details = 'Wallet top-up via Razorpay'
+    deposit.payment_details = 'Money added to wallet'
     if payment_note:
         deposit.bot_notes = f'{notes}\n{payment_note}'.strip() if notes else payment_note
     deposit.save(update_fields=['status', 'payment_details', 'bot_notes', 'updated_at'])

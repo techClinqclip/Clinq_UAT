@@ -163,7 +163,29 @@ export default function BrandWallet() {
 
     const activeSpendData = buildSpendTrendData(displayData.recent_transactions || [], filter);
     const totalSpendForPeriod = activeSpendData.reduce((sum, d) => sum + Number(d.amount || 0), 0);
-    const hasTransactions = (displayData.recent_transactions || []).length > 0;
+    const recentTransactions = (displayData.recent_transactions || []).slice(0, 5);
+    const hasTransactions = recentTransactions.length > 0;
+
+    const formatTxnLabel = (txn, rawType) => {
+        const rawLabel = (txn?.paymentDetails || txn?.payment_details || txn?.label || "").toString();
+        if (/wallet top-up via razorpay/i.test(rawLabel) || rawType.includes("deposit")) {
+            return "Money added to wallet";
+        }
+        return rawLabel || "Transaction";
+    };
+
+    const formatTxnDate = (value) => {
+        if (!value) return "Just now";
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) return String(value);
+        return parsed.toLocaleString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+    };
 
     const handleFundsAdded = (result) => {
         if (typeof result?.walletBalance === "number") {
@@ -414,12 +436,16 @@ export default function BrandWallet() {
 
                 {hasTransactions ? (
                     <div className="mt-8 space-y-4">
-                        {(displayData.recent_transactions || []).map((txn) => {
+                        {recentTransactions.map((txn) => {
                             const rawType = (txn?.transactionType ?? txn?.transaction_type ?? txn?.type ?? "").toString().toLowerCase();
-                            const isDeposit = rawType.includes("deposit") || rawType.includes("add") || rawType.includes("fund");
-                            const label = txn?.paymentDetails || txn?.payment_details || txn?.label || "Transaction";
+                            const isCredit =
+                                rawType.includes("deposit")
+                                || rawType.includes("add")
+                                || rawType.includes("fund")
+                                || rawType.includes("settle");
+                            const label = formatTxnLabel(txn, rawType);
                             const amount = Number(txn?.amount ?? 0);
-                            const date = txn?.createdAt || txn?.created_at || txn?.date || "Just now";
+                            const date = formatTxnDate(txn?.createdAt || txn?.created_at || txn?.date);
                             const status = txn?.status || "Completed";
 
                             return (
@@ -430,10 +456,10 @@ export default function BrandWallet() {
                                     <div className="flex items-center gap-3">
                                         <div
                                             className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-                                                isDeposit ? "bg-emerald-500/10" : "bg-rose-500/10"
+                                                isCredit ? "bg-emerald-500/10" : "bg-rose-500/10"
                                             }`}
                                         >
-                                            {isDeposit ? (
+                                            {isCredit ? (
                                                 <ArrowUpCircle size={18} className="text-emerald-400" />
                                             ) : (
                                                 <ArrowDownCircle size={18} className="text-rose-400" />
@@ -446,14 +472,16 @@ export default function BrandWallet() {
                                     </div>
 
                                     <div className="flex items-center gap-6 md:gap-8">
-                                        <h4 className={`text-xl font-semibold ${isDeposit ? "text-emerald-400" : "text-white"}`}>
-                                            {isDeposit ? "+" : "−"}₹{amount.toLocaleString()}
+                                        <h4 className={`text-xl font-semibold ${isCredit ? "text-emerald-400" : "text-white"}`}>
+                                            {isCredit ? "+" : "−"}₹{amount.toLocaleString()}
                                         </h4>
 
                                         <span
                                             className={`rounded-full px-3 py-1 text-xs font-medium ${
                                                 String(status).toLowerCase() === "completed"
                                                     ? "bg-emerald-500/10 text-emerald-400"
+                                                    : String(status).toLowerCase() === "failed"
+                                                    ? "bg-red-500/10 text-red-400"
                                                     : "bg-amber-500/10 text-amber-400"
                                             }`}
                                         >

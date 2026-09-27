@@ -87,11 +87,17 @@ function normalizeBrandTransaction(transaction) {
             })
             : "—",
         type,
-        label:
-            transaction.paymentDetails
-            || transaction.payment_details
-            || transaction.contentTitle
-            || TXN_META[type].label,
+        label: (() => {
+            const raw =
+                transaction.paymentDetails
+                || transaction.payment_details
+                || transaction.contentTitle
+                || "";
+            if (type === "deposit" || /wallet top-up via razorpay/i.test(raw)) {
+                return "Money added to wallet";
+            }
+            return raw || TXN_META[type].label;
+        })(),
         campaign: transaction.contentTitle || null,
         amount: Number(transaction.amount || 0),
         method: transaction.paymentMethod || transaction.payment_method || (type === "deposit" ? "Razorpay" : "Wallet"),

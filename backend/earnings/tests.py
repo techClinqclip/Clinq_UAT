@@ -192,7 +192,7 @@ class WalletTopUpTests(TestCase):
             transaction_type='deposit',
             status='pending',
             payment_method='razorpay',
-            payment_details='Wallet top-up via Razorpay',
+            payment_details='Money added to wallet',
             external_ref='order_pending_456',
         )
 
