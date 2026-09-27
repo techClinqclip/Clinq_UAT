@@ -378,28 +378,40 @@ export default function CreatorWallet() {
         total_spent: 0,
         total_deposited: totalDeposited,
         earnings_monthly: [],
+        spend_monthly: [],
+        earnings_by_period: {},
+        spend_by_period: {},
         campaigns_clipping: [],
         campaigns_published: [],
         recent_transactions: transactions,
-        spend_monthly: [],
     };
-    const zeroFilledSpend = (displayData.earnings_monthly || []).map((entry) => ({
-        ...entry,
-        amount: 0,
-        previousAmount: 0,
-    }));
-
-
-    // in your fallback/displayData object, add:
-    // was missing entirely
-    // and update the chart source:
-    const chartData = chartView === "earnings"
-    ? (displayData.earnings_monthly || [])
-    : (displayData.campaign_spend_monthly?.length
-        ? displayData.campaign_spend_monthly
-        : displayData.spend_monthly?.length
-            ? displayData.spend_monthly
-            : zeroFilledSpend);
+    const CHART_FILTER_TO_PERIOD = {
+        "7 Days": "7D",
+        "30 Days": "30D",
+        "3 Months": "3M",
+        "6 Months": "6M",
+        "All Time": "ALL",
+    };
+    const periodKey = CHART_FILTER_TO_PERIOD[selectedFilter] || "30D";
+    const periodSeries =
+        chartView === "earnings"
+            ? displayData.earnings_by_period?.[periodKey]
+            : displayData.spend_by_period?.[periodKey];
+    const fallbackSeries =
+        chartView === "earnings"
+            ? displayData.earnings_monthly
+            : displayData.spend_monthly || displayData.campaign_spend_monthly;
+    const chartData = Array.isArray(periodSeries) && periodSeries.length
+        ? periodSeries
+        : Array.isArray(fallbackSeries)
+            ? fallbackSeries
+            : [];
+    const chartSummaryLabel =
+        selectedFilter === "7 Days"
+            ? "Latest Day"
+            : selectedFilter === "30 Days"
+                ? "Latest Day"
+                : "This Month";
 
     if (loading) {
         return <WalletSkeleton />;
@@ -551,20 +563,23 @@ export default function CreatorWallet() {
                 </div>
 
                 <EarningsChartCard
-    data={chartData}
-    selectedFilter={selectedFilter}
-    onFilterChange={setSelectedFilter}
-    filters={["7 Days", "30 Days", "3 Months", "6 Months", "1 Year"]}
-    title={chartView === "earnings" ? "Monthly Earnings" : "Monthly Spend"}
-    subtitle={
-        chartView === "earnings"
-            ? "Track how your rewards have grown over time."
-            : "Track how your gig spend has changed over time."
-    }
-    summaryLabel="This Month"
-    growthLabel="from last month"
-    accent={chartView === "earnings" ? "violet" : "cyan"}
-/>
+                    data={chartData}
+                    selectedFilter={selectedFilter}
+                    onFilterChange={setSelectedFilter}
+                    title={chartView === "earnings" ? "Monthly Earnings" : "Monthly Spend"}
+                    subtitle={
+                        chartView === "earnings"
+                            ? "Track how your rewards have grown over time."
+                            : "Track how your gig spend has changed over time."
+                    }
+                    summaryLabel={chartSummaryLabel}
+                    growthLabel={
+                        selectedFilter === "7 Days" || selectedFilter === "30 Days"
+                            ? "from previous day"
+                            : "from last month"
+                    }
+                    accent={chartView === "earnings" ? "violet" : "cyan"}
+                />
             </section>
 
             {/* Gigs you're clipping for */}

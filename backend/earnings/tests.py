@@ -90,6 +90,15 @@ class EarningsOverviewTests(TestCase):
         activity = response.data['recent_transactions']
         self.assertTrue(any(item['transactionType'] == 'Earning' and item['amount'] == 20.0 for item in activity))
         self.assertTrue(any(item['transactionType'] == 'Locked' and item['amount'] == 300.0 for item in activity))
+        self.assertIn('earnings_by_period', response.data)
+        self.assertIn('spend_by_period', response.data)
+        for key in ('7D', '30D', '3M', '6M', 'ALL'):
+            self.assertIn(key, response.data['earnings_by_period'])
+            self.assertIn(key, response.data['spend_by_period'])
+            self.assertTrue(len(response.data['earnings_by_period'][key]) > 0)
+            self.assertTrue(len(response.data['spend_by_period'][key]) > 0)
+        self.assertTrue(len(response.data['earnings_monthly']) > 0)
+        self.assertTrue(len(response.data['spend_monthly']) > 0)
 
 
 class WalletTopUpTests(TestCase):

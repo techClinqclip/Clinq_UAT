@@ -76,12 +76,23 @@ export default function ClipperEarnings() {
     }, [showToast]);
 
     const chartData = useMemo(() => {
-        const source = overview.monthly_earnings || [];
+        const filterToPeriod = {
+            "7 Days": "7D",
+            "30 Days": "30D",
+            "3 Months": "3M",
+            "6 Months": "6M",
+            "All Time": "ALL",
+        };
+        const periodKey = filterToPeriod[selectedFilter] || "30D";
+        const byPeriod = overview.earnings_by_period?.[periodKey];
+        if (Array.isArray(byPeriod) && byPeriod.length) return byPeriod;
+
+        const source = overview.monthly_earnings || overview.earnings_monthly || [];
         if (selectedFilter === "30 Days") return source.slice(-1);
         if (selectedFilter === "3 Months") return source.slice(-3);
         if (selectedFilter === "6 Months") return source.slice(-6);
         return source;
-    }, [overview.monthly_earnings, selectedFilter]);
+    }, [overview.monthly_earnings, overview.earnings_monthly, overview.earnings_by_period, selectedFilter]);
 
     // "Earning" transactions = money coming IN from a campaign submission (credit).
     // Anything else (withdrawal/payout request) = money going OUT of the wallet (debit).

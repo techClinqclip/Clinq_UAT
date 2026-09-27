@@ -706,31 +706,6 @@ class EarningsViewSet(viewsets.ViewSet):
             reverse=True,
         )[:50]
         
-        # Monthly earnings breakdown (last 6 months, including soft-deleted)
-        monthly_totals = {
-            row['month'].strftime('%Y-%m'): float(row['amount'] or 0)
-            for row in approved_submissions.annotate(month=TruncMonth('created_at'))
-            .values('month')
-            .annotate(amount=Sum('earning'))
-            if row['month']
-        }
-        
-        monthly_earnings = []
-        current_month = timezone.now().date().replace(day=1)
-        for offset in range(5, -1, -1):
-            year = current_month.year
-            month = current_month.month - offset
-            while month <= 0:
-                month += 12
-                year -= 1
-            month_date = datetime(year, month, 1)
-            month_label = month_date.strftime('%b')
-            month_key = f"{year}-{month:02d}"
-            monthly_earnings.append({
-                'month': month_label,
-                'amount': monthly_totals.get(month_key, 0.0),
-            })
-        
         # Available earnings = approved clip earnings minus withdrawals/transfers out.
         moved_out = Transaction.objects.filter(
             user=user,
@@ -739,12 +714,17 @@ class EarningsViewSet(viewsets.ViewSet):
         ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
         available_earnings = max(float(total_earnings) - float(moved_out), 0.0)
         pending_earnings = float(earnings_totals['pending_earnings'] or 0)
-        
+
         total_withdrawn = float(profile.total_withdrawn or 0) if profile else 0
 
-        # Campaign spend trend: money paid out to clippers on this user's
-        # campaigns/gigs (matches wallet total_spent), bucketed for the chart.
-        owned_spend_submissions = list(
+        # Chart source rows: earnings (as clipper) + spend (as campaign/gig owner).
+        earning_events = list(
+            approved_submissions
+            .exclude(earning__isnull=True)
+            .exclude(earning=0)
+            .values('created_at', 'earning')[:2000]
+        )
+        spend_events = list(
             CampaignSubmission.objects.filter(
                 participant__campaign__creator=user,
                 status='approved',
@@ -754,7 +734,23 @@ class EarningsViewSet(viewsets.ViewSet):
             .values('created_at', 'earning')[:2000]
         )
 
-        def build_spend_period_series(filter_key):
+        def _month_labels(count, with_year=False):
+            today = timezone.now().date()
+            labels = []
+            for i in range(count - 1, -1, -1):
+                year = today.year
+                month = today.month - i
+                while month <= 0:
+                    month += 12
+                    year -= 1
+                month_date = datetime(year, month, 1).date()
+                labels.append({
+                    'key': month_date.strftime('%Y-%m'),
+                    'label': month_date.strftime('%b %y' if with_year else '%b'),
+                })
+            return labels
+
+        def build_amount_period_series(events, filter_key):
             today = timezone.now().date()
             if filter_key == '7D':
                 labels = [
@@ -764,6 +760,7 @@ class EarningsViewSet(viewsets.ViewSet):
                     }
                     for i in range(6, -1, -1)
                 ]
+                daily = True
             elif filter_key == '30D':
                 labels = [
                     {
@@ -772,57 +769,52 @@ class EarningsViewSet(viewsets.ViewSet):
                     }
                     for i in range(29, -1, -1)
                 ]
+                daily = True
+            elif filter_key == '3M':
+                labels = _month_labels(3)
+                daily = False
             elif filter_key == '6M':
-                labels = []
-                for i in range(5, -1, -1):
-                    year = today.year
-                    month = today.month - i
-                    while month <= 0:
-                        month += 12
-                        year -= 1
-                    month_date = datetime(year, month, 1).date()
-                    labels.append({
-                        'key': month_date.strftime('%Y-%m'),
-                        'label': month_date.strftime('%b'),
-                    })
+                labels = _month_labels(6)
+                daily = False
             else:
-                labels = []
-                for i in range(11, -1, -1):
-                    year = today.year
-                    month = today.month - i
-                    while month <= 0:
-                        month += 12
-                        year -= 1
-                    month_date = datetime(year, month, 1).date()
-                    labels.append({
-                        'key': month_date.strftime('%Y-%m'),
-                        'label': month_date.strftime('%b %y'),
-                    })
+                labels = _month_labels(12, with_year=True)
+                daily = False
 
             series = []
             for label in labels:
                 bucket_amount = 0.0
-                for row in owned_spend_submissions:
+                for row in events:
                     created_at = row.get('created_at')
                     if not created_at:
                         continue
                     created_date = created_at.date() if hasattr(created_at, 'date') else created_at
-                    if filter_key in {'7D', '30D'}:
+                    if daily:
                         bucket_match = created_date.isoformat() == label['key']
                     else:
                         bucket_match = created_date.strftime('%Y-%m') == label['key']
                     if bucket_match:
                         bucket_amount += float(row.get('earning') or 0)
+                # month key kept for EarningsAreaChart; period for Brand spend chart.
                 series.append({
+                    'month': label['label'],
                     'period': label['label'],
                     'amount': round(bucket_amount, 2),
                 })
             return series
 
-        spend_by_period = {
-            key: build_spend_period_series(key)
-            for key in ('7D', '30D', '6M', 'ALL')
+        period_keys = ('7D', '30D', '3M', '6M', 'ALL')
+        earnings_by_period = {
+            key: build_amount_period_series(earning_events, key)
+            for key in period_keys
         }
+        spend_by_period = {
+            key: build_amount_period_series(spend_events, key)
+            for key in period_keys
+        }
+
+        # Convenience monthly series (last 12 months) for simple chart consumers.
+        earnings_monthly = build_amount_period_series(earning_events, 'ALL')
+        spend_monthly = build_amount_period_series(spend_events, 'ALL')
 
         return Response({
             # Earnings side
@@ -837,9 +829,11 @@ class EarningsViewSet(viewsets.ViewSet):
             'total_spent': total_spent,
             'total_deposited': total_deposited,
             'campaigns_published': campaigns_published,
+            'earnings_by_period': earnings_by_period,
             'spend_by_period': spend_by_period,
-            # Monthly earnings
-            'earnings_monthly': monthly_earnings,
+            # Monthly series
+            'earnings_monthly': earnings_monthly,
+            'spend_monthly': spend_monthly,
             # Recent transactions
             'recent_transactions': recent_activity,
         })
