@@ -44,50 +44,64 @@ const formatK = (n) => `${(n / 1000).toFixed(0)}K`;
 
 const FILTERS = ["7D", "30D", "6M", "ALL"];
 
+/** Budget-lock fallback when API has no spend_by_period yet. */
 const isSpendTxn = (txn) => {
     const rawType = (txn?.transactionType ?? txn?.transaction_type ?? txn?.type ?? "").toString().toLowerCase();
-    return rawType.includes("spend") || rawType.includes("withdraw") || rawType.includes("campaign");
+    // Real campaign spend = budget locks (money leaving wallet). Never deposits/settlements.
+    return (
+        rawType.includes("lock")
+        || rawType === "spend"
+        || (rawType.includes("spend") && !rawType.includes("deposit"))
+    );
 };
 
 const buildSpendTrendData = (transactions = [], filter) => {
     const now = new Date();
+    const startOfDay = (value) => {
+        const d = new Date(value);
+        d.setHours(0, 0, 0, 0);
+        return d;
+    };
+    const today = startOfDay(now);
 
     const spendTxns = transactions
         .filter(isSpendTxn)
         .map((txn) => ({
             amount: Number(txn?.amount ?? 0),
-            date: new Date(txn?.createdAt || txn?.created_at || txn?.date || 0),
+            date: startOfDay(txn?.createdAt || txn?.created_at || txn?.date || 0),
         }))
-        .filter((txn) => Number.isFinite(txn.date.getTime()) && txn.amount);
+        .filter((txn) => Number.isFinite(txn.date.getTime()) && txn.amount > 0);
 
     if (filter === "7D" || filter === "30D") {
         const days = filter === "7D" ? 7 : 30;
         const buckets = Array.from({ length: days }, (_, i) => {
-            const d = new Date(now);
-            d.setDate(d.getDate() - (days - 1 - i));
+            const d = new Date(today);
+            d.setDate(today.getDate() - (days - 1 - i));
             return {
                 key: d.toDateString(),
-                date: d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }),
+                period: d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }),
                 amount: 0,
             };
         });
 
         spendTxns.forEach((txn) => {
-            const diffDays = Math.floor((now - txn.date) / 86400000);
+            const diffDays = Math.round((today - txn.date) / 86400000);
             if (diffDays < 0 || diffDays >= days) return;
             const bucket = buckets[days - 1 - diffDays];
             if (bucket) bucket.amount += txn.amount;
         });
 
-        return buckets.map(({ date, amount }) => ({ date, amount }));
+        return buckets.map(({ period, amount }) => ({ period, amount }));
     }
 
-    // 6M / ALL -> monthly buckets (ALL capped at trailing 12 months, since
-    // we have no signal here for "account creation date" to bound it properly)
     const monthsBack = filter === "6M" ? 6 : 12;
     const buckets = Array.from({ length: monthsBack }, (_, i) => {
-        const d = new Date(now.getFullYear(), now.getMonth() - (monthsBack - 1 - i), 1);
-        return { key: `${d.getFullYear()}-${d.getMonth()}`, date: d.toLocaleString("en-US", { month: "short" }), amount: 0 };
+        const d = new Date(today.getFullYear(), today.getMonth() - (monthsBack - 1 - i), 1);
+        return {
+            key: `${d.getFullYear()}-${d.getMonth()}`,
+            period: d.toLocaleString("en-US", { month: "short", year: filter === "ALL" ? "2-digit" : undefined }),
+            amount: 0,
+        };
     });
 
     spendTxns.forEach((txn) => {
@@ -96,8 +110,14 @@ const buildSpendTrendData = (transactions = [], filter) => {
         if (bucket) bucket.amount += txn.amount;
     });
 
-    return buckets.map(({ date, amount }) => ({ date, amount }));
+    return buckets.map(({ period, amount }) => ({ period, amount }));
 };
+
+const normalizeSpendSeries = (series = []) =>
+    (Array.isArray(series) ? series : []).map((point) => ({
+        period: point.period || point.date || "",
+        amount: Number(point.amount ?? point.payout ?? 0),
+    }));
 
 export default function BrandWallet() {
     const [filter, setFilter] = useState("30D");
@@ -161,8 +181,13 @@ export default function BrandWallet() {
         recent_transactions: [],
     };
 
-    const activeSpendData = buildSpendTrendData(displayData.recent_transactions || [], filter);
+    const apiSpendSeries = displayData.spend_by_period?.[filter];
+    const hasSpendByPeriod = Array.isArray(apiSpendSeries);
+    const activeSpendData = hasSpendByPeriod
+        ? normalizeSpendSeries(apiSpendSeries)
+        : buildSpendTrendData(displayData.recent_transactions || [], filter);
     const totalSpendForPeriod = activeSpendData.reduce((sum, d) => sum + Number(d.amount || 0), 0);
+    const spendSourceLabel = hasSpendByPeriod ? "paid to clippers" : "budget locked";
     const recentTransactions = (displayData.recent_transactions || []).slice(0, 5);
     const hasTransactions = recentTransactions.length > 0;
 
@@ -293,13 +318,16 @@ export default function BrandWallet() {
                     <div>
                         <p className="text-sm uppercase tracking-[0.2em] text-violet-400">Spend Overview</p>
                         <h3 className="mt-2 text-4xl font-bold text-white">₹{totalSpendForPeriod.toLocaleString()}</h3>
-                        <p className="mt-2 text-zinc-500">Campaign spend trend · {filter}</p>
+                        <p className="mt-2 text-zinc-500">
+                            Campaign spend trend · {filter} · {spendSourceLabel}
+                        </p>
                     </div>
 
                     <div className="flex gap-2">
                         {FILTERS.map((period) => (
                             <button
                                 key={period}
+                                type="button"
                                 onClick={() => setFilter(period)}
                                 className={`rounded-xl px-4 py-2 text-sm transition ${
                                     filter === period
@@ -314,7 +342,13 @@ export default function BrandWallet() {
                 </div>
 
                 <div className="mt-8 rounded-2xl border border-violet-500/20 bg-[#0B0B12] p-4">
-                    <PayoutTrendChart data={activeSpendData} />
+                    {activeSpendData.some((point) => Number(point.amount || 0) > 0) ? (
+                        <PayoutTrendChart data={activeSpendData} xKey="period" dataKey="amount" />
+                    ) : (
+                        <div className="flex h-[240px] items-center justify-center text-sm text-zinc-500">
+                            No campaign spend in this period yet.
+                        </div>
+                    )}
                 </div>
             </section>
 

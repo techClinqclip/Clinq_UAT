@@ -665,7 +665,89 @@ class EarningsViewSet(viewsets.ViewSet):
         pending_earnings = float(earnings_totals['pending_earnings'] or 0)
         
         total_withdrawn = float(profile.total_withdrawn or 0) if profile else 0
-        
+
+        # Campaign spend trend: money paid out to clippers on this user's
+        # campaigns/gigs (matches wallet total_spent), bucketed for the chart.
+        owned_spend_submissions = list(
+            CampaignSubmission.objects.filter(
+                participant__campaign__creator=user,
+                status='approved',
+            )
+            .exclude(earning__isnull=True)
+            .exclude(earning=0)
+            .values('created_at', 'earning')[:2000]
+        )
+
+        def build_spend_period_series(filter_key):
+            today = timezone.now().date()
+            if filter_key == '7D':
+                labels = [
+                    {
+                        'key': (today - timedelta(days=i)).isoformat(),
+                        'label': (today - timedelta(days=i)).strftime('%d %b'),
+                    }
+                    for i in range(6, -1, -1)
+                ]
+            elif filter_key == '30D':
+                labels = [
+                    {
+                        'key': (today - timedelta(days=i)).isoformat(),
+                        'label': (today - timedelta(days=i)).strftime('%d %b'),
+                    }
+                    for i in range(29, -1, -1)
+                ]
+            elif filter_key == '6M':
+                labels = []
+                for i in range(5, -1, -1):
+                    year = today.year
+                    month = today.month - i
+                    while month <= 0:
+                        month += 12
+                        year -= 1
+                    month_date = datetime(year, month, 1).date()
+                    labels.append({
+                        'key': month_date.strftime('%Y-%m'),
+                        'label': month_date.strftime('%b'),
+                    })
+            else:
+                labels = []
+                for i in range(11, -1, -1):
+                    year = today.year
+                    month = today.month - i
+                    while month <= 0:
+                        month += 12
+                        year -= 1
+                    month_date = datetime(year, month, 1).date()
+                    labels.append({
+                        'key': month_date.strftime('%Y-%m'),
+                        'label': month_date.strftime('%b %y'),
+                    })
+
+            series = []
+            for label in labels:
+                bucket_amount = 0.0
+                for row in owned_spend_submissions:
+                    created_at = row.get('created_at')
+                    if not created_at:
+                        continue
+                    created_date = created_at.date() if hasattr(created_at, 'date') else created_at
+                    if filter_key in {'7D', '30D'}:
+                        bucket_match = created_date.isoformat() == label['key']
+                    else:
+                        bucket_match = created_date.strftime('%Y-%m') == label['key']
+                    if bucket_match:
+                        bucket_amount += float(row.get('earning') or 0)
+                series.append({
+                    'period': label['label'],
+                    'amount': round(bucket_amount, 2),
+                })
+            return series
+
+        spend_by_period = {
+            key: build_spend_period_series(key)
+            for key in ('7D', '30D', '6M', 'ALL')
+        }
+
         return Response({
             # Earnings side
             'total_earnings': total_earnings,
@@ -679,6 +761,7 @@ class EarningsViewSet(viewsets.ViewSet):
             'total_spent': total_spent,
             'total_deposited': total_deposited,
             'campaigns_published': campaigns_published,
+            'spend_by_period': spend_by_period,
             # Monthly earnings
             'earnings_monthly': monthly_earnings,
             # Recent transactions
