@@ -180,3 +180,37 @@ class WalletTopUpTests(TestCase):
         self.assertEqual(again.status_code, 200)
         profile.refresh_from_db()
         self.assertEqual(profile.wallet_balance, Decimal('1000.00'))
+
+    @patch('earnings.payments.get_razorpay_client')
+    def test_sync_topups_credits_paid_pending_deposit(self, mock_get_client):
+        from unittest.mock import MagicMock
+        from earnings.models import Transaction
+
+        deposit = Transaction.objects.create(
+            user=self.brand,
+            amount=Decimal('1500.00'),
+            transaction_type='deposit',
+            status='pending',
+            payment_method='razorpay',
+            payment_details='Wallet top-up via Razorpay',
+            external_ref='order_pending_456',
+        )
+
+        fake_client = MagicMock()
+        fake_client.order.fetch.return_value = {'id': 'order_pending_456', 'status': 'paid'}
+        fake_client.order.payments.return_value = {
+            'items': [{'id': 'pay_pending_456', 'status': 'captured'}],
+        }
+        mock_get_client.return_value = (fake_client, 'rzp_test_real')
+
+        with self.settings(RAZORPAY_KEY_ID='rzp_test_real', RAZORPAY_KEY_SECRET='secret_real'):
+            response = self.client.post('/api/earnings/wallet/sync-topups/')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['creditedCount'], 1)
+        self.assertEqual(response.data['walletBalance'], 1500.0)
+
+        deposit.refresh_from_db()
+        self.assertEqual(deposit.status, 'completed')
+        profile = Profile.objects.get(user=self.brand)
+        self.assertEqual(profile.wallet_balance, Decimal('1500.00'))

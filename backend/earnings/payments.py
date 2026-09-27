@@ -235,14 +235,104 @@ def credit_wallet_from_razorpay_order(*, order_id: str, payment_id: str = '') ->
             .first()
         )
         if not deposit:
+            logger.warning('No pending deposit found for Razorpay order %s', order_id)
             return None
         if deposit.status == 'completed':
             profile = Profile.objects.filter(user=deposit.user).first()
             return _topup_result(deposit, profile)
+        if deposit.status == 'failed':
+            logger.warning('Ignoring webhook for failed deposit order %s', order_id)
+            return None
 
         deposit = _credit_wallet_for_deposit(deposit, payment_id=payment_id)
         profile = Profile.objects.filter(user=deposit.user).first()
+        logger.info(
+            'Credited wallet via Razorpay recovery for user=%s order=%s amount=%s',
+            deposit.user_id,
+            order_id,
+            deposit.amount,
+        )
         return _topup_result(deposit, profile)
+
+
+def _extract_captured_payment_id(client, order_id: str) -> str | None:
+    """Return a captured/authorized payment id for an order, if Razorpay has one."""
+    try:
+        order = client.order.fetch(order_id)
+    except Exception:
+        logger.exception('Failed to fetch Razorpay order %s', order_id)
+        return None
+
+    if (order or {}).get('status') == 'paid':
+        # Prefer an explicit payment id from the payments listing.
+        pass
+    elif (order or {}).get('status') not in {'paid', 'attempted'}:
+        return None
+
+    try:
+        payments = client.order.payments(order_id)
+    except Exception:
+        logger.exception('Failed to list Razorpay payments for order %s', order_id)
+        return None
+
+    items = (payments or {}).get('items') or []
+    for payment in items:
+        status = (payment or {}).get('status')
+        if status in {'captured', 'authorized'}:
+            payment_id = (payment or {}).get('id') or ''
+            if payment_id:
+                return payment_id
+
+    # Some accounts mark the order paid even if listing is delayed.
+    if (order or {}).get('status') == 'paid':
+        return 'order_paid'
+    return None
+
+
+def reconcile_pending_wallet_topups(*, user, limit: int = 20) -> dict:
+    """Credit any pending deposits that Razorpay already marked paid.
+
+    Covers: browser closed / offline after money was debited, but before
+    confirm-topup reached our API. Safe to call repeatedly (idempotent).
+    """
+    assert_wallet_topup_allowed(user)
+    client, _key_id = get_razorpay_client()
+
+    pending = list(
+        Transaction.objects.filter(
+            user=user,
+            transaction_type='deposit',
+            status='pending',
+        )
+        .exclude(external_ref='')
+        .order_by('-created_at')[:limit]
+    )
+
+    credited = []
+    still_pending = 0
+    for deposit in pending:
+        payment_id = _extract_captured_payment_id(client, deposit.external_ref)
+        if not payment_id:
+            still_pending += 1
+            continue
+        result = credit_wallet_from_razorpay_order(
+            order_id=deposit.external_ref,
+            payment_id='' if payment_id == 'order_paid' else payment_id,
+        )
+        if result and result.get('status') == 'completed':
+            credited.append(result)
+        else:
+            still_pending += 1
+
+    profile = Profile.objects.filter(user=user).first()
+    return {
+        'checked': len(pending),
+        'creditedCount': len(credited),
+        'stillPending': still_pending,
+        'credited': credited,
+        'walletBalance': float(profile.wallet_balance) if profile else 0.0,
+        'totalDeposited': float(profile.total_deposited) if profile else 0.0,
+    }
 
 
 def verify_webhook_signature(*, body: bytes, signature: str) -> bool:

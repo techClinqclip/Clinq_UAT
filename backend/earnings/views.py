@@ -23,6 +23,7 @@ from .payments import (
     PaymentValidationError,
     confirm_wallet_topup,
     create_wallet_topup_order,
+    reconcile_pending_wallet_topups,
 )
 from accounts.models import Profile
 from content.models import CampaignSubmission
@@ -410,6 +411,29 @@ class EarningsViewSet(viewsets.ViewSet):
         except PaymentConfigError as error:
             return Response({'error': str(error)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
+        return Response(payload, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        summary='Sync pending wallet top-ups',
+        description=(
+            'Ask Razorpay whether any pending deposit orders were already paid. '
+            'Credits the wallet when payment succeeded but the browser never confirmed.'
+        ),
+        tags=['Earnings'],
+    )
+    @action(detail=False, methods=['post'], url_path='wallet/sync-topups')
+    def sync_wallet_topups(self, request):
+        try:
+            payload = reconcile_pending_wallet_topups(user=request.user)
+        except PaymentValidationError as error:
+            return Response({'error': str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        except PaymentConfigError as error:
+            return Response({'error': str(error)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        except Exception as error:
+            return Response(
+                {'error': f'Unable to sync wallet top-ups: {error}'},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
         return Response(payload, status=status.HTTP_200_OK)
 
     @extend_schema(

@@ -13,6 +13,7 @@ import Breadcrumbs from "../../components/Breadcrumbs";
 import PayoutTrendChart from "./PayoutTrendChart"; // ADJUST to match this file's actual path
 import LoadingScreen from "../../shared/ui/LoadingScreen"; // ADJUST to match this file's actual path
 import AddFundsModal from "../../shared/wallet/AddFundsModal";
+import { syncPendingWalletTopups } from "../../shared/wallet/syncPendingTopups";
 import { api } from "../../lib/api"; // ADJUST to match this file's actual path
 
 /*
@@ -126,6 +127,8 @@ export default function BrandWallet() {
             try {
                 setLoading(true);
                 setError("");
+                // Recover payments captured while browser was offline/closed.
+                await syncPendingWalletTopups();
                 const data = await api("/api/earnings/wallet/");
                 if (!mounted) return;
                 setWalletData(data);

@@ -1,6 +1,8 @@
 import { api } from "../../lib/api";
+import { syncPendingWalletTopups } from "./syncPendingTopups";
 
 const RAZORPAY_SCRIPT_SRC = "https://checkout.razorpay.com/v1/checkout.js";
+const PENDING_TOPUP_KEY = "clinq_pending_wallet_topup";
 
 function loadRazorpayScript() {
   if (typeof window === "undefined") {
@@ -49,6 +51,19 @@ export async function startWalletTopUp({
     body: { amount: value },
   });
 
+  try {
+    sessionStorage.setItem(
+      PENDING_TOPUP_KEY,
+      JSON.stringify({
+        orderId: order.orderId,
+        amount: value,
+        createdAt: Date.now(),
+      }),
+    );
+  } catch {
+    // ignore storage failures
+  }
+
   const Razorpay = await loadRazorpayScript();
 
   const paymentResult = await new Promise((resolve, reject) => {
@@ -81,20 +96,48 @@ export async function startWalletTopUp({
     checkout.open();
   });
 
-  const confirmed = await api("/api/earnings/wallet/confirm-topup/", {
-    method: "POST",
-    body: {
-      razorpayOrderId: paymentResult.razorpay_order_id,
-      razorpayPaymentId: paymentResult.razorpay_payment_id,
-      razorpaySignature: paymentResult.razorpay_signature,
-    },
-  });
+  try {
+    const confirmed = await api("/api/earnings/wallet/confirm-topup/", {
+      method: "POST",
+      body: {
+        razorpayOrderId: paymentResult.razorpay_order_id,
+        razorpayPaymentId: paymentResult.razorpay_payment_id,
+        razorpaySignature: paymentResult.razorpay_signature,
+      },
+    });
 
-  return {
-    amount: Number(confirmed.amount ?? value),
-    walletBalance: Number(confirmed.walletBalance ?? 0),
-    totalDeposited: Number(confirmed.totalDeposited ?? 0),
-    transactionId: confirmed.transactionId,
-    orderId: confirmed.orderId || order.orderId,
-  };
+    try {
+      sessionStorage.removeItem(PENDING_TOPUP_KEY);
+    } catch {
+      // ignore
+    }
+
+    return {
+      amount: Number(confirmed.amount ?? value),
+      walletBalance: Number(confirmed.walletBalance ?? 0),
+      totalDeposited: Number(confirmed.totalDeposited ?? 0),
+      transactionId: confirmed.transactionId,
+      orderId: confirmed.orderId || order.orderId,
+    };
+  } catch (confirmError) {
+    // Money may already be captured on Razorpay. Ask API to reconcile.
+    const synced = await syncPendingWalletTopups();
+    if (synced?.creditedCount > 0) {
+      try {
+        sessionStorage.removeItem(PENDING_TOPUP_KEY);
+      } catch {
+        // ignore
+      }
+      const credited = synced.credited?.[0];
+      return {
+        amount: Number(credited?.amount ?? value),
+        walletBalance: Number(synced.walletBalance ?? 0),
+        totalDeposited: Number(synced.totalDeposited ?? 0),
+        transactionId: credited?.transactionId,
+        orderId: credited?.orderId || order.orderId,
+        recovered: true,
+      };
+    }
+    throw confirmError;
+  }
 }

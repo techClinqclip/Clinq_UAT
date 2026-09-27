@@ -32,16 +32,26 @@ def razorpay_webhook(request):
     if event not in {'payment.captured', 'order.paid'}:
         return HttpResponse(status=200)
 
-    entity = (
-        payload.get('payload', {}).get('payment', {}).get('entity')
-        or payload.get('payload', {}).get('order', {}).get('entity')
-        or {}
-    )
-    order_id = entity.get('order_id') or entity.get('id')
-    payment_id = entity.get('id') if event == 'payment.captured' else ''
+    payment_entity = payload.get('payload', {}).get('payment', {}).get('entity') or {}
+    order_entity = payload.get('payload', {}).get('order', {}).get('entity') or {}
+
+    if event == 'payment.captured':
+        order_id = payment_entity.get('order_id') or ''
+        payment_id = payment_entity.get('id') or ''
+    else:
+        order_id = order_entity.get('id') or payment_entity.get('order_id') or ''
+        payment_id = payment_entity.get('id') or ''
+
+    if not order_id:
+        logger.warning('Razorpay webhook %s missing order id', event)
+        return HttpResponse(status=200)
 
     try:
-        credit_wallet_from_razorpay_order(order_id=order_id, payment_id=payment_id or '')
+        result = credit_wallet_from_razorpay_order(order_id=order_id, payment_id=payment_id or '')
+        if result:
+            logger.info('Webhook credited order=%s payment=%s', order_id, payment_id)
+        else:
+            logger.info('Webhook ignored order=%s (no matching pending deposit)', order_id)
     except Exception:
         logger.exception('Failed to credit wallet from Razorpay webhook for order %s', order_id)
         return HttpResponse(status=500)

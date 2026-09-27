@@ -17,6 +17,7 @@ import {
 import Breadcrumbs from "../../components/Breadcrumbs";
 import EarningsChartCard from "../clipper/components/EarningsChartCard";
 import AddFundsModal from "../../shared/wallet/AddFundsModal";
+import { syncPendingWalletTopups } from "../../shared/wallet/syncPendingTopups";
 import WithdrawModal from "./components/WithdrawModal";
 import TransferToCampaignModal from "./components/TransferToCampaignModal";
 import { api } from "../../lib/api"; // ADJUST to match this file's actual path
@@ -361,6 +362,7 @@ export default function CreatorWallet() {
             try {
                 setLoading(true);
                 setError("");
+                await syncPendingWalletTopups();
                 const data = await api("/api/earnings/wallet/");
                 if (!mounted) return;
 
