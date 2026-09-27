@@ -1907,14 +1907,14 @@ class CampaignSubmissionViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=['post'], url_path='settle-pending', permission_classes=[IsAdminUser])
     def settle_pending(self, request, pk=None):
         submission = self.get_object()
-        if submission.payout_review_status != 'pending':
-            return Response(
-                {'detail': 'Only pending payouts can be approved.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
         if submission.status != 'approved':
             return Response(
                 {'detail': 'Submission must be approved before pending earnings can be settled.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if submission.payout_review_status == 'held':
+            return Response(
+                {'detail': 'Held payouts must be released from hold before approval.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         if not submission.pending_earning or float(submission.pending_earning) <= 0:
@@ -1922,23 +1922,42 @@ class CampaignSubmissionViewSet(viewsets.ReadOnlyModelViewSet):
                 {'detail': 'No pending earnings are available to settle.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        # Allow re-settlement when new pending accrued after a prior approval
+        # (payout_review_status may still be stale 'approved' until reconcile).
+        if submission.payout_review_status not in ('pending', 'approved'):
+            return Response(
+                {'detail': 'Only pending payouts can be approved.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         from django.utils import timezone
         from accounts.models import Profile
         from django.db.models import F
         pending_amount = Decimal(str(submission.pending_earning))
+        first_settlement = Decimal(str(submission.earning or 0)) <= 0
         with db_transaction.atomic():
             submission.approve_pending_earning()
-            Profile.objects.filter(user_id=submission.participant.clipper_id).update(
-                total_earnings=F('total_earnings') + pending_amount,
-                clips_completed=F('clips_completed') + 1,
-                views_generated=F('views_generated') + submission.views,
-            )
+            profile_updates = {
+                'total_earnings': F('total_earnings') + pending_amount,
+                'views_generated': F('views_generated') + submission.views,
+            }
+            if first_settlement:
+                profile_updates['clips_completed'] = F('clips_completed') + 1
+            Profile.objects.filter(user_id=submission.participant.clipper_id).update(**profile_updates)
             submission.payout_review_status = 'approved'
             submission.payout_reviewed_by = request.user
             submission.payout_reviewed_at = timezone.now()
             submission.payout_review_notes = str(request.data.get('notes') or '')
-            submission.save(update_fields=['payout_review_status', 'payout_reviewed_by', 'payout_reviewed_at', 'payout_review_notes', 'updated_at'], skip_earning_update=True)
+            submission.save(
+                update_fields=[
+                    'payout_review_status',
+                    'payout_reviewed_by',
+                    'payout_reviewed_at',
+                    'payout_review_notes',
+                    'updated_at',
+                ],
+                skip_earning_update=True,
+            )
         from notifications.helpers import notify_user_event
         notify_user_event(
             user_id=submission.participant.clipper_id,
@@ -1948,13 +1967,11 @@ class CampaignSubmissionViewSet(viewsets.ReadOnlyModelViewSet):
             category='earnings',
             entity_type='campaign_submission',
             payload={'submission_id': submission.id, 'amount': str(pending_amount)},
-            idempotency_key=f'earnings.pending_payout_approved:{submission.id}',
+            idempotency_key=(
+                f'earnings.pending_payout_approved:{submission.id}:'
+                f'{pending_amount}:{submission.payout_reviewed_at.isoformat()}'
+            ),
         )
-        submission.payout_review_status = 'approved'
-        submission.payout_reviewed_by = request.user
-        submission.payout_reviewed_at = timezone.now()
-        submission.payout_review_notes = str(request.data.get('notes') or '')
-        submission.save(update_fields=['payout_review_status', 'payout_reviewed_by', 'payout_reviewed_at', 'payout_review_notes', 'updated_at'], skip_earning_update=True)
         serializer = self.get_serializer(submission)
         return Response(serializer.data)
 

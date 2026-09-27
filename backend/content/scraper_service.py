@@ -139,7 +139,17 @@ def scrape_active_campaign_submissions(job_id=None):
             submission.views = int(metrics.get('views') or 0)
             submission.likes = int(metrics.get('likes') or 0)
             with transaction.atomic():
-                submission.save(update_fields=['views', 'likes', 'updated_at'], skip_earning_update=True)
+                # Recompute pending earnings so new reach re-enters admin
+                # Pending Amt. Approval after a prior settlement.
+                if submission.status == 'approved':
+                    submission.update_earning()
+                    if submission.likes != previous_likes:
+                        type(submission).objects.filter(pk=submission.pk).update(likes=submission.likes)
+                else:
+                    submission.save(
+                        update_fields=['views', 'likes', 'updated_at'],
+                        skip_earning_update=True,
+                    )
             updated += 1
 
             clipper_id = getattr(getattr(submission.participant, 'clipper', None), 'id', None)

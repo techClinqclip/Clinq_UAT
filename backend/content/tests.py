@@ -1455,6 +1455,65 @@ class CampaignViewSetTest(TestCase):
         self.assertEqual(second_approval.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(hold_after_approval.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_new_pending_after_settlement_reopens_payout_queue(self):
+        """Same submission/campaign/user must reappear after views grow post-approval."""
+        clipper = User.objects.create_user(
+            email='payout-reopen@test.com',
+            password='testpass123',
+            type='clipper',
+        )
+        participant = CampaignParticipant.objects.create(
+            campaign=self.campaign,
+            clipper=clipper,
+            status='submitted',
+        )
+        submission = CampaignSubmission.objects.create(
+            participant=participant,
+            platform='instagram',
+            platform_username='@reopenclipper',
+            content_url='https://instagram.com/p/payout-reopen',
+            views=1000,
+            status='approved',
+        )
+        admin = User.objects.create_superuser(
+            email='payout-reopen-admin@test.com',
+            password='testpass123',
+        )
+        self.client.force_authenticate(user=admin)
+
+        settle = self.client.post(
+            f'/api/content/campaign-submissions/{submission.id}/settle-pending/',
+            {'notes': 'First settlement'},
+            format='json',
+        )
+        self.assertEqual(settle.status_code, status.HTTP_200_OK)
+        submission.refresh_from_db()
+        self.assertEqual(submission.payout_review_status, 'approved')
+        self.assertEqual(submission.pending_earning, Decimal('0.00'))
+
+        # More views accrue additional pending earnings.
+        submission.views = 2000
+        submission.update_earning()
+        submission.refresh_from_db()
+        self.assertGreater(submission.pending_earning, Decimal('0.00'))
+        self.assertEqual(submission.payout_review_status, 'pending')
+
+        queue = self.client.get('/api/content/campaign-submissions/?queue=payouts')
+        self.assertEqual(queue.status_code, status.HTTP_200_OK)
+        queued = next(item for item in queue.data if item['id'] == submission.id)
+        self.assertEqual(queued['payoutReviewStatus'], 'pending')
+        self.assertGreater(Decimal(str(queued['pendingEarning'])), Decimal('0'))
+
+        settle_again = self.client.post(
+            f'/api/content/campaign-submissions/{submission.id}/settle-pending/',
+            {'notes': 'Second settlement after new views'},
+            format='json',
+        )
+        self.assertEqual(settle_again.status_code, status.HTTP_200_OK)
+        submission.refresh_from_db()
+        self.assertEqual(submission.pending_earning, Decimal('0.00'))
+        self.assertEqual(submission.payout_review_status, 'approved')
+
     def test_admin_can_approve_and_reject_campaign_submissions(self):
         clipper = User.objects.create_user(email='queue-clipper@test.com', password='testpass123', type='clipper')
         participant = CampaignParticipant.objects.create(campaign=self.campaign, clipper=clipper, status='submitted')

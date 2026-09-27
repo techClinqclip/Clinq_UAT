@@ -168,24 +168,36 @@ export default function PendingApprovals() {
 
   useEffect(() => {
     api("/api/content/campaign-submissions/?queue=payouts")
-      .then((response) => setItems((response.results || response || []).map((item) => ({
-        ...item,
-        campaignId: item.campaignId,
-        campaignTitle: item.campaignTitle || "Campaign",
-        brandName: item.brandName || "Brand",
-        clipperName: item.clipperEmail || "Clipper",
-        clipperUsername: item.clipperUsername || item.clipperEmail || "clipper",
-        platform: item.platform === "Twitter/X" ? "X" : item.platform,
-        clipUrl: item.contentUrl,
-        submittedAt: new Date(item.createdAt).toLocaleString(),
-        reportedViews: Number(item.views || 0),
-        liveViews: Number(item.views || 0),
-        pendingAmount: item.payoutReviewStatus === "approved"
-          ? Number(item.earning || 0)
-          : Number(item.pendingEarning || 0),
-        cap: Number(item.campaignMaxEarnings || 0),
-        status: item.payoutReviewStatus === "held" ? "Held" : item.payoutReviewStatus === "approved" ? "Approved" : "Pending",
-      }))))
+      .then((response) => setItems((response.results || response || []).map((item) => {
+        const pendingEarning = Number(item.pendingEarning || 0);
+        const hasPendingPayout = pendingEarning > 0;
+        // New pending after a prior settlement must show as Pending even if
+        // payoutReviewStatus was left as "approved" until reconcile runs.
+        let status = "Pending";
+        if (item.payoutReviewStatus === "held") {
+          status = "Held";
+        } else if (hasPendingPayout) {
+          status = "Pending";
+        } else if (item.payoutReviewStatus === "approved") {
+          status = "Approved";
+        }
+        return {
+          ...item,
+          campaignId: item.campaignId,
+          campaignTitle: item.campaignTitle || "Campaign",
+          brandName: item.brandName || "Brand",
+          clipperName: item.clipperEmail || "Clipper",
+          clipperUsername: item.clipperUsername || item.clipperEmail || "clipper",
+          platform: item.platform === "Twitter/X" ? "X" : item.platform,
+          clipUrl: item.contentUrl,
+          submittedAt: new Date(item.createdAt).toLocaleString(),
+          reportedViews: Number(item.views || 0),
+          liveViews: Number(item.views || 0),
+          pendingAmount: hasPendingPayout ? pendingEarning : Number(item.earning || 0),
+          cap: Number(item.campaignMaxEarnings || 0),
+          status,
+        };
+      })))
       .catch((error) => showToast({ type: "error", message: error.message }));
   }, [showToast]);
 
