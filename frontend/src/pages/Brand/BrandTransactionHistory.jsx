@@ -339,12 +339,12 @@ export default function BrandTransactionHistory() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredTransactions.map((t) => {
+                                {filteredTransactions.map((t, index) => {
                                     const meta = TXN_META[t.type] || TXN_META.deposit;
                                     const Icon = meta.icon;
                                     return (
                                         <tr key={t.id} className="border-b border-white/5 transition hover:bg-white/[0.03]">
-                                            <td className="px-6 py-5 font-medium">#{t.id}</td>
+                                            <td className="px-6 py-5 font-medium">{index + 1}</td>
                                             <td className="px-6 py-5 text-zinc-400">{t.date}</td>
                                             <td className="px-6 py-5">
                                                 <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${meta.bg} ${meta.color}`}>
