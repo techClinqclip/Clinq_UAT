@@ -12,6 +12,7 @@ import {
     ArrowDownCircle,
 } from "lucide-react";
 import { api } from "../../lib/api";
+import { formatWithdrawalDescription } from "../../shared/wallet/formatWithdrawalDescription";
 
 /*
   Clipper withdrawal history — same shell as Creator transactions,
@@ -39,53 +40,7 @@ function normalizeStatus(rawStatus) {
     return status.replace(/^./, (c) => c.toUpperCase());
 }
 
-export function formatWithdrawalDescription(transaction) {
-    const methodRaw = (
-        transaction.paymentMethod
-        || transaction.payment_method
-        || ""
-    ).toString().toLowerCase();
-    const details = (
-        transaction.paymentDetails
-        || transaction.payment_details
-        || ""
-    ).toString().trim();
-
-    const isUpi =
-        methodRaw.includes("upi")
-        || (details.includes("@") && !details.includes("|"));
-    const isBank =
-        methodRaw.includes("bank")
-        || details.includes("|");
-
-    if (isUpi) {
-        // May be "upi@bank · UTR 123" after payout completes.
-        return details
-            ? `Withdrawal via UPI · ${details}`
-            : "Withdrawal via UPI";
-    }
-
-    if (isBank) {
-        const parts = details.split("|").map((part) => part.trim()).filter(Boolean);
-        if (parts.length >= 3) {
-            const bankName = parts[1];
-            const accountNumber = parts[2].replace(/·\s*UTR.*/i, "").trim();
-            const last4 = accountNumber.slice(-4);
-            const utrMatch = details.match(/UTR\s+([A-Za-z0-9]+)/i);
-            const base = `Withdrawal via Bank Transfer · ${bankName} •••• ${last4}`;
-            return utrMatch ? `${base} · UTR ${utrMatch[1]}` : base;
-        }
-        return details
-            ? `Withdrawal via Bank Transfer · ${details}`
-            : "Withdrawal via Bank Transfer";
-    }
-
-    if (methodRaw.includes("paypal")) {
-        return details ? `Withdrawal via PayPal · ${details}` : "Withdrawal via PayPal";
-    }
-
-    return details ? `Withdrawal · ${details}` : "Withdrawal request";
-}
+export { formatWithdrawalDescription };
 
 export function normalizeClipperWithdrawal(transaction) {
     const rawType = (
@@ -128,7 +83,9 @@ export function normalizeClipperWithdrawal(transaction) {
             })
             : "—",
         type: "withdrawal",
-        label: formatWithdrawalDescription(transaction),
+        label: formatWithdrawalDescription(transaction, {
+            fallbackLabel: "Withdrawal request",
+        }),
         amount: Number(transaction.amount || 0),
         method,
         status: normalizeStatus(transaction.status),

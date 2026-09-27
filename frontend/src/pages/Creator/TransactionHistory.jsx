@@ -4,6 +4,7 @@ import Breadcrumbs from "../../components/Breadcrumbs";
 import { api } from "../../lib/api";
 import { syncPendingWalletTopups } from "../../shared/wallet/syncPendingTopups";
 import { notifyWalletBalanceChanged } from "../../shared/wallet/walletBalanceEvents";
+import { formatWithdrawalDescription } from "../../shared/wallet/formatWithdrawalDescription";
 
 import {
     ArrowLeft,
@@ -78,62 +79,6 @@ function normalizeStatus(rawStatus) {
     return status.replace(/^./, (c) => c.toUpperCase());
 }
 
-function formatWithdrawalDescription(transaction) {
-    const methodRaw = (
-        transaction.paymentMethod
-        || transaction.payment_method
-        || ""
-    ).toString().toLowerCase();
-    const details = (
-        transaction.paymentDetails
-        || transaction.payment_details
-        || transaction.external_ref
-        || transaction.externalRef
-        || ""
-    ).toString().trim();
-
-    const isUpi =
-        methodRaw.includes("upi")
-        || (details.includes("@") && !details.includes("|"));
-    const isBank =
-        methodRaw.includes("bank")
-        || details.includes("|");
-
-    if (isUpi) {
-        const upiId = details.includes("|")
-            ? details.split("|").pop().trim()
-            : details;
-        return upiId
-            ? `Withdrawal via UPI · ${upiId}`
-            : "Withdrawal via UPI";
-    }
-
-    if (isBank) {
-        const parts = details.split("|").map((part) => part.trim()).filter(Boolean);
-        // Stored as: "Holder | Bank Name | Account Number"
-        if (parts.length >= 3) {
-            const bankName = parts[1];
-            const accountNumber = parts[2];
-            const last4 = accountNumber.slice(-4);
-            return `Withdrawal via Bank Transfer · ${bankName} •••• ${last4}`;
-        }
-        if (parts.length === 2) {
-            return `Withdrawal via Bank Transfer · ${parts[0]} · ${parts[1]}`;
-        }
-        return details
-            ? `Withdrawal via Bank Transfer · ${details}`
-            : "Withdrawal via Bank Transfer";
-    }
-
-    if (methodRaw.includes("paypal")) {
-        return details ? `Withdrawal via PayPal · ${details}` : "Withdrawal via PayPal";
-    }
-
-    return details
-        ? `Withdrawal to ${details}`
-        : "Earned money withdrawal";
-}
-
 export function normalizeCreatorWalletTransaction(transaction) {
     const rawType = (
         transaction.transactionType
@@ -178,7 +123,9 @@ export function normalizeCreatorWalletTransaction(transaction) {
     } else if (type === "transfer") {
         label = "Earned money transferred to gig wallet";
     } else if (type === "withdrawal") {
-        label = formatWithdrawalDescription(transaction);
+        label = formatWithdrawalDescription(transaction, {
+            fallbackLabel: "Earned money withdrawal",
+        });
     }
 
     const methodRaw = (
