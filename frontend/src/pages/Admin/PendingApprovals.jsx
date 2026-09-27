@@ -15,6 +15,7 @@ import { FaYoutube, FaInstagram, FaTiktok, FaXTwitter } from "react-icons/fa6";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import useToast from "../../hooks/useToast";
 import PendingApprovalReviewModal from "./components/PendingApprovalReviewModal";
+import AdminLoadingSkeleton from "./components/AdminLoadingSkeleton";
 import { api } from "../../lib/api";
 
 /*
@@ -157,6 +158,7 @@ const STATUS_OPTIONS = ["Pending", "Approved", "Held", "All"];
 
 export default function PendingApprovals() {
   const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState(null);
   const [search, setSearch] = useState("");
   const [platformFilter, setPlatformFilter] = useState("All");
@@ -167,8 +169,12 @@ export default function PendingApprovals() {
   const { showToast } = useToast();
 
   useEffect(() => {
+    let active = true;
+    setLoading(true);
     api("/api/content/campaign-submissions/?queue=payouts")
-      .then((response) => setItems((response.results || response || []).map((item) => {
+      .then((response) => {
+        if (!active) return;
+        setItems((response.results || response || []).map((item) => {
         const pendingEarning = Number(item.pendingEarning || 0);
         const hasPendingPayout = pendingEarning > 0;
         // New pending after a prior settlement must show as Pending even if
@@ -197,8 +203,15 @@ export default function PendingApprovals() {
           cap: Number(item.campaignMaxEarnings || 0),
           status,
         };
-      })))
-      .catch((error) => showToast({ type: "error", message: error.message }));
+        }));
+      })
+      .catch((error) => {
+        if (active) showToast({ type: "error", message: error.message });
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
   }, [showToast]);
 
   const selected = items.find((i) => i.id === selectedId) || null;
@@ -306,6 +319,10 @@ export default function PendingApprovals() {
       showToast({ type: "error", message: error.message });
     }
   };
+
+  if (loading) {
+    return <AdminLoadingSkeleton variant="default" kpiCount={5} />;
+  }
 
   return (
     <div className="min-h-screen bg-black text-white">

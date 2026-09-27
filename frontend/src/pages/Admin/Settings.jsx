@@ -8,6 +8,7 @@ import {
   downloadLegalDocument,
   downloadResourceSampleTemplate,
 } from "../../lib/resourceTemplate";
+import AdminLoadingSkeleton from "./components/AdminLoadingSkeleton";
 
 function DocumentUploadCard({
   icon: Icon,
@@ -78,6 +79,7 @@ function DocumentUploadCard({
 
 export default function AdminSettings() {
   const { showToast } = useToast();
+  const [loading, setLoading] = useState(true);
   const [isRunning, setIsRunning] = useState(false);
   const [lastRun, setLastRun] = useState(null);
   const [scrapeProgress, setScrapeProgress] = useState(0);
@@ -110,12 +112,18 @@ export default function AdminSettings() {
       setTermsDocument(terms);
     } catch (error) {
       showToast({ type: "error", message: error.message || "Unable to load platform documents." });
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     loadDocuments();
   }, []);
+
+  if (loading) {
+    return <AdminLoadingSkeleton variant="settings" />;
+  }
 
   const updateDocument = async ({
     file,

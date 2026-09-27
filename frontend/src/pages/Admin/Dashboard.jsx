@@ -12,6 +12,7 @@ import {
 import Breadcrumbs from "../../components/Breadcrumbs";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { api } from "../../lib/api";
+import AdminLoadingSkeleton from "./components/AdminLoadingSkeleton";
 
 /*
   Admin — overview/home. Summarizes the sections from the spec sheet
@@ -128,6 +129,7 @@ export default function AdminDashboard() {
   const realUser = useCurrentUser();
   const [dashboardData, setDashboardData] = useState(null);
   const [loadError, setLoadError] = useState("");
+  const [loading, setLoading] = useState(true);
   // TEMP: falls back to the mock user only if the real hook has no
   // name yet (guest/unauthenticated). Once real admin sessions exist,
   // realUser.name will populate and this fallback stops mattering —
@@ -139,16 +141,21 @@ export default function AdminDashboard() {
     let active = true;
     api("/api/content/campaigns/admin-dashboard/")
       .then((data) => { if (active) setDashboardData(data); })
-      .catch((error) => { if (active) setLoadError(error.message || "Unable to load admin dashboard data."); });
+      .catch((error) => { if (active) setLoadError(error.message || "Unable to load admin dashboard data."); })
+      .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);
+
+  if (loading) {
+    return <AdminLoadingSkeleton variant="dashboard" />;
+  }
 
   const summaryCards = dashboardData ? [
     { ...SUMMARY_CARDS[0], value: dashboardData.pending_submissions },
     { ...SUMMARY_CARDS[1], value: `₹${Number(dashboardData.pending_payout_amount || 0).toLocaleString()}`, hint: `Across ${dashboardData.pending_payout_clippers || 0} clippers` },
     { ...SUMMARY_CARDS[2], value: `₹${Number(dashboardData.paid_out || 0).toLocaleString()}`, hint: "Released from approved submissions" },
     { ...SUMMARY_CARDS[3], value: dashboardData.open_support_tickets, hint: `${dashboardData.urgent_support_tickets || 0} marked urgent` },
-  ] : SUMMARY_CARDS.map((card) => ({ ...card, value: "..." }));
+  ] : SUMMARY_CARDS.map((card) => ({ ...card, value: "—" }));
   const recentActivity = dashboardData?.recent_activity || [];
 
   return (
@@ -236,7 +243,6 @@ export default function AdminDashboard() {
           </div>
 
           {loadError && <div className="mt-6 rounded-xl border border-rose-500/20 bg-rose-500/5 px-4 py-3 text-xs text-rose-300">{loadError}</div>}
-          {!loadError && !dashboardData && <div className="mt-6 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-xs text-zinc-500">Loading live dashboard data...</div>}
           <div className="mt-6 flex items-start gap-2.5 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-xs text-amber-300">
             <AlertTriangle size={14} className="mt-0.5 shrink-0" />
             Live data from submissions, payouts, and support records.

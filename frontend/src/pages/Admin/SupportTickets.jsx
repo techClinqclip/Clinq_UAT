@@ -19,6 +19,7 @@ import {
 import Breadcrumbs from "../../components/Breadcrumbs";
 import useToast from "../../hooks/useToast";
 import { api } from "../../lib/api";
+import AdminLoadingSkeleton from "./components/AdminLoadingSkeleton";
 
 /*
   Admin — Support Tickets. From the spec sheet's fourth admin section.
@@ -394,6 +395,7 @@ export default function SupportTickets({ isAdmin = false }) {
 
 function AdminSupportTickets() {
   const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState(null);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
@@ -401,10 +403,20 @@ function AdminSupportTickets() {
   const { showToast } = useToast();
 
   useEffect(() => {
+    let active = true;
+    setLoading(true);
     api("/api/support/tickets/")
-      .then((response) => setTickets((response.results || response).map(mapTicket)))
-      .catch((error) => showToast({ type: "error", message: error.message }));
-  }, []);
+      .then((response) => {
+        if (active) setTickets((response.results || response).map(mapTicket));
+      })
+      .catch((error) => {
+        if (active) showToast({ type: "error", message: error.message });
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, [showToast]);
 
   const selected = tickets.find((t) => t.id === selectedId) || null;
 
@@ -475,6 +487,10 @@ function AdminSupportTickets() {
       showToast({ type: "error", message: error.message });
     }
   };
+
+  if (loading) {
+    return <AdminLoadingSkeleton variant="default" />;
+  }
 
   return (
     <div className="min-h-screen bg-black text-white">

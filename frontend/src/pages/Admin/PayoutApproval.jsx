@@ -12,6 +12,7 @@ import {
 import Breadcrumbs from "../../components/Breadcrumbs";
 import useToast from "../../hooks/useToast";
 import { api } from "../../lib/api";
+import AdminLoadingSkeleton, { AdminListSkeleton } from "./components/AdminLoadingSkeleton";
 import ManualPayoutModal from "./components/ManualPayoutModal";
 import RejectPayoutModal from "./components/RejectPayoutModal";
 
@@ -187,6 +188,7 @@ export default function AdminPayoutApproval() {
     all: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [savingToggle, setSavingToggle] = useState(false);
   const [confirmConfig, setConfirmConfig] = useState(null);
   const [actionId, setActionId] = useState(null);
@@ -230,7 +232,10 @@ export default function AdminPayoutApproval() {
           showToast({ type: "error", message: error?.message || "Unable to load payout approval." });
         }
       } finally {
-        if (mounted) setLoading(false);
+        if (mounted) {
+          setLoading(false);
+          setHasLoadedOnce(true);
+        }
       }
     })();
     return () => {
@@ -385,6 +390,10 @@ export default function AdminPayoutApproval() {
     }
   };
 
+  if (loading && !hasLoadedOnce) {
+    return <AdminLoadingSkeleton variant="default" />;
+  }
+
   return (
     <div className="min-h-screen bg-black text-white">
       <Breadcrumbs />
@@ -502,7 +511,7 @@ export default function AdminPayoutApproval() {
         </div>
 
         {loading ? (
-          <p className="p-6 text-zinc-400">Loading payout requests…</p>
+          <AdminListSkeleton rows={6} />
         ) : queue.length === 0 ? (
           <p className="p-6 text-zinc-400">
             No {statusFilter === "all" ? "" : `${statusFilter} `}payouts found.

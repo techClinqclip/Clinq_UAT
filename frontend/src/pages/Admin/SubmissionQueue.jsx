@@ -16,6 +16,7 @@ import { FaYoutube, FaInstagram, FaTiktok, FaXTwitter } from "react-icons/fa6";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import useToast from "../../hooks/useToast";
 import SubmissionReviewModal from "./components/SubmissionReviewModal";
+import AdminLoadingSkeleton from "./components/AdminLoadingSkeleton";
 import { api } from "../../lib/api";
 
 const PLATFORM_ICONS = {
@@ -48,6 +49,7 @@ const STATUS_OPTIONS = ["Pending", "Approved", "Rejected", "All"];
 
 export default function SubmissionQueue() {
   const [submissions, setSubmissions] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState(null);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
@@ -59,8 +61,11 @@ export default function SubmissionQueue() {
   const { showToast } = useToast();
 
   useEffect(() => {
+    let active = true;
+    setLoading(true);
     api("/api/content/campaign-submissions/?page_size=100")
       .then((response) => {
+        if (!active) return;
         const items = response.results || response || [];
         setSubmissions(items.map((item) => ({
           ...item,
@@ -77,7 +82,13 @@ export default function SubmissionQueue() {
           status: String(item.status || "pending").replace(/^./, (value) => value.toUpperCase()),
         })));
       })
-      .catch((error) => showToast({ type: "error", message: error.message }));
+      .catch((error) => {
+        if (active) showToast({ type: "error", message: error.message });
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
   }, [showToast]);
 
   const selected = submissions.find((s) => s.id === selectedId) || null;
@@ -183,6 +194,10 @@ export default function SubmissionQueue() {
       showToast({ type: "error", message: error.message });
     }
   };
+
+  if (loading) {
+    return <AdminLoadingSkeleton variant="default" kpiCount={5} />;
+  }
 
   return (
     <div className="min-h-screen bg-black text-white">
