@@ -465,6 +465,11 @@ DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
 # be reached from the deployment environment.
 EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '10'))
 
+# -------------------- Razorpay (wallet top-ups) --------------------
+RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID', '')
+RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET', '')
+RAZORPAY_WEBHOOK_SECRET = os.getenv('RAZORPAY_WEBHOOK_SECRET', '')
+
 
 # Public frontend configuration values (optional)
 VITE_API_BASE_URL = os.getenv('VITE_API_BASE_URL') or os.getenv('API_BASE_URL') or 'http://localhost:8000/'

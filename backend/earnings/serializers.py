@@ -1,6 +1,25 @@
 from rest_framework import serializers
 from decimal import Decimal
 from .models import Transaction
+from .payments import MAX_TOPUP_AMOUNT, MIN_TOPUP_AMOUNT
+
+
+class WalletTopUpCreateSerializer(serializers.Serializer):
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=MIN_TOPUP_AMOUNT)
+
+    def validate_amount(self, value):
+        if value < MIN_TOPUP_AMOUNT:
+            raise serializers.ValidationError(f'Minimum top-up is ₹{MIN_TOPUP_AMOUNT}.')
+        if value > MAX_TOPUP_AMOUNT:
+            raise serializers.ValidationError(f'Maximum top-up is ₹{MAX_TOPUP_AMOUNT}.')
+        return value
+
+
+class WalletTopUpConfirmSerializer(serializers.Serializer):
+    razorpayOrderId = serializers.CharField(max_length=100, source='order_id')
+    razorpayPaymentId = serializers.CharField(max_length=100, source='payment_id')
+    razorpaySignature = serializers.CharField(max_length=255, source='signature')
+
 
 # Serializer for handling the withdrawal request body
 class PayoutSerializer(serializers.Serializer):

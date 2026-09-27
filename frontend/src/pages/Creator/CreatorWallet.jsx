@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import EarningsChartCard from "../clipper/components/EarningsChartCard";
-import AddFundsModal from "./components/AddFundsModal";
+import AddFundsModal from "../../shared/wallet/AddFundsModal";
 import WithdrawModal from "./components/WithdrawModal";
 import TransferToCampaignModal from "./components/TransferToCampaignModal";
 import { api } from "../../lib/api"; // ADJUST to match this file's actual path
@@ -406,10 +406,17 @@ export default function CreatorWallet() {
         setTransactions((t) => [{ id: Date.now(), date: "Just now", status: "Completed", ...entry }, ...t]);
     };
 
-    const handleFundsAdded = (amount) => {
-        setWalletBalance((b) => b + amount);
-        setTotalDeposited((d) => d + amount);
-        pushTransaction({ type: "deposit", label: `Added via ${savedMethod?.label || "payment method"}`, amount });
+    const handleFundsAdded = (result) => {
+        const amount = Number(result?.amount ?? result ?? 0);
+        const nextBalance = typeof result?.walletBalance === "number"
+            ? result.walletBalance
+            : walletBalance + amount;
+        const nextDeposited = typeof result?.totalDeposited === "number"
+            ? result.totalDeposited
+            : totalDeposited + amount;
+        setWalletBalance(nextBalance);
+        setTotalDeposited(nextDeposited);
+        pushTransaction({ type: "deposit", label: "Added via Razorpay", amount });
     };
 
     const handleWithdraw = (amount) => {
@@ -816,7 +823,8 @@ export default function CreatorWallet() {
                 isOpen={addFundsOpen}
                 onClose={() => setAddFundsOpen(false)}
                 onSuccess={handleFundsAdded}
-                savedMethod={savedMethod}
+                subtitle="Top up your wallet to launch and fund your own campaigns."
+                description="Clinq creator wallet top-up"
             />
 
             <WithdrawModal

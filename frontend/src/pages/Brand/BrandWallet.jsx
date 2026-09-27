@@ -6,16 +6,13 @@ import {
     ArrowDownCircle,
     ArrowRight,
     Plus,
-    Smartphone,
-    Building2,
-    CreditCard,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import PayoutTrendChart from "./PayoutTrendChart"; // ADJUST to match this file's actual path
 import LoadingScreen from "../../shared/ui/LoadingScreen"; // ADJUST to match this file's actual path
-import AddFundsModal from "./Components/AddFundsModal";
+import AddFundsModal from "../../shared/wallet/AddFundsModal";
 import { api } from "../../lib/api"; // ADJUST to match this file's actual path
 
 /*
@@ -100,42 +97,6 @@ const buildSpendTrendData = (transactions = [], filter) => {
     return buckets.map(({ date, amount }) => ({ date, amount }));
 };
 
-// Mirrors buildInitialForm()'s field mapping in BrandProfile.jsx — this is
-// intentionally reading the SAME raw API fields that page saves, so the
-// two stay in sync without needing a shared import (they're on different
-// slices of the app but describe the same underlying profile object).
-function getSavedPaymentMethodDisplay(profile) {
-    const method = profile?.payment_method || profile?.onboarding_data?.paymentMethod;
-    if (!method) return null;
-
-    if (method === "upi") {
-        const upiId = profile?.upi_id || profile?.onboarding_data?.upiId;
-        return upiId ? { method, label: "UPI", detail: upiId, icon: Smartphone } : null;
-    }
-
-    if (method === "bank") {
-        const bankName = profile?.bank_name || profile?.onboarding_data?.bankName;
-        const accountNumber = profile?.bank_account_number || profile?.onboarding_data?.bankAccountNumber;
-        if (!bankName) return null;
-        const last4 = accountNumber ? String(accountNumber).slice(-4) : "";
-        return { method, label: "Bank Transfer", detail: `${bankName}${last4 ? ` •••• ${last4}` : ""}`, icon: Building2 };
-    }
-
-    if (method === "debit" || method === "credit") {
-        const cardNumber = profile?.card_number || profile?.onboarding_data?.cardNumber;
-        const last4 = cardNumber ? String(cardNumber).replace(/\D/g, "").slice(-4) : "";
-        if (!last4) return null;
-        return {
-            method,
-            label: method === "debit" ? "Debit Card" : "Credit Card",
-            detail: `•••• ${last4}`,
-            icon: CreditCard,
-        };
-    }
-
-    return null;
-}
-
 export default function BrandWallet() {
     const [filter, setFilter] = useState("30D");
     const [addFundsOpen, setAddFundsOpen] = useState(false);
@@ -143,12 +104,25 @@ export default function BrandWallet() {
     const [loading, setLoading] = useState(true);
     const [showLoader, setShowLoader] = useState(true);
     const [error, setError] = useState("");
-    const [profile, setProfile] = useState(null);
+
+    const loadWalletData = async () => {
+        try {
+            setLoading(true);
+            setError("");
+            const data = await api("/api/earnings/wallet/");
+            setWalletData(data);
+        } catch (err) {
+            setError(err?.message || "Failed to load wallet data");
+            console.error("Wallet error:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         let mounted = true;
 
-        const loadWalletData = async () => {
+        const run = async () => {
             try {
                 setLoading(true);
                 setError("");
@@ -164,22 +138,12 @@ export default function BrandWallet() {
             }
         };
 
-        loadWalletData();
-
-        api("/api/auth/profile/me/", { cache: "no-store" })
-            .then((data) => {
-                if (mounted) setProfile(data);
-            })
-            .catch(() => {
-                if (mounted) setProfile(null);
-            });
-
+        run();
         return () => {
             mounted = false;
         };
     }, []);
 
-    const savedMethod = getSavedPaymentMethodDisplay(profile);
     const displayData = walletData || {
         wallet_balance: 0,
         locked_in_campaigns: 0,
@@ -193,23 +157,15 @@ export default function BrandWallet() {
     const totalSpendForPeriod = activeSpendData.reduce((sum, d) => sum + Number(d.amount || 0), 0);
     const hasTransactions = (displayData.recent_transactions || []).length > 0;
 
-    const handleFundsAdded = (amount) => {
-        setWalletData((current) => ({
-            ...(current || {}),
-            wallet_balance: Number(current?.wallet_balance || 0) + Number(amount || 0),
-            total_deposited: Number(current?.total_deposited || 0) + Number(amount || 0),
-            recent_transactions: [
-                {
-                    id: Date.now(),
-                    transactionType: "deposit",
-                    label: `Added via ${savedMethod?.label || "payment method"}`,
-                    amount,
-                    status: "Completed",
-                    createdAt: new Date().toISOString(),
-                },
-                ...(current?.recent_transactions || []),
-            ],
-        }));
+    const handleFundsAdded = (result) => {
+        if (typeof result?.walletBalance === "number") {
+            setWalletData((current) => ({
+                ...(current || {}),
+                wallet_balance: result.walletBalance,
+                total_deposited: result.totalDeposited ?? current?.total_deposited,
+            }));
+        }
+        loadWalletData();
     };
 
     if (error) {
@@ -521,7 +477,6 @@ export default function BrandWallet() {
                 isOpen={addFundsOpen}
                 onClose={() => setAddFundsOpen(false)}
                 onSuccess={handleFundsAdded}
-                savedMethod={savedMethod}
             />
         </div>
     );

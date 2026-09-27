@@ -10,8 +10,20 @@ from rest_framework.response import Response
 from django.db import transaction as db_transaction
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
-from .serializers import PayoutSerializer, TransactionSerializer
+from .serializers import (
+    PayoutSerializer,
+    TransactionSerializer,
+    WalletTopUpConfirmSerializer,
+    WalletTopUpCreateSerializer,
+)
 from .models import Transaction
+from .payments import (
+    PaymentConfigError,
+    PaymentGatewayError,
+    PaymentValidationError,
+    confirm_wallet_topup,
+    create_wallet_topup_order,
+)
 from accounts.models import Profile
 from content.models import CampaignSubmission
 
@@ -351,6 +363,54 @@ class EarningsViewSet(viewsets.ViewSet):
             'minimum_payout': 2500.00,
             'can_request_payout': can_request_payout,
         })
+
+    @extend_schema(
+        summary='Create wallet top-up order',
+        description='Create a Razorpay order to add funds to the brand/creator campaign wallet.',
+        request=WalletTopUpCreateSerializer,
+        tags=['Earnings'],
+    )
+    @action(detail=False, methods=['post'], url_path='wallet/create-topup')
+    def create_wallet_topup(self, request):
+        serializer = WalletTopUpCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            payload = create_wallet_topup_order(
+                user=request.user,
+                amount=serializer.validated_data['amount'],
+            )
+        except PaymentValidationError as error:
+            return Response({'error': str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        except PaymentConfigError as error:
+            return Response({'error': str(error)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        except PaymentGatewayError as error:
+            return Response({'error': str(error)}, status=status.HTTP_502_BAD_GATEWAY)
+
+        return Response(payload, status=status.HTTP_201_CREATED)
+
+    @extend_schema(
+        summary='Confirm wallet top-up',
+        description='Verify Razorpay payment signature and credit the campaign wallet.',
+        request=WalletTopUpConfirmSerializer,
+        tags=['Earnings'],
+    )
+    @action(detail=False, methods=['post'], url_path='wallet/confirm-topup')
+    def confirm_wallet_topup_payment(self, request):
+        serializer = WalletTopUpConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            payload = confirm_wallet_topup(
+                user=request.user,
+                order_id=serializer.validated_data['order_id'],
+                payment_id=serializer.validated_data['payment_id'],
+                signature=serializer.validated_data['signature'],
+            )
+        except PaymentValidationError as error:
+            return Response({'error': str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        except PaymentConfigError as error:
+            return Response({'error': str(error)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        return Response(payload, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary='Get wallet overview',
