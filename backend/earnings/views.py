@@ -121,18 +121,48 @@ class PayoutViewSet(viewsets.ViewSet):
                 )
                 profile.refresh_from_db()
                 remaining = get_available_withdrawable_earnings(request.user)
-                from notifications.helpers import notify_user_event
+                from notifications.helpers import notify_admins_event, notify_user_event
+
                 notify_user_event(
                     user_id=request.user.id,
                     event_type='earnings.withdrawal_requested',
                     title='Withdrawal requested',
-                    message=f'Your withdrawal request for ₹{amount} is pending review.',
+                    message=(
+                        f'Your withdrawal request for ₹{amount} has been received '
+                        f'and is under review. We will notify you once it is processed.'
+                    ),
                     category='earnings',
                     entity_type='transaction',
                     entity_id=txn.id,
-                    payload={'amount': str(amount), 'payment_method': payout_method},
+                    payload={'amount': str(amount), 'status': 'pending'},
                     email=True,
                     idempotency_key=f'earnings.withdrawal_requested:{request.user.id}:{txn.id}:{amount}',
+                )
+
+                requester = (
+                    getattr(request.user, 'email', '')
+                    or getattr(request.user, 'username', '')
+                    or f'User #{request.user.id}'
+                )
+                notify_admins_event(
+                    event_type='earnings.withdrawal_admin_request',
+                    title='New withdrawal request',
+                    message=(
+                        f'{requester} requested a withdrawal of ₹{amount}. '
+                        f'Review it in Payout Approval.'
+                    ),
+                    category='earnings',
+                    entity_type='transaction',
+                    payload={
+                        'amount': str(amount),
+                        'transactionId': txn.id,
+                        'userId': request.user.id,
+                        'userEmail': getattr(request.user, 'email', ''),
+                        'paymentMethod': payout_method,
+                        'status': 'pending',
+                    },
+                    priority='high',
+                    idempotency_key=f'earnings.withdrawal_admin_request:{txn.id}',
                 )
         except Profile.DoesNotExist:
             return Response(
@@ -153,32 +183,32 @@ class PayoutViewSet(viewsets.ViewSet):
         autopay_error = None
         payout_result = None
 
-        if payout_settings.manual_pay:
-            message = (
-                "Withdrawal requested. Admin will pay manually and mark this request approved."
-            )
-        elif payout_settings.require_payout_approval:
-            message = (
-                "Withdrawal requested. Waiting for admin approval before RazorpayX payout."
-            )
-        else:
-            message = "Withdrawal requested. RazorpayX autopay will start now."
+        # User-facing copy only — no gateway / admin workflow details.
+        message = (
+            f'Your withdrawal request for ₹{amount} has been received and is under review. '
+            f'You will be notified once it is processed.'
+        )
 
         if payout_settings.should_trigger_razorpay_on_request():
             try:
                 payout_result = create_razorpay_withdrawal_payout(txn)
                 autopay_triggered = True
-                message = (
-                    "Withdrawal requested. RazorpayX autopay has been triggered."
-                    if payout_result.get('status') == 'pending'
-                    else "Withdrawal paid via RazorpayX."
-                )
                 txn.refresh_from_db()
+                if txn.status == 'completed':
+                    message = (
+                        f'Your withdrawal of ₹{amount} has been completed. '
+                        f'The amount is on its way to your account.'
+                    )
+                else:
+                    message = (
+                        f'Your withdrawal request for ₹{amount} is being processed. '
+                        f'You will be notified once it is completed.'
+                    )
             except (PaymentConfigError, PaymentValidationError, PaymentGatewayError) as error:
                 autopay_error = str(error)
                 message = (
-                    "Withdrawal requested, but RazorpayX autopay could not start. "
-                    "It remains pending for admin retry."
+                    f'Your withdrawal request for ₹{amount} has been received and is under review. '
+                    f'You will be notified once it is processed.'
                 )
 
         return Response({
@@ -349,12 +379,15 @@ class PayoutViewSet(viewsets.ViewSet):
             notify_user_event(
                 user_id=txn.user_id,
                 event_type='earnings.withdrawal_status',
-                title='Withdrawal paid',
-                message=f'Your withdrawal of ₹{txn.amount} was paid manually and marked completed.',
+                title='Withdrawal completed',
+                message=(
+                    f'Your withdrawal of ₹{txn.amount} has been completed. '
+                    f'The amount has been sent to your registered payout account.'
+                ),
                 category='earnings',
                 entity_type='transaction',
                 entity_id=txn.id,
-                payload={'amount': str(txn.amount), 'status': txn.status, 'mode': 'manual'},
+                payload={'amount': str(txn.amount), 'status': txn.status},
                 email=True,
                 idempotency_key=f'earnings.withdrawal_manual_paid:{txn.id}:{txn.external_ref}',
             )
@@ -375,18 +408,40 @@ class PayoutViewSet(viewsets.ViewSet):
             return Response({'error': str(error)}, status=status.HTTP_400_BAD_REQUEST)
 
         txn.refresh_from_db()
-        notify_user_event(
-            user_id=txn.user_id,
-            event_type='earnings.withdrawal_status',
-            title='Withdrawal approved',
-            message=f'Your withdrawal of ₹{txn.amount} was approved and sent via RazorpayX.',
-            category='earnings',
-            entity_type='transaction',
-            entity_id=txn.id,
-            payload={'amount': str(txn.amount), 'status': txn.status, 'payout': payout_result},
-            email=True,
-            idempotency_key=f'earnings.withdrawal_approved:{txn.id}:{payout_result.get("payoutId")}',
-        )
+        # Terminal reject/fail already notified from payment helpers.
+        if txn.status == 'pending':
+            notify_user_event(
+                user_id=txn.user_id,
+                event_type='earnings.withdrawal_status',
+                title='Withdrawal approved',
+                message=(
+                    f'Your withdrawal of ₹{txn.amount} has been approved and is being processed. '
+                    f'You will be notified once the transfer is completed.'
+                ),
+                category='earnings',
+                entity_type='transaction',
+                entity_id=txn.id,
+                payload={'amount': str(txn.amount), 'status': txn.status},
+                email=True,
+                idempotency_key=f'earnings.withdrawal_approved:{txn.id}:{payout_result.get("payoutId")}',
+            )
+        elif txn.status == 'completed':
+            # Immediate completion may not have notified if status was set inline.
+            notify_user_event(
+                user_id=txn.user_id,
+                event_type='earnings.withdrawal_status',
+                title='Withdrawal completed',
+                message=(
+                    f'Your withdrawal of ₹{txn.amount} has been completed. '
+                    f'The amount has been sent to your registered payout account.'
+                ),
+                category='earnings',
+                entity_type='transaction',
+                entity_id=txn.id,
+                payload={'amount': str(txn.amount), 'status': txn.status},
+                email=True,
+                idempotency_key=f'earnings.withdrawal_status:{txn.id}:completed',
+            )
         return Response({
             'status': 'Success',
             'message': 'Withdrawal approved and RazorpayX payout triggered.',
@@ -433,15 +488,19 @@ class PayoutViewSet(viewsets.ViewSet):
             return Response({'error': 'Withdrawal is no longer pending.'}, status=status.HTTP_400_BAD_REQUEST)
 
         from notifications.helpers import notify_user_event
+        reason_text = f' Reason: {reason}' if reason else ''
         notify_user_event(
             user_id=txn.user_id,
             event_type='earnings.withdrawal_status',
-            title='Withdrawal rejected',
-            message=f'Your withdrawal of ₹{txn.amount} was rejected.{(" " + reason) if reason else ""}',
+            title='Withdrawal not approved',
+            message=(
+                f'Your withdrawal of ₹{txn.amount} was not approved and the amount '
+                f'has been returned to your available balance.{reason_text}'
+            ),
             category='earnings',
             entity_type='transaction',
             entity_id=txn.id,
-            payload={'amount': str(txn.amount), 'status': 'rejected', 'reason': reason},
+            payload={'amount': str(txn.amount), 'status': 'rejected'},
             email=True,
             idempotency_key=f'earnings.withdrawal_rejected:{txn.id}',
         )

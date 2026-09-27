@@ -1,172 +1,276 @@
 import { Link } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import Breadcrumbs from "../../components/Breadcrumbs";
-import MarketplaceLoadingSkeleton from "../../components/MarketplaceLoadingSkeleton";
-import { api } from "../../lib/api";
-
 import {
     ArrowLeft,
+    ArrowRight,
     Wallet,
     CircleDollarSign,
-    ArrowDownLeft,
-    ArrowUpRight,
+    Clock3,
+    CheckCircle2,
     Search,
+    ArrowDownCircle,
 } from "lucide-react";
+import { api } from "../../lib/api";
+
+/*
+  Clipper withdrawal history — same shell as Creator transactions,
+  but withdrawals only (no campaign earnings mixed in).
+*/
+
+const PAGE_SIZE = 10;
+
+const TXN_META = {
+    withdrawal: {
+        label: "Withdrawal",
+        icon: ArrowDownCircle,
+        color: "text-violet-400",
+        bg: "bg-violet-500/10",
+        sign: "−",
+    },
+};
+
+function normalizeStatus(rawStatus) {
+    const status = String(rawStatus || "pending").toLowerCase();
+    if (status === "completed" || status === "successful") return "Completed";
+    if (status === "rejected") return "Rejected";
+    if (status === "failed") return "Failed";
+    if (status === "pending") return "Processing";
+    return status.replace(/^./, (c) => c.toUpperCase());
+}
+
+export function formatWithdrawalDescription(transaction) {
+    const methodRaw = (
+        transaction.paymentMethod
+        || transaction.payment_method
+        || ""
+    ).toString().toLowerCase();
+    const details = (
+        transaction.paymentDetails
+        || transaction.payment_details
+        || ""
+    ).toString().trim();
+
+    const isUpi =
+        methodRaw.includes("upi")
+        || (details.includes("@") && !details.includes("|"));
+    const isBank =
+        methodRaw.includes("bank")
+        || details.includes("|");
+
+    if (isUpi) {
+        // May be "upi@bank · UTR 123" after payout completes.
+        return details
+            ? `Withdrawal via UPI · ${details}`
+            : "Withdrawal via UPI";
+    }
+
+    if (isBank) {
+        const parts = details.split("|").map((part) => part.trim()).filter(Boolean);
+        if (parts.length >= 3) {
+            const bankName = parts[1];
+            const accountNumber = parts[2].replace(/·\s*UTR.*/i, "").trim();
+            const last4 = accountNumber.slice(-4);
+            const utrMatch = details.match(/UTR\s+([A-Za-z0-9]+)/i);
+            const base = `Withdrawal via Bank Transfer · ${bankName} •••• ${last4}`;
+            return utrMatch ? `${base} · UTR ${utrMatch[1]}` : base;
+        }
+        return details
+            ? `Withdrawal via Bank Transfer · ${details}`
+            : "Withdrawal via Bank Transfer";
+    }
+
+    if (methodRaw.includes("paypal")) {
+        return details ? `Withdrawal via PayPal · ${details}` : "Withdrawal via PayPal";
+    }
+
+    return details ? `Withdrawal · ${details}` : "Withdrawal request";
+}
+
+export function normalizeClipperWithdrawal(transaction) {
+    const rawType = (
+        transaction.transactionType
+        || transaction.transaction_type
+        || transaction.type
+        || ""
+    ).toString().toLowerCase();
+
+    // History endpoint is withdrawals-only; if a type is present, require withdraw.
+    if (rawType && !rawType.includes("withdraw")) return null;
+
+    const methodRaw = (
+        transaction.paymentMethod
+        || transaction.payment_method
+        || ""
+    ).toString().toLowerCase();
+    const details = (
+        transaction.paymentDetails
+        || transaction.payment_details
+        || ""
+    ).toString();
+
+    let method = "Wallet";
+    if (methodRaw.includes("upi") || (details.includes("@") && !details.includes("|"))) {
+        method = "UPI";
+    } else if (methodRaw.includes("bank") || details.includes("|")) {
+        method = "Bank Transfer";
+    } else if (methodRaw.includes("paypal")) {
+        method = "PayPal";
+    }
+
+    return {
+        id: transaction.id,
+        date: transaction.createdAt
+            ? new Date(transaction.createdAt).toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+            })
+            : "—",
+        type: "withdrawal",
+        label: formatWithdrawalDescription(transaction),
+        amount: Number(transaction.amount || 0),
+        method,
+        status: normalizeStatus(transaction.status),
+        createdAt: transaction.createdAt || transaction.created_at,
+    };
+}
+
+function TransactionHistorySkeleton() {
+    return (
+        <div className="min-h-screen bg-black text-white">
+            <div className="h-5 w-40 animate-pulse rounded bg-white/10" />
+            <section className="mt-6 rounded-3xl border border-white/10 bg-white/[0.03] p-8">
+                <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="max-w-2xl flex-1">
+                        <div className="h-6 w-32 animate-pulse rounded-full bg-white/10" />
+                        <div className="mt-5 h-10 w-64 animate-pulse rounded bg-white/10" />
+                        <div className="mt-4 h-4 w-full max-w-xl animate-pulse rounded bg-white/10" />
+                    </div>
+                    <div className="h-12 w-40 animate-pulse rounded-xl bg-white/10" />
+                </div>
+            </section>
+            <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+                        <div className="mb-4 h-7 w-7 animate-pulse rounded bg-white/10" />
+                        <div className="h-3 w-24 animate-pulse rounded bg-white/10" />
+                        <div className="mt-3 h-7 w-20 animate-pulse rounded bg-white/10" />
+                    </div>
+                ))}
+            </div>
+            <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.03] p-6">
+                <div className="h-12 w-full animate-pulse rounded-xl bg-white/10" />
+            </div>
+            <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.03]">
+                <div className="space-y-0 px-6 py-2">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                        <div key={i} className="flex items-center gap-4 border-b border-white/5 py-5 last:border-b-0">
+                            <div className="h-4 w-8 animate-pulse rounded bg-white/10" />
+                            <div className="h-4 w-24 animate-pulse rounded bg-white/10" />
+                            <div className="h-6 w-24 animate-pulse rounded-full bg-white/10" />
+                            <div className="h-4 flex-1 animate-pulse rounded bg-white/10" />
+                            <div className="h-4 w-20 animate-pulse rounded bg-white/10" />
+                            <div className="h-6 w-20 animate-pulse rounded-full bg-white/10" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
 
 export default function TransactionHistory() {
+    const [search, setSearch] = useState("");
+    const [statusFilter, setStatusFilter] = useState("All");
+    const [sortBy, setSortBy] = useState("Newest");
+    const [page, setPage] = useState(1);
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [search, setSearch] = useState("");
-    const [typeFilter, setTypeFilter] = useState("All"); // All | Earned | Withdrawn
-    const [methodFilter, setMethodFilter] = useState("All");
-    const [sortBy, setSortBy] = useState("Newest");
+    const [error, setError] = useState("");
 
     useEffect(() => {
         let mounted = true;
-
-        const loadHistory = async () => {
+        const load = async () => {
             try {
-                const data = await api('/api/earnings/overview/');
+                setLoading(true);
+                setError("");
+                const data = await api("/api/earnings/payout/history/");
                 if (!mounted) return;
-                const source = Array.isArray(data.recent_transactions) ? data.recent_transactions : [];
-
-                // Same distinction used on the Earnings page: "Earning" transactions
-                // are money coming IN from a campaign submission (credit); everything
-                // else is money going OUT of the wallet as a withdrawal (debit).
-                setTransactions(source.map((item) => {
-                    const isCredit = item.transactionType === "Earning";
-                    const methodRaw = (item.paymentMethod || item.payment_method || "").toString().toLowerCase();
-                    const details = (item.paymentDetails || item.payment_details || item.external_ref || "").toString().trim();
-                    const isUpi = methodRaw.includes("upi") || (details.includes("@") && !details.includes("|"));
-                    const isBank = methodRaw.includes("bank") || details.includes("|");
-
-                    let withdrawalLabel = "Wallet Withdrawal";
-                    if (!isCredit) {
-                        if (isUpi) {
-                            withdrawalLabel = details ? `Withdrawal via UPI · ${details}` : "Withdrawal via UPI";
-                        } else if (isBank) {
-                            const parts = details.split("|").map((part) => part.trim()).filter(Boolean);
-                            if (parts.length >= 3) {
-                                withdrawalLabel = `Withdrawal via Bank Transfer · ${parts[1]} •••• ${parts[2].slice(-4)}`;
-                            } else {
-                                withdrawalLabel = details
-                                    ? `Withdrawal via Bank Transfer · ${details}`
-                                    : "Withdrawal via Bank Transfer";
-                            }
-                        } else if (details) {
-                            withdrawalLabel = `Withdrawal to ${details}`;
-                        }
-                    }
-
-                    return {
-                        id: item.submissionId || item.id,
-                        date: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '',
-                        campaign: isCredit
-                            ? (item.contentTitle || item.paymentDetails || item.external_ref || 'Campaign earnings')
-                            : withdrawalLabel,
-                        amount: Number(item.amount || 0),
-                        isCredit,
-                        method: isCredit
-                            ? 'Campaign Submission'
-                            : isUpi
-                                ? 'UPI'
-                                : isBank
-                                    ? 'Bank Transfer'
-                                    : (item.paymentMethod || 'Wallet Withdrawal'),
-                    };
-                }));
-            } catch (error) {
-                console.error(error);
+                const rows = (Array.isArray(data) ? data : data?.results || [])
+                    .map(normalizeClipperWithdrawal)
+                    .filter(Boolean);
+                setTransactions(rows);
+            } catch (err) {
+                if (!mounted) return;
+                setError(err?.message || "Unable to load withdrawal history.");
             } finally {
                 if (mounted) setLoading(false);
             }
         };
-
-        loadHistory();
+        load();
         return () => {
             mounted = false;
         };
     }, []);
 
+    useEffect(() => {
+        setPage(1);
+    }, [search, statusFilter, sortBy]);
+
     const filteredTransactions = useMemo(() => {
         let data = [...transactions];
 
         if (search) {
-            data = data.filter(
-                (transaction) =>
-                    (transaction.campaign || transaction.method)
-                        .toLowerCase()
-                        .includes(search.toLowerCase()) ||
-                    transaction.id.toString().includes(search)
-            );
+            const q = search.toLowerCase();
+            data = data.filter((t) => t.label.toLowerCase().includes(q));
         }
-
-        if (typeFilter !== "All") {
-            const wantsCredit = typeFilter === "Earned";
-            data = data.filter((transaction) => transaction.isCredit === wantsCredit);
-        }
-
-        if (methodFilter !== "All") {
-            data = data.filter(
-                (transaction) => transaction.method === methodFilter
-            );
-        }
+        if (statusFilter !== "All") data = data.filter((t) => t.status === statusFilter);
 
         switch (sortBy) {
             case "Oldest":
-                data.reverse();
+                data.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
                 break;
-
             case "Highest Amount":
                 data.sort((a, b) => b.amount - a.amount);
                 break;
-
             case "Lowest Amount":
                 data.sort((a, b) => a.amount - b.amount);
                 break;
-
             default:
+                data.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
                 break;
         }
-
         return data;
-    }, [search, typeFilter, methodFilter, sortBy, transactions]);
+    }, [transactions, search, statusFilter, sortBy]);
 
-    const totalEarned = transactions
-        .filter((transaction) => transaction.isCredit)
-        .reduce((sum, transaction) => sum + transaction.amount, 0);
+    const totalPages = Math.max(1, Math.ceil(filteredTransactions.length / PAGE_SIZE));
+    const currentPage = Math.min(page, totalPages);
+    const pageStart = (currentPage - 1) * PAGE_SIZE;
+    const paginatedTransactions = filteredTransactions.slice(pageStart, pageStart + PAGE_SIZE);
 
+    const completedCount = transactions.filter((t) => t.status === "Completed").length;
+    const processingCount = transactions.filter((t) => t.status === "Processing").length;
     const totalWithdrawn = transactions
-        .filter((transaction) => !transaction.isCredit)
-        .reduce((sum, transaction) => sum + transaction.amount, 0);
+        .filter((t) => t.status === "Completed")
+        .reduce((sum, t) => sum + t.amount, 0);
 
-    const earnedCount = transactions.filter((transaction) => transaction.isCredit).length;
-    const withdrawnCount = transactions.filter((transaction) => !transaction.isCredit).length;
-
-    if (loading) {
-        return <MarketplaceLoadingSkeleton />;
-    }
+    if (loading) return <TransactionHistorySkeleton />;
 
     return (
         <div className="min-h-screen bg-black text-white">
             <Breadcrumbs />
 
-            {/* Hero */}
-
             <section className="mt-6 flex flex-col gap-6 rounded-3xl border border-white/10 bg-white/[0.03] p-8 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                    
-
-                    <h1 className="mt-5 text-4xl font-bold">
-                        Transaction History
-                    </h1>
-
+                    <span className="inline-flex rounded-full bg-violet-500/10 px-4 py-1 text-xs font-medium text-violet-300">
+                        Clipper Earnings
+                    </span>
+                    <h1 className="mt-5 text-4xl font-bold">Withdrawal History</h1>
                     <p className="mt-4 max-w-2xl leading-7 text-zinc-400">
-                        View your complete payment history and track what's
-                        been earned from gigs versus withdrawn from your wallet.
+                        Track every withdrawal request — pending review, completed, or returned.
                     </p>
                 </div>
-
                 <Link
                     to="/clipper/earnings"
                     className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-6 py-3 font-medium transition hover:bg-white/5"
@@ -176,257 +280,180 @@ export default function TransactionHistory() {
                 </Link>
             </section>
 
-            {/* KPI Cards */}
-
             <section className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-                    <Wallet
-                        className="mb-4 text-violet-400"
-                        size={28}
-                    />
-
-                    <p className="text-sm text-zinc-500">
-                        Total Transactions
-                    </p>
-
-                    <h3 className="mt-2 text-3xl font-bold">
-                        {transactions.length}
-                    </h3>
+                    <Wallet className="mb-4 text-violet-400" size={28} />
+                    <p className="text-sm text-zinc-500">Total Requests</p>
+                    <h3 className="mt-2 text-3xl font-bold">{transactions.length}</h3>
                 </div>
-
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-                    <ArrowDownLeft
-                        className="mb-4 text-emerald-400"
-                        size={28}
-                    />
-
-                    <p className="text-sm text-zinc-500">
-                        Total Earned
-                    </p>
-
-                    <h3 className="mt-2 text-3xl font-bold text-emerald-400">
-                        +₹{totalEarned.toLocaleString()}
-                    </h3>
-
-                    <p className="mt-2 text-xs text-zinc-500">
-                        {earnedCount} campaign submission{earnedCount !== 1 ? "s" : ""}
-                    </p>
+                    <CheckCircle2 className="mb-4 text-emerald-400" size={28} />
+                    <p className="text-sm text-zinc-500">Completed</p>
+                    <h3 className="mt-2 text-3xl font-bold">{completedCount}</h3>
                 </div>
-
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-                    <ArrowUpRight
-                        className="mb-4 text-red-400"
-                        size={28}
-                    />
-
-                    <p className="text-sm text-zinc-500">
-                        Total Withdrawn
-                    </p>
-
-                    <h3 className="mt-2 text-3xl font-bold text-red-400">
-                        -₹{totalWithdrawn.toLocaleString()}
-                    </h3>
-
-                    <p className="mt-2 text-xs text-zinc-500">
-                        {withdrawnCount} withdrawal{withdrawnCount !== 1 ? "s" : ""}
-                    </p>
+                    <Clock3 className="mb-4 text-amber-400" size={28} />
+                    <p className="text-sm text-zinc-500">In Review</p>
+                    <h3 className="mt-2 text-3xl font-bold">{processingCount}</h3>
                 </div>
-
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-                    <CircleDollarSign
-                        className="mb-4 text-sky-400"
-                        size={28}
-                    />
-
-                    <p className="text-sm text-zinc-500">
-                        Net Balance Change
-                    </p>
-
-                    <h3 className="mt-2 text-3xl font-bold">
-                        ₹{(totalEarned - totalWithdrawn).toLocaleString()}
-                    </h3>
+                    <CircleDollarSign className="mb-4 text-sky-400" size={28} />
+                    <p className="text-sm text-zinc-500">Total Paid Out</p>
+                    <h3 className="mt-2 text-3xl font-bold">₹{totalWithdrawn.toLocaleString("en-IN")}</h3>
                 </div>
             </section>
-            {/* Filters */}
 
-           {/* Filters */}
-
-<section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.03] p-6">
-    <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
-        <div className="flex-1">
-            <label className="mb-2 block text-xs font-medium text-zinc-500">
-                Search
-            </label>
-            <div className="relative">
-                <Search
-                    size={18}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"
-                />
-
-                <input
-                    type="text"
-                    placeholder="Search by gig or transaction ID..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-black/40 py-3 pl-11 pr-4 outline-none transition focus:border-violet-500"
-                />
-            </div>
-        </div>
-
-        <div>
-            <label className="mb-2 block text-xs font-medium text-zinc-500">
-                Type
-            </label>
-            <select
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-                className="rounded-xl border border-white/10 bg-black px-4 py-3 outline-none"
-            >
-                <option>All</option>
-                <option>Earned</option>
-                <option>Withdrawn</option>
-            </select>
-        </div>
-
-        <div>
-            <label className="mb-2 block text-xs font-medium text-zinc-500">
-                Method
-            </label>
-            <select
-                value={methodFilter}
-                onChange={(e) => setMethodFilter(e.target.value)}
-                className="rounded-xl border border-white/10 bg-black px-4 py-3 outline-none"
-            >
-                <option>All</option>
-                <option>UPI</option>
-                <option>Bank Transfer</option>
-            </select>
-        </div>
-
-        <div>
-            <label className="mb-2 block text-xs font-medium text-zinc-500">
-                Sort By
-            </label>
-            <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="rounded-xl border border-white/10 bg-black px-4 py-3 outline-none"
-            >
-                <option>Newest</option>
-                <option>Oldest</option>
-                <option>Highest Amount</option>
-                <option>Lowest Amount</option>
-            </select>
-        </div>
-    </div>
-</section>
-
-            {/* Transactions Table */}
+            <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.03] p-6">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+                    <div className="relative flex-1">
+                        <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" />
+                        <input
+                            type="text"
+                            placeholder="Search by UPI, bank, or reference..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="w-full rounded-xl border border-white/10 bg-black/40 py-3 pl-11 pr-4 outline-none transition focus:border-violet-500"
+                        />
+                    </div>
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="rounded-xl border border-white/10 bg-black px-4 py-3 outline-none"
+                    >
+                        <option value="All">All Status</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Processing">Processing</option>
+                        <option value="Rejected">Rejected</option>
+                        <option value="Failed">Failed</option>
+                    </select>
+                    <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                        className="rounded-xl border border-white/10 bg-black px-4 py-3 outline-none"
+                    >
+                        <option>Newest</option>
+                        <option>Oldest</option>
+                        <option>Highest Amount</option>
+                        <option>Lowest Amount</option>
+                    </select>
+                </div>
+            </section>
 
             <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.03]">
                 <div className="border-b border-white/10 px-6 py-5">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h2 className="text-xl font-semibold">
-                                Transactions
-                            </h2>
-
+                            <h2 className="text-xl font-semibold">Withdrawals</h2>
                             <p className="mt-1 text-sm text-zinc-400">
-                                Complete payout history from your gigs.
+                                Your withdrawal requests and payout status.
                             </p>
                         </div>
-
                         <span className="rounded-full bg-white/5 px-3 py-1 text-sm text-zinc-400">
                             {filteredTransactions.length} Results
                         </span>
                     </div>
                 </div>
 
-                {filteredTransactions.length === 0 ? (
+                {error ? (
+                    <div className="px-6 py-16 text-center text-red-400">{error}</div>
+                ) : filteredTransactions.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-24">
-                        <Wallet
-                            size={60}
-                            className="mb-6 text-zinc-600"
-                        />
-
-                        <h3 className="text-2xl font-semibold">
-                            No Transactions Found
-                        </h3>
-
+                        <Wallet size={60} className="mb-6 text-zinc-600" />
+                        <h3 className="text-2xl font-semibold">No Withdrawals Found</h3>
                         <p className="mt-3 max-w-md text-center text-zinc-500">
-                            Try changing your search or filters to find the
-                            transactions you're looking for.
+                            When you request a withdrawal, it will appear here with its status.
                         </p>
-
                         <Link
-                            to="/marketplace"
+                            to="/clipper/withdraw"
                             className="mt-8 rounded-xl bg-violet-600 px-6 py-3 font-medium transition hover:bg-violet-500"
                         >
-                            Browse Gigs
+                            Withdraw Earnings
                         </Link>
                     </div>
                 ) : (
-                    <div className="custom-scrollbar max-h-[500px] overflow-y-auto">
-                        <table className="w-full">
-                            <thead className="sticky top-0 bg-[#0B0B0B]">
-                                <tr className="border-b border-white/10 text-left text-sm text-zinc-400">
-                                    <th className="px-6 py-4">ID</th>
-                                    <th className="px-6 py-4">Date</th>
-                                    <th className="px-6 py-4">Campaign / Source</th>
-                                    <th className="px-6 py-4">Type</th>
-                                    <th className="px-6 py-4 text-right">Amount</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                {filteredTransactions.map((transaction) => (
-                                    <tr
-                                        key={transaction.id}
-                                        className="border-b border-white/5 transition hover:bg-white/[0.03]"
-                                    >
-                                        <td className="px-6 py-5 font-medium">
-                                            #{transaction.id}
-                                        </td>
-
-                                        <td className="px-6 py-5 text-zinc-400">
-                                            {transaction.date}
-                                        </td>
-
-                                        <td className="px-6 py-5">
-                                            <div className="max-w-xs truncate">
-                                                {transaction.isCredit ? transaction.campaign : transaction.method}
-                                            </div>
-                                        </td>
-
-                                        <td className="px-6 py-5">
-                                            <span
-                                                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.08em] ${
-                                                    transaction.isCredit
-                                                        ? "border border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
-                                                        : "border border-red-500/30 bg-red-500/10 text-red-300"
-                                                }`}
-                                            >
-                                                {transaction.isCredit ? (
-                                                    <ArrowDownLeft size={11} />
-                                                ) : (
-                                                    <ArrowUpRight size={11} />
-                                                )}
-                                                {transaction.isCredit ? "Earned" : "Withdrawn"}
-                                            </span>
-                                        </td>
-
-                                        <td
-                                            className={`px-6 py-5 text-right font-semibold ${
-                                                transaction.isCredit ? "text-emerald-400" : "text-red-400"
-                                            }`}
-                                        >
-                                            {transaction.isCredit ? "+" : "-"}₹{transaction.amount.toLocaleString()}
-                                        </td>
+                    <>
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="bg-[#0B0B0B]">
+                                    <tr className="border-b border-white/10 text-left text-sm text-zinc-400">
+                                        <th className="px-6 py-4">ID</th>
+                                        <th className="px-6 py-4">Date</th>
+                                        <th className="px-6 py-4">Type</th>
+                                        <th className="px-6 py-4">Description</th>
+                                        <th className="px-6 py-4">Amount</th>
+                                        <th className="px-6 py-4">Status</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody>
+                                    {paginatedTransactions.map((t, index) => {
+                                        const meta = TXN_META.withdrawal;
+                                        const Icon = meta.icon;
+                                        return (
+                                            <tr key={t.id} className="border-b border-white/5 transition hover:bg-white/[0.03]">
+                                                <td className="px-6 py-5 font-medium">{pageStart + index + 1}</td>
+                                                <td className="px-6 py-5 text-zinc-400">{t.date}</td>
+                                                <td className="px-6 py-5">
+                                                    <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${meta.bg} ${meta.color}`}>
+                                                        <Icon size={12} />
+                                                        {meta.label}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-5">{t.label}</td>
+                                                <td className={`px-6 py-5 font-semibold ${meta.color}`}>
+                                                    {meta.sign}₹{t.amount.toLocaleString("en-IN")}
+                                                </td>
+                                                <td className="px-6 py-5">
+                                                    <span
+                                                        className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
+                                                            t.status === "Completed"
+                                                                ? "bg-emerald-500/10 text-emerald-400"
+                                                                : t.status === "Processing"
+                                                                ? "bg-amber-500/10 text-amber-400"
+                                                                : t.status === "Rejected"
+                                                                ? "bg-rose-500/10 text-rose-400"
+                                                                : "bg-red-500/10 text-red-400"
+                                                        }`}
+                                                    >
+                                                        {t.status}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div className="flex flex-col gap-4 border-t border-white/10 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+                            <p className="text-sm text-zinc-500">
+                                Showing {pageStart + 1}–{Math.min(pageStart + PAGE_SIZE, filteredTransactions.length)} of{" "}
+                                {filteredTransactions.length}
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                    disabled={currentPage <= 1}
+                                    className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-sm font-medium transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    <ArrowLeft size={14} />
+                                    Prev
+                                </button>
+                                <span className="rounded-xl bg-white/5 px-3 py-2 text-sm text-zinc-300">
+                                    Page {currentPage} of {totalPages}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                                    disabled={currentPage >= totalPages}
+                                    className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-sm font-medium transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    Next
+                                    <ArrowRight size={14} />
+                                </button>
+                            </div>
+                        </div>
+                    </>
                 )}
             </section>
         </div>

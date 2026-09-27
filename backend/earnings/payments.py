@@ -541,12 +541,45 @@ def _finalize_withdrawal_as(
         return locked
 
 
+def _notify_withdrawal_user(txn: Transaction, *, title: str, message: str, status_value: str) -> None:
+    """User-facing withdrawal status update — no internal gateway details."""
+    try:
+        from notifications.helpers import notify_user_event
+        notify_user_event(
+            user_id=txn.user_id,
+            event_type='earnings.withdrawal_status',
+            title=title,
+            message=message,
+            category='earnings',
+            entity_type='transaction',
+            entity_id=txn.id,
+            payload={'amount': str(txn.amount), 'status': status_value},
+            email=True,
+            idempotency_key=f'earnings.withdrawal_status:{txn.id}:{status_value}',
+        )
+    except Exception:
+        logger.exception('Failed to notify user for withdrawal %s', txn.id)
+
+
 def mark_withdrawal_failed(txn: Transaction, *, reason: str = '') -> Transaction:
-    return _finalize_withdrawal_as(
+    previous_status = txn.status
+    updated = _finalize_withdrawal_as(
         txn,
         status_value='failed',
         notes={'razorpayError': reason or 'Payout failed', 'razorpayStatus': 'failed'},
     )
+    if previous_status == 'pending' and updated.status == 'failed':
+        _notify_withdrawal_user(
+            updated,
+            title='Withdrawal unsuccessful',
+            message=(
+                f'Your withdrawal of ₹{updated.amount} could not be completed. '
+                f'The amount has been returned to your available balance. '
+                f'Please check your payout details and try again, or contact support.'
+            ),
+            status_value='failed',
+        )
+    return updated
 
 
 def mark_withdrawal_rejected(
@@ -556,6 +589,7 @@ def mark_withdrawal_rejected(
     rejected_by_admin: bool = False,
     razorpay_status: str = 'rejected',
 ) -> Transaction:
+    previous_status = txn.status
     notes = {
         'rejectReason': reason or 'Payout rejected',
         'razorpayStatus': razorpay_status,
@@ -564,10 +598,27 @@ def mark_withdrawal_rejected(
         notes['rejectedByAdmin'] = True
     else:
         notes['razorpayError'] = reason or 'Payout rejected'
-    return _finalize_withdrawal_as(txn, status_value='rejected', notes=notes)
+    updated = _finalize_withdrawal_as(txn, status_value='rejected', notes=notes)
+    # Admin reject path sends its own notification with optional reason.
+    if (
+        not rejected_by_admin
+        and previous_status == 'pending'
+        and updated.status == 'rejected'
+    ):
+        _notify_withdrawal_user(
+            updated,
+            title='Withdrawal not approved',
+            message=(
+                f'Your withdrawal of ₹{updated.amount} was not approved and the amount '
+                f'has been returned to your available balance.'
+            ),
+            status_value='rejected',
+        )
+    return updated
 
 
 def mark_withdrawal_completed(txn: Transaction, *, payout_id: str = '', razorpay_status: str = 'processed') -> Transaction:
+    previous_status = txn.status
     with db_transaction.atomic():
         locked = (
             Transaction.objects.select_for_update()
@@ -589,7 +640,18 @@ def mark_withdrawal_completed(txn: Transaction, *, payout_id: str = '', razorpay
             },
         )
         locked.save(update_fields=['status', 'external_ref', 'bot_notes', 'updated_at'])
-        return locked
+        updated = locked
+    if previous_status == 'pending' and updated.status == 'completed':
+        _notify_withdrawal_user(
+            updated,
+            title='Withdrawal completed',
+            message=(
+                f'Your withdrawal of ₹{updated.amount} has been completed. '
+                f'The amount has been sent to your registered payout account.'
+            ),
+            status_value='completed',
+        )
+    return updated
 
 
 def build_withdrawal_destination_display(txn: Transaction) -> dict:
@@ -794,25 +856,25 @@ def create_razorpay_withdrawal_payout(txn: Transaction) -> dict:
         },
     )
     txn.external_ref = payout_id or txn.external_ref
+    txn.save(update_fields=['external_ref', 'bot_notes', 'updated_at'])
     # Keep pending until webhook confirms processed; immediate terminal states finalize now.
     if payout_status in {'processed', 'completed'}:
-        txn.status = 'completed'
-        txn.save(update_fields=['status', 'external_ref', 'bot_notes', 'updated_at'])
+        txn = mark_withdrawal_completed(
+            txn,
+            payout_id=payout_id,
+            razorpay_status=payout_status,
+        )
     elif payout_status in {'rejected', 'cancelled'}:
-        txn.save(update_fields=['external_ref', 'bot_notes', 'updated_at'])
         txn = mark_withdrawal_rejected(
             txn,
             reason=payout.get('failure_reason') or payout_status,
             razorpay_status=payout_status,
         )
     elif payout_status in {'failed', 'reversed'}:
-        txn.save(update_fields=['external_ref', 'bot_notes', 'updated_at'])
         txn = mark_withdrawal_failed(
             txn,
             reason=payout.get('failure_reason') or payout_status,
         )
-    else:
-        txn.save(update_fields=['external_ref', 'bot_notes', 'updated_at'])
 
     return {
         'transactionId': txn.id,

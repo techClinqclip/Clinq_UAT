@@ -105,11 +105,15 @@ def notify_users_event(user_ids, **kwargs) -> Optional[uuid.UUID]:
 def notify_admins_event(**kwargs) -> Optional[uuid.UUID]:
     """Send an in-app notification to every active staff administrator."""
     from django.contrib.auth import get_user_model
+    from django.db.models import Q
 
-    admin_ids = get_user_model().objects.filter(
-        is_active=True,
-        is_staff=True,
-    ).values_list('id', flat=True)
+    admin_ids = (
+        get_user_model()
+        .objects.filter(is_active=True)
+        .filter(Q(is_staff=True) | Q(is_superuser=True))
+        .values_list('id', flat=True)
+        .distinct()
+    )
     return notify_users_event(list(admin_ids), **kwargs)
 
 
@@ -451,13 +455,32 @@ def notify_earnings_payout_status(
         return None
     
     status_messages = {
-        'pending': ('⏳ Payout Pending', f'Your payout of ${amount} is pending.'),
-        'processing': ('🔄 Payout Processing', f'Your payout of ${amount} is being processed.'),
-        'completed': ('✅ Payout Complete', f'Your payout of ${amount} has been completed.'),
-        'failed': ('❌ Payout Failed', f'Your payout of ${amount} failed. Please contact support.'),
+        'pending': (
+            'Withdrawal under review',
+            f'Your withdrawal of ₹{amount} is under review. We will notify you once it is processed.',
+        ),
+        'processing': (
+            'Withdrawal processing',
+            f'Your withdrawal of ₹{amount} is being processed. You will be notified once it is completed.',
+        ),
+        'completed': (
+            'Withdrawal completed',
+            f'Your withdrawal of ₹{amount} has been completed and sent to your registered payout account.',
+        ),
+        'failed': (
+            'Withdrawal unsuccessful',
+            f'Your withdrawal of ₹{amount} could not be completed. The amount has been returned to your available balance.',
+        ),
+        'rejected': (
+            'Withdrawal not approved',
+            f'Your withdrawal of ₹{amount} was not approved and the amount has been returned to your available balance.',
+        ),
     }
-    
-    title, message = status_messages.get(status, ('💰 Payout Update', f'Payout update: {status}'))
+
+    title, message = status_messages.get(
+        status,
+        ('Withdrawal update', f'There is an update on your withdrawal of ₹{amount}.'),
+    )
     event_type = f'earnings.payout_{status}'
     
     try:

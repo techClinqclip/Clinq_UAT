@@ -4,8 +4,7 @@ import {
     CircleDollarSign,
     Clock3,
     ArrowRight,
-    ArrowDownLeft,
-    ArrowUpRight,
+    ArrowDownCircle,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import Breadcrumbs from "../../components/Breadcrumbs";
@@ -13,6 +12,7 @@ import MarketplaceLoadingSkeleton from "../../components/MarketplaceLoadingSkele
 import EarningsChartCard from "./components/EarningsChartCard";
 import useToast from "../../hooks/useToast";
 import { api } from "../../lib/api";
+import { normalizeClipperWithdrawal } from "./TransactionHistory";
 
 const defaultOverview = {
     total_earnings: 0,
@@ -26,14 +26,9 @@ const defaultOverview = {
     can_request_payout: false,
 };
 
-function formatDate(value) {
-    if (!value) return "";
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString();
-}
-
 export default function ClipperEarnings() {
     const [overview, setOverview] = useState(defaultOverview);
+    const [withdrawals, setWithdrawals] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedFilter, setSelectedFilter] = useState("30 Days");
     const { showToast } = useToast();
@@ -43,7 +38,10 @@ export default function ClipperEarnings() {
 
         const loadOverview = async () => {
             try {
-                const data = await api("/api/earnings/overview/");
+                const [data, history] = await Promise.all([
+                    api("/api/earnings/overview/"),
+                    api("/api/earnings/payout/history/").catch(() => []),
+                ]);
                 if (!mounted) return;
 
                 setOverview({
@@ -57,6 +55,7 @@ export default function ClipperEarnings() {
                     minimum_payout: Number(data.minimum_payout || 2500),
                     can_request_payout: Boolean(data.can_request_payout),
                 });
+                setWithdrawals(Array.isArray(history) ? history : history?.results || []);
             } catch (error) {
                 if (!mounted) return;
                 showToast({
@@ -94,53 +93,15 @@ export default function ClipperEarnings() {
         return source;
     }, [overview.monthly_earnings, overview.earnings_monthly, overview.earnings_by_period, selectedFilter]);
 
-    // "Earning" transactions = money coming IN from a campaign submission (credit).
-    // Anything else (withdrawal/payout request) = money going OUT of the wallet (debit).
-    // We keep both in one feed but style/label them distinctly instead of relying
-    // on a status column, since status ("Completed"/"Processing") doesn't tell you
-    // whether money moved in or out.
+    // Recent Payouts = withdrawal requests only (same idea as Creator recent list).
     const recentPayouts = useMemo(
         () =>
-            (overview.recent_transactions || [])
-                .slice(0, 5)
-                .map((payout) => {
-                    const isCredit = payout.transactionType === "Earning";
-                    const methodRaw = (payout.paymentMethod || payout.payment_method || "").toString().toLowerCase();
-                    const details = (payout.paymentDetails || payout.payment_details || payout.external_ref || "").toString().trim();
-                    const isUpi = methodRaw.includes("upi") || (details.includes("@") && !details.includes("|"));
-                    const isBank = methodRaw.includes("bank") || details.includes("|");
-
-                    let withdrawalMethod = "Wallet Withdrawal";
-                    if (!isCredit) {
-                        if (isUpi) {
-                            withdrawalMethod = details ? `Withdrawal via UPI · ${details}` : "Withdrawal via UPI";
-                        } else if (isBank) {
-                            const parts = details.split("|").map((part) => part.trim()).filter(Boolean);
-                            withdrawalMethod = parts.length >= 3
-                                ? `Withdrawal via Bank Transfer · ${parts[1]} •••• ${parts[2].slice(-4)}`
-                                : details
-                                    ? `Withdrawal via Bank Transfer · ${details}`
-                                    : "Withdrawal via Bank Transfer";
-                        } else if (details) {
-                            withdrawalMethod = `Withdrawal to ${details}`;
-                        }
-                    }
-
-                    return {
-                        id: payout.id,
-                        date: formatDate(payout.createdAt),
-                        amount: Number(payout.amount || 0),
-                        isCredit,
-                        campaignName: isCredit
-                            ? payout.contentTitle ||
-                              payout.paymentDetails ||
-                              payout.external_ref ||
-                              "Campaign earnings"
-                            : null,
-                        method: isCredit ? "Campaign Submission" : withdrawalMethod,
-                    };
-                }),
-        [overview.recent_transactions]
+            (withdrawals || [])
+                .map(normalizeClipperWithdrawal)
+                .filter(Boolean)
+                .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+                .slice(0, 5),
+        [withdrawals]
     );
 
     if (loading) {
@@ -212,73 +173,86 @@ export default function ClipperEarnings() {
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div>
                         <h2 className="text-2xl font-semibold">Recent Payouts</h2>
-                        <p className="mt-2 text-sm text-zinc-400">Your latest withdrawals and payment history.</p>
+                        <p className="mt-2 text-sm text-zinc-400">
+                            Your latest withdrawal requests and their status.
+                        </p>
                     </div>
 
-                    <Link
-                        to="/clipper/transactions"
-                        className="inline-flex items-center gap-2 self-start rounded-xl border border-white/10 px-4 py-2 text-sm font-medium transition hover:bg-white/5 md:self-auto"
-                    >
-                        View All
-                        <ArrowRight size={16} />
-                    </Link>
+                    {recentPayouts.length > 0 && (
+                        <Link
+                            to="/clipper/transactions"
+                            className="inline-flex items-center gap-2 self-start rounded-xl border border-white/10 px-4 py-2 text-sm font-medium transition hover:bg-white/5 md:self-auto"
+                        >
+                            View All
+                            <ArrowRight size={16} />
+                        </Link>
+                    )}
                 </div>
 
-                {loading ? (
-                    <div className="mt-8 py-24 text-center text-zinc-400">Loading earnings...</div>
-                ) : recentPayouts.length === 0 ? (
-                    <div className="mt-8 rounded-2xl border border-white/10 bg-black/40 p-10 text-center text-zinc-400">
-                        No payouts found yet.
+                {recentPayouts.length > 0 ? (
+                    <div className="mt-8 space-y-4">
+                        {recentPayouts.map((txn) => {
+                            const date = txn.createdAt
+                                ? new Date(txn.createdAt).toLocaleString("en-IN", {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                })
+                                : txn.date;
+                            return (
+                                <div
+                                    key={txn.id}
+                                    className="flex flex-col gap-4 rounded-2xl border border-white/10 p-5 transition hover:bg-white/[0.03] md:flex-row md:items-center md:justify-between"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-500/10">
+                                            <ArrowDownCircle size={18} className="text-violet-400" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-medium">{txn.label}</h4>
+                                            <p className="mt-1 text-sm text-zinc-500">{date}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-6 md:gap-8">
+                                        <h4 className="text-xl font-semibold text-violet-400">
+                                            −₹{Number(txn.amount || 0).toLocaleString("en-IN")}
+                                        </h4>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-medium ${
+                                                txn.status === "Completed"
+                                                    ? "bg-emerald-500/10 text-emerald-400"
+                                                    : txn.status === "Processing"
+                                                    ? "bg-amber-500/10 text-amber-400"
+                                                    : txn.status === "Rejected"
+                                                    ? "bg-rose-500/10 text-rose-400"
+                                                    : "bg-red-500/10 text-red-400"
+                                            }`}
+                                        >
+                                            {txn.status}
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 ) : (
-                    <div className="mt-8 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full text-left text-sm text-zinc-200">
-                                <thead className="border-b border-white/10 bg-white/[0.02] text-zinc-400">
-                                    <tr>
-                                        <th className="px-5 py-4 font-medium">Date</th>
-                                        <th className="px-5 py-4 font-medium">Campaign / Source</th>
-                                        <th className="px-5 py-4 font-medium">Type</th>
-                                        <th className="px-5 py-4 font-medium text-right">Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {recentPayouts.map((payout) => (
-                                        <tr key={payout.id} className="border-b border-white/10 last:border-b-0 hover:bg-white/[0.02]">
-                                            <td className="px-5 py-4 text-zinc-300">{payout.date}</td>
-                                            <td className="px-5 py-4">
-                                                <div className="max-w-xs truncate font-medium text-zinc-100">
-                                                    {payout.isCredit ? payout.campaignName : payout.method}
-                                                </div>
-                                            </td>
-                                            <td className="px-5 py-4">
-                                                <span
-                                                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.08em] ${
-                                                        payout.isCredit
-                                                            ? "border border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
-                                                            : "border border-red-500/30 bg-red-500/10 text-red-300"
-                                                    }`}
-                                                >
-                                                    {payout.isCredit ? (
-                                                        <ArrowDownLeft size={11} />
-                                                    ) : (
-                                                        <ArrowUpRight size={11} />
-                                                    )}
-                                                    {payout.isCredit ? "Earned" : "Withdrawn"}
-                                                </span>
-                                            </td>
-                                            <td
-                                                className={`px-5 py-4 text-right font-semibold ${
-                                                    payout.isCredit ? "text-emerald-400" : "text-red-400"
-                                                }`}
-                                            >
-                                                {payout.isCredit ? "+" : "-"}₹{payout.amount.toLocaleString()}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                    <div className="mt-8 flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/10 py-16 text-center">
+                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03]">
+                            <Wallet size={24} className="text-zinc-500" />
                         </div>
+                        <h3 className="text-lg font-semibold text-white">No withdrawals yet</h3>
+                        <p className="max-w-sm text-sm text-zinc-500">
+                            Request a withdrawal when your available balance reaches the minimum.
+                        </p>
+                        <Link
+                            to="/clipper/withdraw"
+                            className="mt-2 inline-flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-medium transition hover:bg-violet-500"
+                        >
+                            Withdraw Earnings
+                            <ArrowRight size={16} />
+                        </Link>
                     </div>
                 )}
             </section>

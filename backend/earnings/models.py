@@ -6,17 +6,11 @@ from django.db.models import Sum
 
 # Import notifications helpers for integration
 try:
-    from notifications.helpers import (
-        notify_earnings_payment_processed,
-        notify_earnings_payout_status,
-        notify_earnings_milestone
-    )
+    from notifications.helpers import notify_earnings_payment_processed
     NOTIFICATIONS_AVAILABLE = True
 except ImportError:
     NOTIFICATIONS_AVAILABLE = False
     notify_earnings_payment_processed = None
-    notify_earnings_payout_status = None
-    notify_earnings_milestone = None
 
 
 class Transaction(models.Model):
@@ -110,33 +104,8 @@ def transaction_notification_handler(sender, instance, created, **kwargs):
                 # For now, just notify the most recent one crossed
                 pass
     
-    # Notify when withdrawal status changes
-    if instance.transaction_type == 'withdrawal' and notify_earnings_payout_status:
-        # Only notify on status changes, not creation
-        if not created and kwargs.get('update_fields'):
-            old_status = None
-            # We can't easily get the old status without tracking it
-            # In production, you'd use a library like django-model-utils or track manually
-            
-            notify_earnings_payout_status(
-                user_id=user_id,
-                payout_id=str(instance.id),
-                status=instance.status,
-                amount=float(instance.amount)
-            )
-
-    if created and instance.transaction_type == 'withdrawal':
-        notify_user_event(
-            user_id=instance.user_id,
-            event_type='earnings.withdrawal_status',
-            title='Withdrawal submitted',
-            message=f'Your withdrawal of ₹{instance.amount} is pending.',
-            category='earnings',
-            entity_type='transaction',
-            payload={'transaction_id': str(instance.id), 'amount': str(instance.amount), 'status': instance.status},
-            email=True,
-            idempotency_key=f'earnings.withdrawal_status:{instance.id}',
-        )
+    # Withdrawal create/status notifications are sent explicitly from
+    # payout views/helpers with user-facing copy (no internal gateway details).
 
     if instance.transaction_type == 'deposit' and instance.status == 'completed':
         notify_user_event(
