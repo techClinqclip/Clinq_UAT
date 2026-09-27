@@ -72,7 +72,8 @@ const TXN_META = {
 function normalizeStatus(rawStatus) {
     const status = String(rawStatus || "pending").toLowerCase();
     if (status === "completed" || status === "successful") return "Completed";
-    if (status === "failed" || status === "rejected") return "Failed";
+    if (status === "rejected") return "Rejected";
+    if (status === "failed") return "Failed";
     if (status === "pending") return "Processing";
     return status.replace(/^./, (c) => c.toUpperCase());
 }
@@ -341,7 +342,7 @@ export default function CreatorTransactionHistory() {
 
     const completedCount = transactions.filter((t) => t.status === "Completed").length;
     const totalWithdrawn = transactions
-        .filter((t) => t.type === "withdrawal" && t.status !== "Failed")
+        .filter((t) => t.type === "withdrawal" && t.status === "Completed")
         .reduce((sum, t) => sum + t.amount, 0);
     const withdrawalCount = transactions.filter((t) => t.type === "withdrawal").length;
     const totalDeposited = transactions
@@ -431,6 +432,7 @@ export default function CreatorTransactionHistory() {
                         <option value="All">All Status</option>
                         <option value="Completed">Completed</option>
                         <option value="Processing">Processing</option>
+                        <option value="Rejected">Rejected</option>
                         <option value="Failed">Failed</option>
                     </select>
                     <select
@@ -516,6 +518,8 @@ export default function CreatorTransactionHistory() {
                                                                 ? "bg-emerald-500/10 text-emerald-400"
                                                                 : t.status === "Processing"
                                                                 ? "bg-amber-500/10 text-amber-400"
+                                                                : t.status === "Rejected"
+                                                                ? "bg-rose-500/10 text-rose-400"
                                                                 : "bg-red-500/10 text-red-400"
                                                         }`}
                                                     >

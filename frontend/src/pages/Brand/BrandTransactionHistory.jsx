@@ -54,7 +54,8 @@ const TXN_META = {
 function normalizeStatus(rawStatus) {
     const status = String(rawStatus || "pending").toLowerCase();
     if (status === "completed" || status === "successful") return "Completed";
-    if (status === "failed" || status === "rejected") return "Failed";
+    if (status === "rejected") return "Rejected";
+    if (status === "failed") return "Failed";
     if (status === "pending") return "Processing";
     return status.replace(/^./, (c) => c.toUpperCase());
 }
@@ -350,6 +351,7 @@ export default function BrandTransactionHistory() {
                         <option value="All">All Status</option>
                         <option value="Completed">Completed</option>
                         <option value="Processing">Processing</option>
+                        <option value="Rejected">Rejected</option>
                         <option value="Failed">Failed</option>
                     </select>
 
@@ -439,6 +441,8 @@ export default function BrandTransactionHistory() {
                                                                 ? "bg-emerald-500/10 text-emerald-400"
                                                                 : t.status === "Processing"
                                                                 ? "bg-amber-500/10 text-amber-400"
+                                                                : t.status === "Rejected"
+                                                                ? "bg-rose-500/10 text-rose-400"
                                                                 : "bg-red-500/10 text-red-400"
                                                         }`}
                                                     >

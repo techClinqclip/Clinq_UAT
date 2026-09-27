@@ -29,9 +29,8 @@ from .payments import (
     mark_wallet_topup_failed,
     build_withdrawal_destination_display,
     mark_withdrawal_paid_manually,
+    mark_withdrawal_rejected,
     reconcile_pending_wallet_topups,
-    restore_withdrawal_balance,
-    merge_withdrawal_notes,
     store_withdrawal_destination,
 )
 from accounts.models import Profile
@@ -241,10 +240,23 @@ class PayoutViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'], url_path='admin-queue', permission_classes=[IsAdminUser])
     def admin_queue(self, request):
         status_filter = (request.query_params.get('status') or 'pending').strip().lower()
-        withdrawals = Transaction.objects.filter(transaction_type='withdrawal').select_related('user')
+        allowed = {'pending', 'completed', 'rejected', 'failed', 'all'}
+        if status_filter not in allowed:
+            status_filter = 'pending'
+
+        base_qs = Transaction.objects.filter(transaction_type='withdrawal')
+        counts = {
+            'pending': base_qs.filter(status='pending').count(),
+            'completed': base_qs.filter(status='completed').count(),
+            'rejected': base_qs.filter(status='rejected').count(),
+            'failed': base_qs.filter(status='failed').count(),
+        }
+        counts['all'] = sum(counts.values())
+
+        withdrawals = base_qs.select_related('user')
         if status_filter != 'all':
             withdrawals = withdrawals.filter(status=status_filter)
-        withdrawals = withdrawals.order_by('-created_at')[:200]
+        withdrawals = withdrawals.order_by('-created_at')[:300]
 
         results = []
         for txn in withdrawals:
@@ -274,11 +286,13 @@ class PayoutViewSet(viewsets.ViewSet):
             'manualPay': bool(settings_row.manual_pay),
             'requirePayoutApproval': bool(settings_row.require_payout_approval),
             'mode': settings_row.mode,
+            'statusFilter': status_filter,
             'results': results,
-            'pendingCount': Transaction.objects.filter(
-                transaction_type='withdrawal',
-                status='pending',
-            ).count(),
+            'counts': counts,
+            'pendingCount': counts['pending'],
+            'completedCount': counts['completed'],
+            'rejectedCount': counts['rejected'],
+            'failedCount': counts['failed'],
         })
 
     @extend_schema(
@@ -409,22 +423,14 @@ class PayoutViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        with db_transaction.atomic():
-            locked = (
-                Transaction.objects.select_for_update()
-                .filter(pk=txn.pk, status='pending', transaction_type='withdrawal')
-                .first()
-            )
-            if not locked:
-                return Response({'error': 'Withdrawal is no longer pending.'}, status=status.HTTP_400_BAD_REQUEST)
-            locked.status = 'rejected'
-            locked.bot_notes = merge_withdrawal_notes(
-                locked,
-                {'rejectedByAdmin': True, 'rejectReason': reason},
-            )
-            locked.save(update_fields=['status', 'bot_notes', 'updated_at'])
-            restore_withdrawal_balance(locked)
-            txn = locked
+        txn = mark_withdrawal_rejected(
+            txn,
+            reason=reason,
+            rejected_by_admin=True,
+            razorpay_status='rejected',
+        )
+        if txn.status != 'rejected':
+            return Response({'error': 'Withdrawal is no longer pending.'}, status=status.HTTP_400_BAD_REQUEST)
 
         from notifications.helpers import notify_user_event
         notify_user_event(

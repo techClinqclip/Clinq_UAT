@@ -520,7 +520,12 @@ def restore_withdrawal_balance(txn: Transaction) -> None:
     )
 
 
-def mark_withdrawal_failed(txn: Transaction, *, reason: str = '') -> Transaction:
+def _finalize_withdrawal_as(
+    txn: Transaction,
+    *,
+    status_value: str,
+    notes: dict,
+) -> Transaction:
     with db_transaction.atomic():
         locked = (
             Transaction.objects.select_for_update()
@@ -529,14 +534,37 @@ def mark_withdrawal_failed(txn: Transaction, *, reason: str = '') -> Transaction
         )
         if not locked:
             return txn
-        locked.status = 'failed'
-        locked.bot_notes = merge_withdrawal_notes(
-            locked,
-            {'razorpayError': reason or 'Payout failed', 'razorpayStatus': 'failed'},
-        )
+        locked.status = status_value
+        locked.bot_notes = merge_withdrawal_notes(locked, notes)
         locked.save(update_fields=['status', 'bot_notes', 'updated_at'])
         restore_withdrawal_balance(locked)
         return locked
+
+
+def mark_withdrawal_failed(txn: Transaction, *, reason: str = '') -> Transaction:
+    return _finalize_withdrawal_as(
+        txn,
+        status_value='failed',
+        notes={'razorpayError': reason or 'Payout failed', 'razorpayStatus': 'failed'},
+    )
+
+
+def mark_withdrawal_rejected(
+    txn: Transaction,
+    *,
+    reason: str = '',
+    rejected_by_admin: bool = False,
+    razorpay_status: str = 'rejected',
+) -> Transaction:
+    notes = {
+        'rejectReason': reason or 'Payout rejected',
+        'razorpayStatus': razorpay_status,
+    }
+    if rejected_by_admin:
+        notes['rejectedByAdmin'] = True
+    else:
+        notes['razorpayError'] = reason or 'Payout rejected'
+    return _finalize_withdrawal_as(txn, status_value='rejected', notes=notes)
 
 
 def mark_withdrawal_completed(txn: Transaction, *, payout_id: str = '', razorpay_status: str = 'processed') -> Transaction:
@@ -766,10 +794,23 @@ def create_razorpay_withdrawal_payout(txn: Transaction) -> dict:
         },
     )
     txn.external_ref = payout_id or txn.external_ref
-    # Keep pending until webhook confirms processed; immediate processed → complete.
+    # Keep pending until webhook confirms processed; immediate terminal states finalize now.
     if payout_status in {'processed', 'completed'}:
         txn.status = 'completed'
         txn.save(update_fields=['status', 'external_ref', 'bot_notes', 'updated_at'])
+    elif payout_status in {'rejected', 'cancelled'}:
+        txn.save(update_fields=['external_ref', 'bot_notes', 'updated_at'])
+        txn = mark_withdrawal_rejected(
+            txn,
+            reason=payout.get('failure_reason') or payout_status,
+            razorpay_status=payout_status,
+        )
+    elif payout_status in {'failed', 'reversed'}:
+        txn.save(update_fields=['external_ref', 'bot_notes', 'updated_at'])
+        txn = mark_withdrawal_failed(
+            txn,
+            reason=payout.get('failure_reason') or payout_status,
+        )
     else:
         txn.save(update_fields=['external_ref', 'bot_notes', 'updated_at'])
 
@@ -801,7 +842,20 @@ def apply_razorpay_payout_webhook(*, payout_id: str, payout_status: str, failure
     status_norm = (payout_status or '').lower()
     if status_norm in {'processed', 'completed'}:
         return mark_withdrawal_completed(txn, payout_id=payout_id, razorpay_status=status_norm)
-    if status_norm in {'failed', 'rejected', 'cancelled', 'reversed'}:
+    if status_norm in {'rejected', 'cancelled'}:
+        if txn.status == 'pending':
+            return mark_withdrawal_rejected(
+                txn,
+                reason=failure_reason or status_norm,
+                razorpay_status=status_norm,
+            )
+        txn.bot_notes = merge_withdrawal_notes(
+            txn,
+            {'razorpayStatus': status_norm, 'razorpayError': failure_reason or status_norm},
+        )
+        txn.save(update_fields=['bot_notes', 'updated_at'])
+        return txn
+    if status_norm in {'failed', 'reversed'}:
         if txn.status == 'pending':
             return mark_withdrawal_failed(txn, reason=failure_reason or status_norm)
         txn.bot_notes = merge_withdrawal_notes(

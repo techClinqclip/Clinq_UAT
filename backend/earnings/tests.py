@@ -537,3 +537,42 @@ class AdminPayoutApprovalTests(TestCase):
         self.assertEqual(self.txn.status, 'rejected')
         self.assertEqual(profile.total_earnings, Decimal('2500.00'))
         self.assertEqual(profile.total_withdrawn, Decimal('0.00'))
+
+    def test_razorpay_payout_rejected_stores_rejected_not_failed(self):
+        from earnings.payments import apply_razorpay_payout_webhook
+
+        self.txn.external_ref = 'pout_rejected_1'
+        self.txn.save(update_fields=['external_ref'])
+        profile = Profile.objects.get(user=self.clipper)
+        profile.total_earnings = Decimal('0.00')
+        profile.total_withdrawn = Decimal('2500.00')
+        profile.save(update_fields=['total_earnings', 'total_withdrawn'])
+
+        apply_razorpay_payout_webhook(
+            payout_id='pout_rejected_1',
+            payout_status='rejected',
+            failure_reason='Bank rejected',
+        )
+        self.txn.refresh_from_db()
+        profile.refresh_from_db()
+        self.assertEqual(self.txn.status, 'rejected')
+        self.assertNotEqual(self.txn.status, 'failed')
+        self.assertEqual(profile.total_earnings, Decimal('2500.00'))
+
+    def test_razorpay_payout_failed_stores_failed(self):
+        from earnings.payments import apply_razorpay_payout_webhook
+
+        self.txn.external_ref = 'pout_failed_1'
+        self.txn.save(update_fields=['external_ref'])
+        profile = Profile.objects.get(user=self.clipper)
+        profile.total_earnings = Decimal('0.00')
+        profile.total_withdrawn = Decimal('2500.00')
+        profile.save(update_fields=['total_earnings', 'total_withdrawn'])
+
+        apply_razorpay_payout_webhook(
+            payout_id='pout_failed_1',
+            payout_status='failed',
+            failure_reason='Gateway error',
+        )
+        self.txn.refresh_from_db()
+        self.assertEqual(self.txn.status, 'failed')
