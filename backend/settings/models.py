@@ -97,6 +97,64 @@ class ResourceSampleTemplate(models.Model):
         return self.filename or self.document_url or 'Resource sample template (not uploaded)'
 
 
+class PlatformPayoutSettings(models.Model):
+    """Singleton platform controls for wallet withdrawals.
+
+    Flow (matches admin Payout Approval workflow):
+      1) manual_pay=True  → admin pays outside the system and marks each
+         request paid manually (no RazorpayX).
+      2) manual_pay=False → RazorpayX autopay:
+           - require_payout_approval=True  → admin must approve, then RazorpayX runs
+           - require_payout_approval=False → RazorpayX runs immediately on request
+    """
+
+    manual_pay = models.BooleanField(
+        default=True,
+        help_text='If enabled, withdrawals are paid manually (no RazorpayX autopay).',
+    )
+    require_payout_approval = models.BooleanField(
+        default=True,
+        help_text='Used only when manual_pay is False. If enabled, admin must approve before RazorpayX.',
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='updated_platform_payout_settings',
+    )
+
+    class Meta:
+        verbose_name = 'Platform Payout Settings'
+        verbose_name_plural = 'Platform Payout Settings'
+
+    def __str__(self):
+        if self.manual_pay:
+            mode = 'manual pay'
+        elif self.require_payout_approval:
+            mode = 'razorpayx with approval'
+        else:
+            mode = 'razorpayx autopay'
+        return f'Platform payout settings ({mode})'
+
+    @classmethod
+    def get_solo(cls):
+        obj, _created = cls.objects.get_or_create(pk=1)
+        return obj
+
+    @property
+    def mode(self) -> str:
+        if self.manual_pay:
+            return 'manual'
+        if self.require_payout_approval:
+            return 'razorpay_with_approval'
+        return 'razorpay_autopay'
+
+    def should_trigger_razorpay_on_request(self) -> bool:
+        return (not self.manual_pay) and (not self.require_payout_approval)
+
+
 class LegalDocument(models.Model):
     """Platform legal documents shown on signup and public pages.
 

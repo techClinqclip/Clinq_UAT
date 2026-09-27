@@ -6,6 +6,7 @@ so views stay thin and other dashboards can call the same functions later.
 
 from __future__ import annotations
 
+import json
 import logging
 from datetime import timedelta
 from decimal import Decimal, ROUND_HALF_UP
@@ -446,3 +447,318 @@ def _topup_result(deposit: Transaction, profile: Profile | None) -> dict:
         'walletBalance': float(profile.wallet_balance) if profile else 0.0,
         'totalDeposited': float(profile.total_deposited) if profile else 0.0,
     }
+
+
+# -------------------- RazorpayX withdrawal payouts --------------------
+
+
+def get_razorpayx_account_number() -> str:
+    account_number = (getattr(settings, 'RAZORPAYX_ACCOUNT_NUMBER', None) or '').strip()
+    if not account_number:
+        raise PaymentConfigError(
+            'RazorpayX is not configured. Set RAZORPAYX_ACCOUNT_NUMBER for withdrawal autopay.'
+        )
+    return account_number
+
+
+def _parse_withdrawal_destination(txn: Transaction) -> dict:
+    notes = {}
+    raw = (txn.bot_notes or '').strip()
+    if raw.startswith('{'):
+        try:
+            notes = json.loads(raw)
+        except json.JSONDecodeError:
+            notes = {}
+    destination = notes.get('destination') if isinstance(notes, dict) else None
+    if isinstance(destination, dict) and destination:
+        return destination
+
+    method = (txn.payment_method or '').strip()
+    details = (txn.payment_details or '').strip()
+    if method == 'upi':
+        return {'payout_method': 'upi', 'upi_id': details or txn.external_ref}
+    if method == 'bank_transfer':
+        parts = [part.strip() for part in details.split('|')]
+        return {
+            'payout_method': 'bank_transfer',
+            'bank_account_holder': parts[0] if len(parts) > 0 else '',
+            'bank_name': parts[1] if len(parts) > 1 else '',
+            'bank_account_number': parts[2] if len(parts) > 2 else (txn.external_ref or ''),
+            'bank_ifsc': notes.get('bank_ifsc', '') if isinstance(notes, dict) else '',
+        }
+    return {'payout_method': method}
+
+
+def merge_withdrawal_notes(txn: Transaction, patch: dict) -> str:
+    notes = {}
+    raw = (txn.bot_notes or '').strip()
+    if raw.startswith('{'):
+        try:
+            notes = json.loads(raw)
+        except json.JSONDecodeError:
+            notes = {'legacyNotes': raw}
+    elif raw:
+        notes = {'legacyNotes': raw}
+    notes.update(patch)
+    return json.dumps(notes)
+
+
+def store_withdrawal_destination(txn: Transaction, *, destination: dict) -> Transaction:
+    txn.bot_notes = merge_withdrawal_notes(txn, {'destination': destination})
+    txn.save(update_fields=['bot_notes', 'updated_at'])
+    return txn
+
+
+def restore_withdrawal_balance(txn: Transaction) -> None:
+    """Return reserved withdrawal amount to the user's available earnings."""
+    from django.db.models import Value
+    from django.db.models.functions import Greatest
+
+    Profile.objects.filter(user_id=txn.user_id).update(
+        total_earnings=F('total_earnings') + txn.amount,
+        total_withdrawn=Greatest(F('total_withdrawn') - txn.amount, Value(Decimal('0.00'))),
+    )
+
+
+def mark_withdrawal_failed(txn: Transaction, *, reason: str = '') -> Transaction:
+    with db_transaction.atomic():
+        locked = (
+            Transaction.objects.select_for_update()
+            .filter(pk=txn.pk, transaction_type='withdrawal', status='pending')
+            .first()
+        )
+        if not locked:
+            return txn
+        locked.status = 'failed'
+        locked.bot_notes = merge_withdrawal_notes(
+            locked,
+            {'razorpayError': reason or 'Payout failed', 'razorpayStatus': 'failed'},
+        )
+        locked.save(update_fields=['status', 'bot_notes', 'updated_at'])
+        restore_withdrawal_balance(locked)
+        return locked
+
+
+def mark_withdrawal_completed(txn: Transaction, *, payout_id: str = '', razorpay_status: str = 'processed') -> Transaction:
+    with db_transaction.atomic():
+        locked = (
+            Transaction.objects.select_for_update()
+            .filter(pk=txn.pk, transaction_type='withdrawal', status__in=['pending', 'completed'])
+            .first()
+        )
+        if not locked:
+            return txn
+        locked.status = 'completed'
+        if payout_id:
+            locked.external_ref = payout_id
+        locked.bot_notes = merge_withdrawal_notes(
+            locked,
+            {
+                'razorpay': {
+                    'payout_id': payout_id or locked.external_ref,
+                    'status': razorpay_status,
+                }
+            },
+        )
+        locked.save(update_fields=['status', 'external_ref', 'bot_notes', 'updated_at'])
+        return locked
+
+
+def mark_withdrawal_paid_manually(
+    txn: Transaction,
+    *,
+    payment_reference: str = '',
+    notes: str = '',
+    admin_email: str = '',
+) -> dict:
+    """Mark a pending withdrawal completed after offline/manual payment."""
+    if txn.transaction_type != 'withdrawal':
+        raise PaymentValidationError('Only withdrawal transactions can be marked paid.')
+    if txn.status != 'pending':
+        raise PaymentValidationError('Only pending withdrawals can be marked paid.')
+
+    reference = (payment_reference or '').strip()
+    with db_transaction.atomic():
+        locked = (
+            Transaction.objects.select_for_update()
+            .filter(pk=txn.pk, transaction_type='withdrawal', status='pending')
+            .first()
+        )
+        if not locked:
+            raise PaymentValidationError('Withdrawal is no longer pending.')
+
+        locked.status = 'completed'
+        if reference:
+            locked.external_ref = reference
+        locked.bot_notes = merge_withdrawal_notes(
+            locked,
+            {
+                'manualPay': {
+                    'paid': True,
+                    'paymentReference': reference,
+                    'notes': (notes or '').strip(),
+                    'paidBy': admin_email or '',
+                }
+            },
+        )
+        locked.save(update_fields=['status', 'external_ref', 'bot_notes', 'updated_at'])
+
+    return {
+        'transactionId': locked.id,
+        'amount': float(locked.amount),
+        'status': locked.status,
+        'paymentReference': locked.external_ref,
+        'mode': 'manual',
+    }
+
+
+def create_razorpay_withdrawal_payout(txn: Transaction) -> dict:
+    """Create a RazorpayX payout for a pending withdrawal transaction."""
+    if txn.transaction_type != 'withdrawal':
+        raise PaymentValidationError('Only withdrawal transactions can be paid out.')
+    if txn.status != 'pending':
+        raise PaymentValidationError('Only pending withdrawals can be paid out.')
+
+    destination = _parse_withdrawal_destination(txn)
+    method = destination.get('payout_method') or txn.payment_method
+    if method not in {'upi', 'bank_transfer'}:
+        raise PaymentValidationError('Razorpay autopay supports UPI or bank transfer only.')
+
+    client, _key_id = get_razorpay_client()
+    account_number = get_razorpayx_account_number()
+    user = txn.user
+    contact_name = (
+        destination.get('bank_account_holder')
+        or getattr(user, 'first_name', None)
+        or (user.email.split('@')[0] if user.email else 'Clinq User')
+    )
+
+    try:
+        contact = client.contact.create(
+            {
+                'name': str(contact_name)[:50],
+                'email': user.email or None,
+                'type': 'customer',
+                'reference_id': f'clinq-user-{user.id}',
+            }
+        )
+        contact_id = contact.get('id')
+        if method == 'upi':
+            upi_id = (destination.get('upi_id') or '').strip()
+            if not upi_id:
+                raise PaymentValidationError('UPI ID is required for Razorpay UPI payout.')
+            fund_account = client.fund_account.create(
+                {
+                    'contact_id': contact_id,
+                    'account_type': 'vpa',
+                    'vpa': {'address': upi_id},
+                }
+            )
+            mode = 'UPI'
+        else:
+            holder = (destination.get('bank_account_holder') or '').strip()
+            bank_account_number = (destination.get('bank_account_number') or '').strip()
+            ifsc = (destination.get('bank_ifsc') or '').strip()
+            if not holder or not bank_account_number or not ifsc:
+                raise PaymentValidationError(
+                    'Bank holder, account number, and IFSC are required for Razorpay bank payout.'
+                )
+            fund_account = client.fund_account.create(
+                {
+                    'contact_id': contact_id,
+                    'account_type': 'bank_account',
+                    'bank_account': {
+                        'name': holder,
+                        'ifsc': ifsc,
+                        'account_number': bank_account_number,
+                    },
+                }
+            )
+            mode = 'NEFT'
+
+        fund_account_id = fund_account.get('id')
+        payout = client.payout.create(
+            {
+                'account_number': account_number,
+                'fund_account_id': fund_account_id,
+                'amount': amount_to_paise(Decimal(str(txn.amount))),
+                'currency': 'INR',
+                'mode': mode,
+                'purpose': 'payout',
+                'queue_if_low_balance': True,
+                'reference_id': f'clinq-wd-{txn.id}',
+                'narration': 'Clinq earnings withdrawal',
+            }
+        )
+    except PaymentValidationError:
+        raise
+    except PaymentConfigError:
+        raise
+    except Exception as exc:
+        logger.exception('Razorpay payout failed for withdrawal %s', txn.id)
+        message = getattr(exc, 'error', None)
+        if isinstance(message, dict):
+            detail = message.get('description') or message.get('code') or str(exc)
+        else:
+            detail = str(exc)
+        raise PaymentGatewayError(detail or 'Razorpay payout failed.') from exc
+
+    payout_id = payout.get('id') or ''
+    payout_status = (payout.get('status') or 'processing').lower()
+    txn.bot_notes = merge_withdrawal_notes(
+        txn,
+        {
+            'destination': destination,
+            'razorpay': {
+                'contact_id': contact_id,
+                'fund_account_id': fund_account_id,
+                'payout_id': payout_id,
+                'status': payout_status,
+            },
+        },
+    )
+    txn.external_ref = payout_id or txn.external_ref
+    # Keep pending until webhook confirms processed; immediate processed → complete.
+    if payout_status in {'processed', 'completed'}:
+        txn.status = 'completed'
+        txn.save(update_fields=['status', 'external_ref', 'bot_notes', 'updated_at'])
+    else:
+        txn.save(update_fields=['external_ref', 'bot_notes', 'updated_at'])
+
+    return {
+        'transactionId': txn.id,
+        'amount': float(txn.amount),
+        'status': txn.status,
+        'payoutId': payout_id,
+        'razorpayStatus': payout_status,
+    }
+
+
+def apply_razorpay_payout_webhook(*, payout_id: str, payout_status: str, failure_reason: str = '') -> Transaction | None:
+    if not payout_id:
+        return None
+    txn = Transaction.objects.filter(
+        transaction_type='withdrawal',
+        external_ref=payout_id,
+    ).first()
+    if not txn:
+        txn = Transaction.objects.filter(
+            transaction_type='withdrawal',
+            bot_notes__icontains=payout_id,
+            status='pending',
+        ).first()
+    if not txn:
+        return None
+
+    status_norm = (payout_status or '').lower()
+    if status_norm in {'processed', 'completed'}:
+        return mark_withdrawal_completed(txn, payout_id=payout_id, razorpay_status=status_norm)
+    if status_norm in {'failed', 'rejected', 'cancelled', 'reversed'}:
+        if txn.status == 'pending':
+            return mark_withdrawal_failed(txn, reason=failure_reason or status_norm)
+        txn.bot_notes = merge_withdrawal_notes(
+            txn,
+            {'razorpayStatus': status_norm, 'razorpayError': failure_reason or status_norm},
+        )
+        txn.save(update_fields=['bot_notes', 'updated_at'])
+    return txn

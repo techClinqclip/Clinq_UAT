@@ -163,6 +163,11 @@ export const sidebarConfig = {
         icon: CircleDollarSign,
       },
       {
+        name: "Payout Approval",
+        path: "/admin/payout-approval",
+        icon: IndianRupee,
+      },
+      {
         name: "Support Tickets",
         path: "/admin/support",
         icon: LifeBuoy,

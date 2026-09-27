@@ -4,7 +4,7 @@ from django.utils import timezone
 from django.db.models import Sum, Q, F, Count
 from django.db.models.functions import Greatest, TruncMonth
 from rest_framework import viewsets, status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db import transaction as db_transaction
@@ -24,13 +24,19 @@ from .payments import (
     PaymentGatewayError,
     PaymentValidationError,
     confirm_wallet_topup,
+    create_razorpay_withdrawal_payout,
     create_wallet_topup_order,
     mark_wallet_topup_failed,
+    mark_withdrawal_paid_manually,
     reconcile_pending_wallet_topups,
+    restore_withdrawal_balance,
+    merge_withdrawal_notes,
+    store_withdrawal_destination,
 )
 from accounts.models import Profile
 from content.models import CampaignSubmission
 from .utils import get_available_withdrawable_earnings, get_total_withdrawn
+from settings.models import PlatformPayoutSettings
 
 class PayoutViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
@@ -89,6 +95,14 @@ class PayoutViewSet(viewsets.ViewSet):
                     payment_details = 'PayPal'
                     external_ref = 'PayPal'
 
+                destination = {
+                    'payout_method': payout_method,
+                    'upi_id': upi_id or '',
+                    'bank_account_holder': bank_account_holder or '',
+                    'bank_account_number': bank_account_number or '',
+                    'bank_ifsc': bank_ifsc or '',
+                    'bank_name': bank_name or '',
+                }
                 txn = Transaction.objects.create(
                     user=request.user,
                     amount=amount,
@@ -98,6 +112,7 @@ class PayoutViewSet(viewsets.ViewSet):
                     status='pending',
                     external_ref=external_ref,
                 )
+                store_withdrawal_destination(txn, destination=destination)
 
                 from django.db.models import Value
                 Profile.objects.filter(user=request.user).update(
@@ -133,13 +148,55 @@ class PayoutViewSet(viewsets.ViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+        payout_settings = PlatformPayoutSettings.get_solo()
+        autopay_triggered = False
+        autopay_error = None
+        payout_result = None
+
+        if payout_settings.manual_pay:
+            message = (
+                "Withdrawal requested. Admin will pay manually and mark this request approved."
+            )
+        elif payout_settings.require_payout_approval:
+            message = (
+                "Withdrawal requested. Waiting for admin approval before RazorpayX payout."
+            )
+        else:
+            message = "Withdrawal requested. RazorpayX autopay will start now."
+
+        if payout_settings.should_trigger_razorpay_on_request():
+            try:
+                payout_result = create_razorpay_withdrawal_payout(txn)
+                autopay_triggered = True
+                message = (
+                    "Withdrawal requested. RazorpayX autopay has been triggered."
+                    if payout_result.get('status') == 'pending'
+                    else "Withdrawal paid via RazorpayX."
+                )
+                txn.refresh_from_db()
+            except (PaymentConfigError, PaymentValidationError, PaymentGatewayError) as error:
+                autopay_error = str(error)
+                message = (
+                    "Withdrawal requested, but RazorpayX autopay could not start. "
+                    "It remains pending for admin retry."
+                )
+
         return Response({
             "status": "Success",
-            "message": "Withdrawal requested. Processing takes 1–3 business days.",
+            "message": message,
             "amount": float(amount),
             "remaining_balance": float(remaining),
             "total_withdrawn": float(get_total_withdrawn(request.user)),
             "transactionId": txn.id,
+            "manualPay": bool(payout_settings.manual_pay),
+            "requiresApproval": bool(
+                payout_settings.manual_pay or payout_settings.require_payout_approval
+            ),
+            "mode": payout_settings.mode,
+            "autopayTriggered": autopay_triggered,
+            "autopayError": autopay_error,
+            "payout": payout_result,
+            "transactionStatus": txn.status,
         }, status=status.HTTP_201_CREATED)
 
     @extend_schema(
@@ -174,6 +231,204 @@ class PayoutViewSet(viewsets.ViewSet):
         
         serializer = TransactionSerializer(withdrawals, many=True)
         return Response(serializer.data)
+
+    @extend_schema(
+        summary='Admin withdrawal queue',
+        description='List withdrawal requests for payout approval / Razorpay autopay.',
+        tags=['Earnings'],
+    )
+    @action(detail=False, methods=['get'], url_path='admin-queue', permission_classes=[IsAdminUser])
+    def admin_queue(self, request):
+        status_filter = (request.query_params.get('status') or 'pending').strip().lower()
+        withdrawals = Transaction.objects.filter(transaction_type='withdrawal').select_related('user')
+        if status_filter != 'all':
+            withdrawals = withdrawals.filter(status=status_filter)
+        withdrawals = withdrawals.order_by('-created_at')[:200]
+
+        results = []
+        for txn in withdrawals:
+            results.append({
+                'id': txn.id,
+                'amount': float(txn.amount),
+                'status': txn.status,
+                'paymentMethod': txn.payment_method,
+                'paymentDetails': txn.payment_details,
+                'externalRef': txn.external_ref,
+                'createdAt': txn.created_at,
+                'updatedAt': txn.updated_at,
+                'userEmail': getattr(txn.user, 'email', ''),
+                'userId': txn.user_id,
+                'userType': getattr(txn.user, 'type', ''),
+            })
+        settings_row = PlatformPayoutSettings.get_solo()
+        return Response({
+            'manualPay': bool(settings_row.manual_pay),
+            'requirePayoutApproval': bool(settings_row.require_payout_approval),
+            'mode': settings_row.mode,
+            'results': results,
+            'pendingCount': Transaction.objects.filter(
+                transaction_type='withdrawal',
+                status='pending',
+            ).count(),
+        })
+
+    @extend_schema(
+        summary='Admin approve withdrawal payout',
+        description=(
+            'Approve a pending withdrawal. In manual mode, mark paid with optional reference. '
+            'In RazorpayX mode, trigger autopay.'
+        ),
+        tags=['Earnings'],
+    )
+    @action(detail=False, methods=['post'], url_path='admin-approve', permission_classes=[IsAdminUser])
+    def admin_approve(self, request):
+        txn_id = request.data.get('transactionId') or request.data.get('transaction_id')
+        payment_reference = str(
+            request.data.get('paymentReference') or request.data.get('payment_reference') or ''
+        ).strip()
+        notes = str(request.data.get('notes') or '').strip()
+        if not txn_id:
+            return Response({'error': 'transactionId is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            txn = Transaction.objects.select_related('user').get(
+                pk=txn_id,
+                transaction_type='withdrawal',
+            )
+        except Transaction.DoesNotExist:
+            return Response({'error': 'Withdrawal not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if txn.status != 'pending':
+            return Response(
+                {'error': f'Only pending withdrawals can be approved (current: {txn.status}).'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        payout_settings = PlatformPayoutSettings.get_solo()
+        from notifications.helpers import notify_user_event
+
+        if payout_settings.manual_pay:
+            try:
+                payout_result = mark_withdrawal_paid_manually(
+                    txn,
+                    payment_reference=payment_reference,
+                    notes=notes,
+                    admin_email=getattr(request.user, 'email', '') or '',
+                )
+            except PaymentValidationError as error:
+                return Response({'error': str(error)}, status=status.HTTP_400_BAD_REQUEST)
+
+            txn.refresh_from_db()
+            notify_user_event(
+                user_id=txn.user_id,
+                event_type='earnings.withdrawal_status',
+                title='Withdrawal paid',
+                message=f'Your withdrawal of ₹{txn.amount} was paid manually and marked completed.',
+                category='earnings',
+                entity_type='transaction',
+                entity_id=txn.id,
+                payload={'amount': str(txn.amount), 'status': txn.status, 'mode': 'manual'},
+                email=True,
+                idempotency_key=f'earnings.withdrawal_manual_paid:{txn.id}:{txn.external_ref}',
+            )
+            return Response({
+                'status': 'Success',
+                'message': 'Withdrawal marked paid manually and saved in database.',
+                'mode': 'manual',
+                'transactionId': txn.id,
+                'transactionStatus': txn.status,
+                'payout': payout_result,
+            })
+
+        try:
+            payout_result = create_razorpay_withdrawal_payout(txn)
+        except PaymentConfigError as error:
+            return Response({'error': str(error)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        except (PaymentValidationError, PaymentGatewayError) as error:
+            return Response({'error': str(error)}, status=status.HTTP_400_BAD_REQUEST)
+
+        txn.refresh_from_db()
+        notify_user_event(
+            user_id=txn.user_id,
+            event_type='earnings.withdrawal_status',
+            title='Withdrawal approved',
+            message=f'Your withdrawal of ₹{txn.amount} was approved and sent via RazorpayX.',
+            category='earnings',
+            entity_type='transaction',
+            entity_id=txn.id,
+            payload={'amount': str(txn.amount), 'status': txn.status, 'payout': payout_result},
+            email=True,
+            idempotency_key=f'earnings.withdrawal_approved:{txn.id}:{payout_result.get("payoutId")}',
+        )
+        return Response({
+            'status': 'Success',
+            'message': 'Withdrawal approved and RazorpayX payout triggered.',
+            'mode': payout_settings.mode,
+            'transactionId': txn.id,
+            'transactionStatus': txn.status,
+            'payout': payout_result,
+        })
+
+    @extend_schema(
+        summary='Admin reject withdrawal payout',
+        description='Reject a pending withdrawal and restore available earnings.',
+        tags=['Earnings'],
+    )
+    @action(detail=False, methods=['post'], url_path='admin-reject', permission_classes=[IsAdminUser])
+    def admin_reject(self, request):
+        txn_id = request.data.get('transactionId') or request.data.get('transaction_id')
+        reason = str(request.data.get('reason') or '').strip()
+        if not txn_id:
+            return Response({'error': 'transactionId is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            txn = Transaction.objects.select_related('user').get(
+                pk=txn_id,
+                transaction_type='withdrawal',
+            )
+        except Transaction.DoesNotExist:
+            return Response({'error': 'Withdrawal not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if txn.status != 'pending':
+            return Response(
+                {'error': f'Only pending withdrawals can be rejected (current: {txn.status}).'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        with db_transaction.atomic():
+            locked = (
+                Transaction.objects.select_for_update()
+                .filter(pk=txn.pk, status='pending', transaction_type='withdrawal')
+                .first()
+            )
+            if not locked:
+                return Response({'error': 'Withdrawal is no longer pending.'}, status=status.HTTP_400_BAD_REQUEST)
+            locked.status = 'rejected'
+            locked.bot_notes = merge_withdrawal_notes(
+                locked,
+                {'rejectedByAdmin': True, 'rejectReason': reason},
+            )
+            locked.save(update_fields=['status', 'bot_notes', 'updated_at'])
+            restore_withdrawal_balance(locked)
+            txn = locked
+
+        from notifications.helpers import notify_user_event
+        notify_user_event(
+            user_id=txn.user_id,
+            event_type='earnings.withdrawal_status',
+            title='Withdrawal rejected',
+            message=f'Your withdrawal of ₹{txn.amount} was rejected.{(" " + reason) if reason else ""}',
+            category='earnings',
+            entity_type='transaction',
+            entity_id=txn.id,
+            payload={'amount': str(txn.amount), 'status': 'rejected', 'reason': reason},
+            email=True,
+            idempotency_key=f'earnings.withdrawal_rejected:{txn.id}',
+        )
+        return Response({
+            'status': 'Success',
+            'message': 'Withdrawal rejected and balance restored.',
+            'transactionId': txn.id,
+            'transactionStatus': txn.status,
+        })
 
 
 class EarningsViewSet(viewsets.ViewSet):

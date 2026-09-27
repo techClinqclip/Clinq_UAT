@@ -76,6 +76,8 @@ services:
         sync: false
       - key: RAZORPAY_WEBHOOK_SECRET
         sync: false
+      - key: RAZORPAYX_ACCOUNT_NUMBER
+        sync: false
 
   - type: worker
     name: clinq-worker

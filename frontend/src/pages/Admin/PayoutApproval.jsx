@@ -1,0 +1,386 @@
+import { useEffect, useMemo, useState } from "react";
+import {
+  CheckCircle2,
+  CircleDollarSign,
+  Clock3,
+  RefreshCw,
+  ShieldAlert,
+  XCircle,
+} from "lucide-react";
+import Breadcrumbs from "../../components/Breadcrumbs";
+import useToast from "../../hooks/useToast";
+import { api } from "../../lib/api";
+
+const MODE_LABELS = {
+  manual: "Manual Pay",
+  razorpay_with_approval: "RazorpayX + Approval",
+  razorpay_autopay: "RazorpayX Autopay",
+};
+
+function ConfirmToggleModal({ open, title, body, confirmLabel, confirmClassName, onCancel, onConfirm, busy }) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#131316] p-6 shadow-2xl">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10">
+            <ShieldAlert size={18} className="text-amber-300" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-white">{title}</h3>
+            <p className="mt-2 text-sm leading-6 text-zinc-400">{body}</p>
+          </div>
+        </div>
+
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={busy}
+            className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-white/5 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={busy}
+            className={`rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition disabled:opacity-50 ${confirmClassName}`}
+          >
+            {busy ? "Saving..." : confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ToggleRow({ title, description, enabled, onToggle, disabled = false }) {
+  return (
+    <div className="flex flex-col gap-4 border-b border-white/10 py-5 last:border-b-0 lg:flex-row lg:items-center lg:justify-between">
+      <div>
+        <h3 className="text-base font-semibold text-white">{title}</h3>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">{description}</p>
+      </div>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onToggle}
+        className={`relative h-10 w-16 rounded-full transition disabled:cursor-not-allowed disabled:opacity-40 ${
+          enabled ? "bg-violet-600" : "bg-zinc-700"
+        }`}
+        aria-label={title}
+      >
+        <span
+          className={`absolute top-1 h-8 w-8 rounded-full bg-white transition ${
+            enabled ? "left-7" : "left-1"
+          }`}
+        />
+      </button>
+    </div>
+  );
+}
+
+export default function AdminPayoutApproval() {
+  const { showToast } = useToast();
+  const [manualPay, setManualPay] = useState(true);
+  const [requireApproval, setRequireApproval] = useState(true);
+  const [mode, setMode] = useState("manual");
+  const [queue, setQueue] = useState([]);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [savingToggle, setSavingToggle] = useState(false);
+  const [confirmConfig, setConfirmConfig] = useState(null);
+  const [actionId, setActionId] = useState(null);
+
+  const applySettings = (data) => {
+    setManualPay(Boolean(data.manualPay));
+    setRequireApproval(Boolean(data.requirePayoutApproval));
+    setMode(data.mode || (data.manualPay ? "manual" : data.requirePayoutApproval ? "razorpay_with_approval" : "razorpay_autopay"));
+  };
+
+  const loadQueue = async () => {
+    const data = await api("/api/earnings/payout/admin-queue/?status=pending");
+    applySettings(data);
+    setQueue(Array.isArray(data.results) ? data.results : []);
+    setPendingCount(Number(data.pendingCount || 0));
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setLoading(true);
+        await loadQueue();
+      } catch (error) {
+        if (mounted) {
+          showToast({ type: "error", message: error?.message || "Unable to load payout approval." });
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [showToast]);
+
+  const totalPendingAmount = useMemo(
+    () => queue.reduce((sum, item) => sum + Number(item.amount || 0), 0),
+    [queue]
+  );
+
+  const openManualConfirm = (nextValue) => {
+    setConfirmConfig({
+      key: "manualPay",
+      value: nextValue,
+      title: nextValue ? "Enable Manual Pay?" : "Disable Manual Pay?",
+      body: nextValue
+        ? "Admin will pay each withdrawal manually and enter payout details to mark it approved. RazorpayX autopay will not run."
+        : "System will switch to RazorpayX autopay. Use the “With approval” switch to decide whether admin approval is required before transfer.",
+      confirmLabel: nextValue ? "Enable Manual Pay" : "Use RazorpayX Autopay",
+      confirmClassName: nextValue ? "bg-violet-600 hover:bg-violet-500" : "bg-amber-600 hover:bg-amber-500",
+    });
+  };
+
+  const openApprovalConfirm = (nextValue) => {
+    setConfirmConfig({
+      key: "requirePayoutApproval",
+      value: nextValue,
+      title: nextValue ? "Enable approval for RazorpayX?" : "Disable approval for RazorpayX?",
+      body: nextValue
+        ? "New withdrawal requests will wait for admin approval. After approval, RazorpayX will transfer money and save data automatically."
+        : "New withdrawal requests will transfer money via RazorpayX immediately and save data automatically. Admin approval will not be required.",
+      confirmLabel: nextValue ? "Enable With Approval" : "Disable Approval (full autopay)",
+      confirmClassName: nextValue ? "bg-violet-600 hover:bg-violet-500" : "bg-amber-600 hover:bg-amber-500",
+    });
+  };
+
+  const confirmToggle = async () => {
+    if (!confirmConfig) return;
+    setSavingToggle(true);
+    try {
+      const body =
+        confirmConfig.key === "manualPay"
+          ? { manualPay: confirmConfig.value }
+          : { requirePayoutApproval: confirmConfig.value };
+      const updated = await api("/api/settings/payout-approval/", {
+        method: "PATCH",
+        body,
+      });
+      applySettings(updated);
+      setConfirmConfig(null);
+      showToast({
+        type: "success",
+        message: `Payout mode updated: ${MODE_LABELS[updated.mode] || updated.mode}.`,
+      });
+    } catch (error) {
+      showToast({ type: "error", message: error?.message || "Unable to update payout settings." });
+    } finally {
+      setSavingToggle(false);
+    }
+  };
+
+  const approveWithdrawal = async (id) => {
+    setActionId(id);
+    try {
+      const body = { transactionId: id };
+      if (manualPay) {
+        const paymentReference =
+          window.prompt("Enter UTR / payment reference (optional):") || "";
+        const notes = window.prompt("Optional notes for this manual payout:") || "";
+        body.paymentReference = paymentReference;
+        body.notes = notes;
+      }
+      const result = await api("/api/earnings/payout/admin-approve/", {
+        method: "POST",
+        body,
+      });
+      showToast({
+        type: "success",
+        message:
+          result?.message ||
+          (manualPay
+            ? "Withdrawal marked paid manually."
+            : "Withdrawal approved and RazorpayX payout triggered."),
+      });
+      await loadQueue();
+    } catch (error) {
+      showToast({ type: "error", message: error?.message || "Unable to approve withdrawal." });
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const rejectWithdrawal = async (id) => {
+    const reason = window.prompt("Optional rejection reason:") || "";
+    setActionId(id);
+    try {
+      const result = await api("/api/earnings/payout/admin-reject/", {
+        method: "POST",
+        body: { transactionId: id, reason },
+      });
+      showToast({
+        type: "success",
+        message: result?.message || "Withdrawal rejected and balance restored.",
+      });
+      await loadQueue();
+    } catch (error) {
+      showToast({ type: "error", message: error?.message || "Unable to reject withdrawal." });
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-black text-white">
+      <Breadcrumbs />
+
+      <section className="mt-6 rounded-3xl border border-white/10 bg-white/[0.03] p-8">
+        <span className="inline-flex rounded-full bg-violet-500/10 px-4 py-1 text-xs font-medium text-violet-300">
+          Admin Panel
+        </span>
+        <h1 className="mt-5 text-4xl font-bold">Payout Approval</h1>
+        <p className="mt-4 max-w-3xl leading-7 text-zinc-400">
+          Choose Manual Pay or RazorpayX Autopay. For RazorpayX, decide whether admin approval is
+          required before money is transferred.
+        </p>
+      </section>
+
+      <section className="mt-8 grid gap-6 md:grid-cols-3">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+          <Clock3 className="mb-4 text-amber-400" size={28} />
+          <p className="text-sm text-zinc-500">Pending requests</p>
+          <h3 className="mt-2 text-3xl font-bold">{pendingCount}</h3>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+          <CircleDollarSign className="mb-4 text-violet-400" size={28} />
+          <p className="text-sm text-zinc-500">Pending amount</p>
+          <h3 className="mt-2 text-3xl font-bold">₹{totalPendingAmount.toLocaleString()}</h3>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+          <CheckCircle2 className="mb-4 text-emerald-400" size={28} />
+          <p className="text-sm text-zinc-500">Current mode</p>
+          <h3 className="mt-2 text-2xl font-bold">{MODE_LABELS[mode] || mode}</h3>
+        </div>
+      </section>
+
+      <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.03] px-6">
+        <ToggleRow
+          title="Manual Pay"
+          description={
+            manualPay
+              ? "ON: pay each request manually and enter payout data to mark it approved. RazorpayX will not run."
+              : "OFF: RazorpayX autopay is active. Use “With approval” below for gated or full autopay."
+          }
+          enabled={manualPay}
+          onToggle={() => openManualConfirm(!manualPay)}
+        />
+        <ToggleRow
+          title="With approval (RazorpayX)"
+          description={
+            manualPay
+              ? "Available only when Manual Pay is OFF."
+              : requireApproval
+                ? "ON: admin must approve; then RazorpayX transfers money and stores data automatically."
+                : "OFF: RazorpayX transfers money and stores data automatically for every new request."
+          }
+          enabled={!manualPay && requireApproval}
+          disabled={manualPay}
+          onToggle={() => openApprovalConfirm(!requireApproval)}
+        />
+      </section>
+
+      <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.03]">
+        <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
+          <div>
+            <h2 className="text-xl font-semibold">Pending withdrawals</h2>
+            <p className="mt-1 text-sm text-zinc-500">
+              {manualPay
+                ? "Mark paid after sending money manually, or reject to restore balance."
+                : "Approve to send via RazorpayX, or reject to restore balance."}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                await loadQueue();
+                showToast({ type: "success", message: "Queue refreshed." });
+              } catch (error) {
+                showToast({ type: "error", message: error?.message || "Refresh failed." });
+              }
+            }}
+            className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2 text-sm text-zinc-300 transition hover:bg-white/5"
+          >
+            <RefreshCw size={14} />
+            Refresh
+          </button>
+        </div>
+
+        {loading ? (
+          <p className="p-6 text-zinc-400">Loading withdrawal queue…</p>
+        ) : queue.length === 0 ? (
+          <p className="p-6 text-zinc-400">No pending withdrawals right now.</p>
+        ) : (
+          <div className="divide-y divide-white/5">
+            {queue.map((item) => (
+              <div
+                key={item.id}
+                className="flex flex-col gap-4 px-6 py-5 lg:flex-row lg:items-center lg:justify-between"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium text-white">{item.userEmail || `User #${item.userId}`}</p>
+                  <p className="mt-1 text-sm text-zinc-500">
+                    {item.paymentMethod === "upi" ? "UPI" : "Bank"} · {item.paymentDetails || "—"}
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-600">
+                    Requested {item.createdAt ? new Date(item.createdAt).toLocaleString() : "—"}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="text-lg font-semibold text-white">
+                    ₹{Number(item.amount || 0).toLocaleString()}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={actionId === item.id}
+                    onClick={() => approveWithdrawal(item.id)}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:opacity-50"
+                  >
+                    <CheckCircle2 size={14} />
+                    {manualPay ? "Mark paid" : "Approve & pay"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={actionId === item.id}
+                    onClick={() => rejectWithdrawal(item.id)}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3.5 py-2 text-sm font-medium text-rose-300 transition hover:bg-rose-500/20 disabled:opacity-50"
+                  >
+                    <XCircle size={14} />
+                    Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <ConfirmToggleModal
+        open={Boolean(confirmConfig)}
+        title={confirmConfig?.title}
+        body={confirmConfig?.body}
+        confirmLabel={confirmConfig?.confirmLabel}
+        confirmClassName={confirmConfig?.confirmClassName}
+        busy={savingToggle}
+        onCancel={() => {
+          if (savingToggle) return;
+          setConfirmConfig(null);
+        }}
+        onConfirm={confirmToggle}
+      />
+    </div>
+  );
+}

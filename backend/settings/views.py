@@ -17,7 +17,7 @@ from rest_framework.views import APIView
 
 from core.media_storage import upload_public_media
 
-from .models import LegalDocument, ResourceSampleTemplate, UserSettings
+from .models import LegalDocument, PlatformPayoutSettings, ResourceSampleTemplate, UserSettings
 from .serializers import UserSettingsSerializer
 
 logger = logging.getLogger(__name__)
@@ -369,3 +369,57 @@ class LegalDocumentDownloadView(APIView):
             missing_detail=f"No {config['label']} document is available.",
             download_error_detail=f"Unable to download the {config['label']} document.",
         )
+
+
+class PlatformPayoutSettingsView(APIView):
+    """Admin controls: Manual Pay vs RazorpayX, and With Approval for RazorpayX."""
+
+    permission_classes = [IsAuthenticated]
+
+    @staticmethod
+    def _require_staff(request):
+        if not request.user.is_staff and not request.user.is_superuser:
+            raise PermissionDenied('Only administrators can manage payout approval settings.')
+
+    @staticmethod
+    def _as_bool(value):
+        if isinstance(value, str):
+            return value.strip().lower() in {'1', 'true', 'yes', 'on'}
+        return bool(value)
+
+    @staticmethod
+    def _payload(config):
+        return {
+            'manualPay': bool(config.manual_pay),
+            'requirePayoutApproval': bool(config.require_payout_approval),
+            'mode': config.mode,
+            'updatedAt': config.updated_at,
+            'updatedBy': getattr(config.updated_by, 'email', None) if config.updated_by_id else None,
+        }
+
+    def get(self, request):
+        self._require_staff(request)
+        return Response(self._payload(PlatformPayoutSettings.get_solo()))
+
+    def patch(self, request):
+        self._require_staff(request)
+        if 'manualPay' not in request.data and 'requirePayoutApproval' not in request.data:
+            return Response(
+                {'error': 'Provide manualPay and/or requirePayoutApproval.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        config = PlatformPayoutSettings.get_solo()
+        update_fields = ['updated_by', 'updated_at']
+
+        if 'manualPay' in request.data:
+            config.manual_pay = self._as_bool(request.data.get('manualPay'))
+            update_fields.append('manual_pay')
+
+        if 'requirePayoutApproval' in request.data:
+            config.require_payout_approval = self._as_bool(request.data.get('requirePayoutApproval'))
+            update_fields.append('require_payout_approval')
+
+        config.updated_by = request.user
+        config.save(update_fields=update_fields)
+        return Response(self._payload(config))

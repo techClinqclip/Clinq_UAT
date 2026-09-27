@@ -18,5 +18,6 @@ urlpatterns = [
         views.LegalDocumentView.as_view(),
         name='legal-document',
     ),
+    path('payout-approval/', views.PlatformPayoutSettingsView.as_view(), name='platform-payout-approval'),
     path('', include(router.urls)),
 ]

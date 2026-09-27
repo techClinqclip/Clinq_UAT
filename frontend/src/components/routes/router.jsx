@@ -21,6 +21,7 @@ import TermsAndConditions from "../../pages/TermsAndConditions";
 import AdminDashboard from "../../pages/Admin/Dashboard";
 import AdminSubmissionQueue from "../../pages/Admin/SubmissionQueue";
 import AdminPendingApprovals from "../../pages/Admin/PendingApprovals";
+import AdminPayoutApproval from "../../pages/Admin/PayoutApproval";
 import AdminPayoutEligibility from "../../pages/Admin/PayoutEligibility";
 import SupportTickets from "../../pages/Admin/SupportTickets";
 import CampaignSubmissions from "../../pages/Admin/CampaignSubmissions";
@@ -384,6 +385,10 @@ export const router = createBrowserRouter([
       {
         path: "pending-approvals",
         element: <AdminPendingApprovals />,
+      },
+      {
+        path: "payout-approval",
+        element: <AdminPayoutApproval />,
       },
       {
         path: "payouts",

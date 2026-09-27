@@ -343,6 +343,13 @@ const ROUTES = [
   },
 
   {
+    test: /^\/admin\/payout-approval\/?$/,
+    crumbs: () => [
+      { label: "Payout Approval" },
+    ],
+  },
+
+  {
     test: /^\/admin\/payouts\/?$/,
     crumbs: () => [
       { label: "Payout Eligibility" },
