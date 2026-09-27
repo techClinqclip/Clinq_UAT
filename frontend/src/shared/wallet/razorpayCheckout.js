@@ -29,6 +29,26 @@ function loadRazorpayScript() {
   });
 }
 
+async function markTopUpFailed(orderId, reason) {
+  if (!orderId) return;
+  try {
+    await api("/api/earnings/wallet/fail-topup/", {
+      method: "POST",
+      body: {
+        razorpayOrderId: orderId,
+        reason: reason || "Payment cancelled or failed.",
+      },
+    });
+  } catch (error) {
+    console.warn("[wallet] fail-topup failed", error?.message || error);
+  }
+  try {
+    sessionStorage.removeItem(PENDING_TOPUP_KEY);
+  } catch {
+    // ignore
+  }
+}
+
 /**
  * Shared wallet top-up flow for Brand / Creator dashboards.
  * 1) Create order on our API
@@ -66,35 +86,45 @@ export async function startWalletTopUp({
 
   const Razorpay = await loadRazorpayScript();
 
-  const paymentResult = await new Promise((resolve, reject) => {
-    const checkout = new Razorpay({
-      key: order.keyId,
-      amount: order.amountPaise,
-      currency: order.currency || "INR",
-      name: "Clinq",
-      description,
-      order_id: order.orderId,
-      prefill: {
-        name: userName || undefined,
-        email: userEmail || undefined,
-      },
-      theme: { color: "#7c3aed" },
-      handler: (response) => resolve(response),
-      modal: {
-        ondismiss: () => reject(new Error("Payment cancelled.")),
-      },
-    });
+  let paymentResult;
+  try {
+    paymentResult = await new Promise((resolve, reject) => {
+      const checkout = new Razorpay({
+        key: order.keyId,
+        amount: order.amountPaise,
+        currency: order.currency || "INR",
+        name: "Clinq",
+        description,
+        order_id: order.orderId,
+        prefill: {
+          name: userName || undefined,
+          email: userEmail || undefined,
+        },
+        theme: { color: "#7c3aed" },
+        handler: (response) => resolve(response),
+        modal: {
+          ondismiss: () => reject(new Error("Payment cancelled.")),
+        },
+      });
 
-    checkout.on("payment.failed", (response) => {
-      const message =
-        response?.error?.description
-        || response?.error?.reason
-        || "Payment failed. Please try again.";
-      reject(new Error(message));
-    });
+      checkout.on("payment.failed", (response) => {
+        const message =
+          response?.error?.description
+          || response?.error?.reason
+          || "Payment failed. Please try again.";
+        reject(new Error(message));
+      });
 
-    checkout.open();
-  });
+      checkout.open();
+    });
+  } catch (checkoutError) {
+    const message = checkoutError?.message || "Payment failed.";
+    await markTopUpFailed(
+      order.orderId,
+      /cancelled/i.test(message) ? "Checkout dismissed by user." : message,
+    );
+    throw checkoutError;
+  }
 
   try {
     const confirmed = await api("/api/earnings/wallet/confirm-topup/", {

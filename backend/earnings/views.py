@@ -15,6 +15,7 @@ from .serializers import (
     TransactionSerializer,
     WalletTopUpConfirmSerializer,
     WalletTopUpCreateSerializer,
+    WalletTopUpFailSerializer,
 )
 from .models import Transaction
 from .payments import (
@@ -23,6 +24,7 @@ from .payments import (
     PaymentValidationError,
     confirm_wallet_topup,
     create_wallet_topup_order,
+    mark_wallet_topup_failed,
     reconcile_pending_wallet_topups,
 )
 from accounts.models import Profile
@@ -414,10 +416,33 @@ class EarningsViewSet(viewsets.ViewSet):
         return Response(payload, status=status.HTTP_200_OK)
 
     @extend_schema(
+        summary='Mark wallet top-up failed',
+        description='Mark a pending Razorpay deposit as failed when checkout is cancelled or payment fails.',
+        request=WalletTopUpFailSerializer,
+        tags=['Earnings'],
+    )
+    @action(detail=False, methods=['post'], url_path='wallet/fail-topup')
+    def fail_wallet_topup(self, request):
+        serializer = WalletTopUpFailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            payload = mark_wallet_topup_failed(
+                user=request.user,
+                order_id=serializer.validated_data['order_id'],
+                reason=serializer.validated_data.get('reason') or 'Payment cancelled or failed.',
+            )
+        except PaymentValidationError as error:
+            return Response({'error': str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        except PaymentConfigError as error:
+            return Response({'error': str(error)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        return Response(payload, status=status.HTTP_200_OK)
+
+    @extend_schema(
         summary='Sync pending wallet top-ups',
         description=(
             'Ask Razorpay whether any pending deposit orders were already paid. '
-            'Credits the wallet when payment succeeded but the browser never confirmed.'
+            'Credits the wallet when payment succeeded but the browser never confirmed. '
+            'Also marks abandoned/failed Razorpay top-ups as failed.'
         ),
         tags=['Earnings'],
     )
@@ -550,28 +575,62 @@ class EarningsViewSet(viewsets.ViewSet):
                 'createdAt': submission['created_at'].isoformat() if submission.get('created_at') else None,
             })
 
-        gig_activity = []
-        creator_gigs = Campaign.objects.filter(
-            creator=user,
-            type='gig',
-            budget__gt=0,
-        ).values('id', 'name', 'budget', 'created_at')[:50]
-        for gig in creator_gigs:
-            gig_activity.append({
-                'id': f"gig-budget-{gig['id']}",
-                'amount': float(gig['budget'] or 0),
-                'transactionType': 'Locked',
-                'paymentMethod': 'Budget Lock',
-                'paymentDetails': f"Funds locked for {gig['name']}",
-                'status': 'completed',
-                'external_ref': '',
-                'contentTitle': gig['name'],
-                'submissionId': None,
-                'createdAt': gig['created_at'].isoformat() if gig.get('created_at') else None,
-            })
+        # Synthesize lock/settlement rows for campaigns created before
+        # Transaction(lock/settlement) records existed.
+        existing_refs = {
+            (row.get('external_ref') or '')
+            for row in transactions_data
+            if row.get('external_ref')
+        }
+        campaign_activity = []
+        owned_campaigns = Campaign.objects.filter(creator=user).values(
+            'id',
+            'name',
+            'budget',
+            'type',
+            'created_at',
+            'remaining_funds_settled',
+            'remaining_funds_settled_amount',
+            'remaining_funds_settled_at',
+        )[:100]
+        for campaign in owned_campaigns:
+            lock_ref = f"campaign-lock-{campaign['id']}"
+            if float(campaign['budget'] or 0) > 0 and lock_ref not in existing_refs:
+                campaign_activity.append({
+                    'id': f"campaign-lock-{campaign['id']}",
+                    'amount': float(campaign['budget'] or 0),
+                    'transactionType': 'Budget Lock',
+                    'paymentMethod': 'Budget Lock',
+                    'paymentDetails': f"Funds locked for {campaign['name']}",
+                    'status': 'completed',
+                    'external_ref': lock_ref,
+                    'contentTitle': campaign['name'],
+                    'submissionId': None,
+                    'createdAt': campaign['created_at'].isoformat() if campaign.get('created_at') else None,
+                })
+            settle_ref = f"campaign-settle-{campaign['id']}"
+            settled_amount = float(campaign.get('remaining_funds_settled_amount') or 0)
+            if (
+                campaign.get('remaining_funds_settled')
+                and settled_amount > 0
+                and settle_ref not in existing_refs
+            ):
+                settled_at = campaign.get('remaining_funds_settled_at') or campaign.get('created_at')
+                campaign_activity.append({
+                    'id': f"campaign-settle-{campaign['id']}",
+                    'amount': settled_amount,
+                    'transactionType': 'Campaign Settlement',
+                    'paymentMethod': 'Wallet',
+                    'paymentDetails': f"Remaining budget returned from {campaign['name']}",
+                    'status': 'completed',
+                    'external_ref': settle_ref,
+                    'contentTitle': campaign['name'],
+                    'submissionId': None,
+                    'createdAt': settled_at.isoformat() if settled_at else None,
+                })
 
         recent_activity = sorted(
-            transactions_data + submission_activity + gig_activity,
+            transactions_data + submission_activity + campaign_activity,
             key=lambda entry: entry.get('createdAt') or '',
             reverse=True,
         )[:50]

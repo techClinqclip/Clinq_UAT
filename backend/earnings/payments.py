@@ -7,11 +7,13 @@ so views stay thin and other dashboards can call the same functions later.
 from __future__ import annotations
 
 import logging
+from datetime import timedelta
 from decimal import Decimal, ROUND_HALF_UP
 
 from django.conf import settings
 from django.db import transaction as db_transaction
 from django.db.models import F
+from django.utils import timezone
 
 from accounts.models import Profile
 from .models import Transaction
@@ -21,6 +23,8 @@ logger = logging.getLogger(__name__)
 MIN_TOPUP_AMOUNT = Decimal('500.00')
 MAX_TOPUP_AMOUNT = Decimal('500000.00')
 WALLET_TOPUP_ROLES = {'brand', 'creator'}
+# Pending Razorpay deposits older than this with no captured payment → failed
+PENDING_TOPUP_FAIL_AFTER = timedelta(minutes=15)
 
 
 class PaymentConfigError(Exception):
@@ -289,8 +293,75 @@ def _extract_captured_payment_id(client, order_id: str) -> str | None:
     return None
 
 
+def _mark_deposit_failed(deposit: Transaction, *, reason: str) -> Transaction:
+    if deposit.status == 'completed':
+        return deposit
+    notes = (deposit.bot_notes or '').strip()
+    deposit.status = 'failed'
+    deposit.bot_notes = f'{notes}\n{reason}'.strip() if notes else reason
+    deposit.save(update_fields=['status', 'bot_notes', 'updated_at'])
+    return deposit
+
+
+def mark_wallet_topup_failed(*, user, order_id: str, reason: str = 'Payment cancelled or failed.') -> dict:
+    """Mark a pending deposit as failed (checkout dismissed / payment failed)."""
+    assert_wallet_topup_allowed(user)
+    order_id = (order_id or '').strip()
+    if not order_id:
+        raise PaymentValidationError('orderId is required.')
+
+    with db_transaction.atomic():
+        deposit = (
+            Transaction.objects.select_for_update()
+            .filter(
+                user=user,
+                transaction_type='deposit',
+                external_ref=order_id,
+            )
+            .first()
+        )
+        if not deposit:
+            raise PaymentValidationError('Deposit order not found.')
+        if deposit.status == 'completed':
+            profile = Profile.objects.filter(user=user).first()
+            return _topup_result(deposit, profile)
+
+        deposit = _mark_deposit_failed(deposit, reason=reason)
+        profile = Profile.objects.filter(user=user).first()
+        return _topup_result(deposit, profile)
+
+
+def _should_fail_unpaid_deposit(client, deposit: Transaction) -> tuple[bool, str]:
+    """Decide if an unpaid pending deposit should be marked failed."""
+    try:
+        order = client.order.fetch(deposit.external_ref)
+    except Exception:
+        # If we cannot reach Razorpay, only age-out very old pending rows.
+        if deposit.created_at and timezone.now() - deposit.created_at >= PENDING_TOPUP_FAIL_AFTER:
+            return True, 'Marked failed: unpaid deposit timed out.'
+        return False, ''
+
+    status = (order or {}).get('status') or ''
+    if status == 'paid':
+        return False, ''
+
+    try:
+        payments = client.order.payments(deposit.external_ref)
+    except Exception:
+        payments = {'items': []}
+
+    items = (payments or {}).get('items') or []
+    if items and all((payment or {}).get('status') in {'failed', 'refunded'} for payment in items):
+        return True, 'Marked failed: Razorpay payment failed.'
+
+    if deposit.created_at and timezone.now() - deposit.created_at >= PENDING_TOPUP_FAIL_AFTER:
+        return True, 'Marked failed: checkout abandoned / unpaid.'
+
+    return False, ''
+
+
 def reconcile_pending_wallet_topups(*, user, limit: int = 20) -> dict:
-    """Credit any pending deposits that Razorpay already marked paid.
+    """Credit paid deposits; mark abandoned/failed Razorpay top-ups as failed.
 
     Covers: browser closed / offline after money was debited, but before
     confirm-topup reached our API. Safe to call repeatedly (idempotent).
@@ -309,31 +380,47 @@ def reconcile_pending_wallet_topups(*, user, limit: int = 20) -> dict:
     )
 
     credited = []
+    failed = []
     still_pending = 0
     for deposit in pending:
         payment_id = _extract_captured_payment_id(client, deposit.external_ref)
-        if not payment_id:
-            still_pending += 1
+        if payment_id:
+            result = credit_wallet_from_razorpay_order(
+                order_id=deposit.external_ref,
+                payment_id='' if payment_id == 'order_paid' else payment_id,
+            )
+            if result and result.get('status') == 'completed':
+                credited.append(result)
+            else:
+                still_pending += 1
             continue
-        result = credit_wallet_from_razorpay_order(
-            order_id=deposit.external_ref,
-            payment_id='' if payment_id == 'order_paid' else payment_id,
-        )
-        if result and result.get('status') == 'completed':
-            credited.append(result)
-        else:
-            still_pending += 1
+
+        should_fail, reason = _should_fail_unpaid_deposit(client, deposit)
+        if should_fail:
+            with db_transaction.atomic():
+                locked = (
+                    Transaction.objects.select_for_update()
+                    .filter(pk=deposit.pk, status='pending')
+                    .first()
+                )
+                if locked:
+                    locked = _mark_deposit_failed(locked, reason=reason)
+                    failed.append(_topup_result(locked, Profile.objects.filter(user=user).first()))
+            continue
+
+        still_pending += 1
 
     profile = Profile.objects.filter(user=user).first()
     return {
         'checked': len(pending),
         'creditedCount': len(credited),
+        'failedCount': len(failed),
         'stillPending': still_pending,
         'credited': credited,
+        'failed': failed,
         'walletBalance': float(profile.wallet_balance) if profile else 0.0,
         'totalDeposited': float(profile.total_deposited) if profile else 0.0,
     }
-
 
 def verify_webhook_signature(*, body: bytes, signature: str) -> bool:
     webhook_secret = (getattr(settings, 'RAZORPAY_WEBHOOK_SECRET', None) or '').strip()

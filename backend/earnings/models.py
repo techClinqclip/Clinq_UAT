@@ -24,6 +24,8 @@ class Transaction(models.Model):
         ('earning', 'Viral Earning'),       # Clipper earned from reach
         ('withdrawal', 'Withdrawal'),       # Clipper taking money out
         ('deposit', 'Wallet Deposit'),      # Brand/creator wallet top-up
+        ('lock', 'Budget Lock'),            # Funds locked into campaign/gig budget
+        ('settlement', 'Campaign Settlement'),  # Remaining budget returned to wallet
         ('commission', 'Platform Fee'),     # Your platform cut
         ('listing_fee', 'Premium Listing'), # Creator "Gig of the Day" payment
         ('bid_fee', 'Premium Bid Fee'),     # Clipper bidding fee

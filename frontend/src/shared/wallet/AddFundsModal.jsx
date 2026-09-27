@@ -4,6 +4,7 @@ import { X, IndianRupee, ShieldCheck, Loader2 } from "lucide-react";
 import useToast from "../../hooks/useToast";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { startWalletTopUp } from "./razorpayCheckout";
+import { notifyWalletBalanceChanged } from "./walletBalanceEvents";
 
 /*
   Shared AddFundsModal — used by Brand wallet, navbar WalletChip, and
@@ -62,6 +63,11 @@ export default function AddFundsModal({
       });
       reset();
       onClose();
+      if (typeof result?.walletBalance === "number") {
+        notifyWalletBalanceChanged(result.walletBalance);
+      } else {
+        notifyWalletBalanceChanged();
+      }
       onSuccess?.(result);
       showToast({
         type: "success",
@@ -71,6 +77,10 @@ export default function AddFundsModal({
       const message = error?.message || "Unable to complete payment.";
       if (!/cancelled/i.test(message)) {
         showToast({ type: "error", message });
+      } else {
+        // Cancelled/dismissed checkout — navbar may need to stay in sync
+        // after any server-side fail marking.
+        notifyWalletBalanceChanged();
       }
     } finally {
       setProcessing(false);

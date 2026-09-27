@@ -14,6 +14,7 @@ import PayoutTrendChart from "./PayoutTrendChart"; // ADJUST to match this file'
 import LoadingScreen from "../../shared/ui/LoadingScreen"; // ADJUST to match this file's actual path
 import AddFundsModal from "../../shared/wallet/AddFundsModal";
 import { syncPendingWalletTopups } from "../../shared/wallet/syncPendingTopups";
+import { notifyWalletBalanceChanged } from "../../shared/wallet/walletBalanceEvents";
 import { api } from "../../lib/api"; // ADJUST to match this file's actual path
 
 /*
@@ -128,10 +129,14 @@ export default function BrandWallet() {
                 setLoading(true);
                 setError("");
                 // Recover payments captured while browser was offline/closed.
-                await syncPendingWalletTopups();
+                const synced = await syncPendingWalletTopups();
+                if (synced && typeof synced.walletBalance === "number") {
+                    notifyWalletBalanceChanged(synced.walletBalance);
+                }
                 const data = await api("/api/earnings/wallet/");
                 if (!mounted) return;
                 setWalletData(data);
+                notifyWalletBalanceChanged(data.wallet_balance);
             } catch (err) {
                 if (!mounted) return;
                 setError(err?.message || "Failed to load wallet data");
@@ -167,6 +172,9 @@ export default function BrandWallet() {
                 wallet_balance: result.walletBalance,
                 total_deposited: result.totalDeposited ?? current?.total_deposited,
             }));
+            notifyWalletBalanceChanged(result.walletBalance);
+        } else {
+            notifyWalletBalanceChanged();
         }
         loadWalletData();
     };

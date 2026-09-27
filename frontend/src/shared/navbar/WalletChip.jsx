@@ -1,21 +1,26 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Wallet, Plus } from "lucide-react";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { api } from "../../lib/api";
 import AddFundsModal from "../wallet/AddFundsModal";
+import {
+  notifyWalletBalanceChanged,
+  subscribeWalletBalanceChanged,
+} from "../wallet/walletBalanceEvents";
 
 const formatBalance = (n) =>
   new Intl.NumberFormat("en-IN").format(Number.isFinite(n) ? n : 0);
 
 const EARNINGS_ROUTE_BY_ROLE = {
   clipper: "/clipper/earnings",
-  brand: "/brand/payouts",
+  brand: "/brand/earnings",
   creator: "/creator/analytics",
 };
 
 export default function WalletChip() {
   const navigate = useNavigate();
+  const location = useLocation();
   const user = useCurrentUser();
   const [balance, setBalance] = useState(0);
   const [addFundsOpen, setAddFundsOpen] = useState(false);
@@ -47,37 +52,28 @@ export default function WalletChip() {
   };
 
   useEffect(() => {
-    let active = true;
+    loadBalance();
+  }, [user?.role, user?.user_type, user?.email, isBrand, isCreator, location.pathname]);
 
-    async function run() {
-      const token = localStorage.getItem("access_token");
-      if (!token) {
-        if (active) setBalance(0);
+  useEffect(() => {
+    return subscribeWalletBalanceChanged((detail) => {
+      if (typeof detail?.walletBalance === "number") {
+        setBalance(detail.walletBalance);
         return;
       }
+      loadBalance();
+    });
+  }, [isBrand, isCreator]);
 
-      try {
-        const data = isBrand || isCreator
-          ? await api("/api/earnings/wallet/")
-          : await api("/api/earnings/overview/");
-
-        const nextBalance = Number(
-          isBrand || isCreator
-            ? data?.wallet_balance ?? data?.walletBalance ?? 0
-            : data?.available_balance ?? data?.total_earnings ?? 0
-        );
-
-        if (active) setBalance(nextBalance);
-      } catch {
-        if (active) setBalance(0);
-      }
-    }
-
-    run();
+  useEffect(() => {
+    const onFocus = () => loadBalance();
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
     return () => {
-      active = false;
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
     };
-  }, [user?.role, user?.user_type, user?.email, isBrand, isCreator]);
+  }, [isBrand, isCreator]);
 
   const handleGoToEarnings = () => {
     const route = EARNINGS_ROUTE_BY_ROLE[role] || "/marketplace";
@@ -121,8 +117,10 @@ export default function WalletChip() {
           onSuccess={(result) => {
             if (typeof result?.walletBalance === "number") {
               setBalance(result.walletBalance);
+              notifyWalletBalanceChanged(result.walletBalance);
             } else {
               loadBalance();
+              notifyWalletBalanceChanged();
             }
           }}
         />

@@ -21,6 +21,11 @@ class WalletTopUpConfirmSerializer(serializers.Serializer):
     razorpaySignature = serializers.CharField(max_length=255, source='signature')
 
 
+class WalletTopUpFailSerializer(serializers.Serializer):
+    razorpayOrderId = serializers.CharField(max_length=100, source='order_id')
+    reason = serializers.CharField(max_length=255, required=False, allow_blank=True)
+
+
 # Serializer for handling the withdrawal request body
 class PayoutSerializer(serializers.Serializer):
     amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal('2500.00'))

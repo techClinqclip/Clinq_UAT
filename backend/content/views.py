@@ -95,6 +95,16 @@ class CampaignViewSet(viewsets.ModelViewSet):
                 Profile.objects.filter(pk=locked_profile.pk).update(
                     wallet_balance=F('wallet_balance') - budget
                 )
+                from earnings.models import Transaction
+                Transaction.objects.create(
+                    user=self.request.user,
+                    amount=budget,
+                    transaction_type='lock',
+                    status='completed',
+                    payment_method='',
+                    payment_details=f'Funds locked for {campaign.name}',
+                    external_ref=f'campaign-lock-{campaign.id}',
+                )
 
         if campaign.status in ('active', 'available'):
             from notifications.helpers import notify_users_event
@@ -285,6 +295,7 @@ class CampaignViewSet(viewsets.ModelViewSet):
             return Response({'error': 'No remaining budget to transfer.'}, status=status.HTTP_400_BAD_REQUEST)
         
         from accounts.models import Profile
+        from earnings.models import Transaction
         with db_transaction.atomic():
             Profile.objects.filter(user_id=campaign.creator_id).update(
                 wallet_balance=F('wallet_balance') + remaining,
@@ -293,8 +304,16 @@ class CampaignViewSet(viewsets.ModelViewSet):
             campaign.remaining_funds_settled_amount = remaining
             campaign.remaining_funds_settled_at = timezone.now()
             campaign.save(update_fields=['remaining_funds_settled', 'remaining_funds_settled_amount', 'remaining_funds_settled_at', 'updated_at'])
+            Transaction.objects.create(
+                user=campaign.creator,
+                amount=remaining,
+                transaction_type='settlement',
+                status='completed',
+                payment_method='',
+                payment_details=f'Remaining budget returned from {campaign.name}',
+                external_ref=f'campaign-settle-{campaign.id}',
+            )
         return Response({'status': 'success', 'amount': float(remaining), 'campaign': self.get_serializer(campaign).data})
-
     @action(detail=False, methods=['get'], url_path='marketplace')
     def marketplace(self, request):
         """List active campaigns and gigs in marketplace"""
