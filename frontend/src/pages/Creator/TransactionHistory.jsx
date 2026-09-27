@@ -268,10 +268,10 @@ export default function CreatorTransactionHistory() {
     const paginatedTransactions = filteredTransactions.slice(pageStart, pageStart + PAGE_SIZE);
 
     const completedCount = transactions.filter((t) => t.status === "Completed").length;
-    const failedCount = transactions.filter((t) => t.status === "Failed").length;
-    const failedAmount = transactions
-        .filter((t) => t.status === "Failed")
+    const totalWithdrawn = transactions
+        .filter((t) => t.type === "withdrawal" && t.status !== "Failed")
         .reduce((sum, t) => sum + t.amount, 0);
+    const withdrawalCount = transactions.filter((t) => t.type === "withdrawal").length;
     const totalDeposited = transactions
         .filter((t) => t.type === "deposit" && t.status === "Completed")
         .reduce((sum, t) => sum + t.amount, 0);
@@ -314,10 +314,10 @@ export default function CreatorTransactionHistory() {
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
                     <Clock3 className="mb-4 text-amber-400" size={28} />
-                    <p className="text-sm text-zinc-500">Failed Amount</p>
-                    <h3 className="mt-2 text-3xl font-bold">₹{failedAmount.toLocaleString("en-IN")}</h3>
+                    <p className="text-sm text-zinc-500">Total Withdrawal</p>
+                    <h3 className="mt-2 text-3xl font-bold">₹{totalWithdrawn.toLocaleString("en-IN")}</h3>
                     <p className="mt-2 text-xs text-zinc-500">
-                        {failedCount} failed transaction{failedCount !== 1 ? "s" : ""}
+                        {withdrawalCount} withdrawal{withdrawalCount !== 1 ? "s" : ""}
                     </p>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
