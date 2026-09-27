@@ -416,7 +416,6 @@ export default function CreatorTransactionHistory() {
                                         <th className="px-6 py-4">Type</th>
                                         <th className="px-6 py-4">Description</th>
                                         <th className="px-6 py-4">Amount</th>
-                                        <th className="px-6 py-4">Method</th>
                                         <th className="px-6 py-4">Status</th>
                                     </tr>
                                 </thead>
@@ -438,7 +437,6 @@ export default function CreatorTransactionHistory() {
                                                 <td className={`px-6 py-5 font-semibold ${meta.color}`}>
                                                     {meta.sign}₹{t.amount.toLocaleString("en-IN")}
                                                 </td>
-                                                <td className="px-6 py-5 text-zinc-300">{t.method}</td>
                                                 <td className="px-6 py-5">
                                                     <span
                                                         className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
