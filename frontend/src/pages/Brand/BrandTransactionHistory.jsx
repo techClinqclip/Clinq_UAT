@@ -7,6 +7,7 @@ import { notifyWalletBalanceChanged } from "../../shared/wallet/walletBalanceEve
 
 import {
     ArrowLeft,
+    ArrowRight,
     Wallet,
     CircleDollarSign,
     Clock3,
@@ -23,6 +24,8 @@ import {
     lock        — Budget locked when a campaign is created
     settlement  — Remaining budget returned from an expired/closed campaign
 */
+
+const PAGE_SIZE = 10;
 
 const TXN_META = {
     deposit: {
@@ -52,8 +55,6 @@ function normalizeStatus(rawStatus) {
     const status = String(rawStatus || "pending").toLowerCase();
     if (status === "completed" || status === "successful") return "Completed";
     if (status === "failed" || status === "rejected") return "Failed";
-    // Abandoned Razorpay rows should already be failed server-side;
-    // anything still pending shows as Processing briefly.
     if (status === "pending") return "Processing";
     return status.replace(/^./, (c) => c.toUpperCase());
 }
@@ -106,11 +107,73 @@ function normalizeBrandTransaction(transaction) {
     };
 }
 
+function TransactionHistorySkeleton() {
+    return (
+        <div className="min-h-screen bg-black text-white">
+            <div className="h-5 w-40 animate-pulse rounded bg-white/10" />
+
+            <section className="mt-6 rounded-3xl border border-white/10 bg-white/[0.03] p-8">
+                <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="max-w-2xl flex-1">
+                        <div className="h-6 w-32 animate-pulse rounded-full bg-white/10" />
+                        <div className="mt-5 h-10 w-64 animate-pulse rounded bg-white/10" />
+                        <div className="mt-4 h-4 w-full max-w-xl animate-pulse rounded bg-white/10" />
+                    </div>
+                    <div className="h-12 w-40 animate-pulse rounded-xl bg-white/10" />
+                </div>
+            </section>
+
+            <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+                        <div className="mb-4 h-7 w-7 animate-pulse rounded bg-white/10" />
+                        <div className="h-3 w-24 animate-pulse rounded bg-white/10" />
+                        <div className="mt-3 h-7 w-20 animate-pulse rounded bg-white/10" />
+                    </div>
+                ))}
+            </div>
+
+            <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.03] p-6">
+                <div className="flex flex-col gap-4 lg:flex-row">
+                    <div className="h-12 flex-1 animate-pulse rounded-xl bg-white/10" />
+                    <div className="h-12 w-36 animate-pulse rounded-xl bg-white/10" />
+                    <div className="h-12 w-36 animate-pulse rounded-xl bg-white/10" />
+                    <div className="h-12 w-36 animate-pulse rounded-xl bg-white/10" />
+                </div>
+            </div>
+
+            <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.03]">
+                <div className="border-b border-white/10 px-6 py-5">
+                    <div className="h-6 w-40 animate-pulse rounded bg-white/10" />
+                    <div className="mt-2 h-4 w-72 animate-pulse rounded bg-white/10" />
+                </div>
+                <div className="space-y-0 px-6 py-2">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                        <div
+                            key={i}
+                            className="flex items-center gap-4 border-b border-white/5 py-5 last:border-b-0"
+                        >
+                            <div className="h-4 w-8 animate-pulse rounded bg-white/10" />
+                            <div className="h-4 w-24 animate-pulse rounded bg-white/10" />
+                            <div className="h-6 w-24 animate-pulse rounded-full bg-white/10" />
+                            <div className="h-4 flex-1 animate-pulse rounded bg-white/10" />
+                            <div className="h-4 w-20 animate-pulse rounded bg-white/10" />
+                            <div className="h-4 w-20 animate-pulse rounded bg-white/10" />
+                            <div className="h-6 w-20 animate-pulse rounded-full bg-white/10" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function BrandTransactionHistory() {
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("All");
     const [typeFilter, setTypeFilter] = useState("All");
     const [sortBy, setSortBy] = useState("Newest");
+    const [page, setPage] = useState(1);
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -147,6 +210,10 @@ export default function BrandTransactionHistory() {
         };
     }, []);
 
+    useEffect(() => {
+        setPage(1);
+    }, [search, statusFilter, typeFilter, sortBy]);
+
     const filteredTransactions = useMemo(() => {
         let data = [...transactions];
 
@@ -156,7 +223,6 @@ export default function BrandTransactionHistory() {
                 (t) =>
                     t.label.toLowerCase().includes(q)
                     || (t.campaign && t.campaign.toLowerCase().includes(q))
-                    || String(t.id).toLowerCase().includes(q)
             );
         }
 
@@ -181,6 +247,11 @@ export default function BrandTransactionHistory() {
         return data;
     }, [transactions, search, statusFilter, typeFilter, sortBy]);
 
+    const totalPages = Math.max(1, Math.ceil(filteredTransactions.length / PAGE_SIZE));
+    const currentPage = Math.min(page, totalPages);
+    const pageStart = (currentPage - 1) * PAGE_SIZE;
+    const paginatedTransactions = filteredTransactions.slice(pageStart, pageStart + PAGE_SIZE);
+
     const completedCount = transactions.filter((t) => t.status === "Completed").length;
     const failedCount = transactions.filter((t) => t.status === "Failed").length;
     const failedAmount = transactions
@@ -189,6 +260,10 @@ export default function BrandTransactionHistory() {
     const totalDeposited = transactions
         .filter((t) => t.type === "deposit" && t.status === "Completed")
         .reduce((sum, t) => sum + t.amount, 0);
+
+    if (loading) {
+        return <TransactionHistorySkeleton />;
+    }
 
     return (
         <div className="min-h-screen bg-black text-white">
@@ -249,7 +324,7 @@ export default function BrandTransactionHistory() {
                         <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" />
                         <input
                             type="text"
-                            placeholder="Search by description or transaction ID..."
+                            placeholder="Search by description..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             className="w-full rounded-xl border border-white/10 bg-black/40 py-3 pl-11 pr-4 outline-none transition focus:border-violet-500"
@@ -306,9 +381,7 @@ export default function BrandTransactionHistory() {
                     </div>
                 </div>
 
-                {loading ? (
-                    <div className="px-6 py-16 text-center text-zinc-500">Loading transactions...</div>
-                ) : error ? (
+                {error ? (
                     <div className="px-6 py-16 text-center text-red-400">{error}</div>
                 ) : filteredTransactions.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-24">
@@ -325,57 +398,90 @@ export default function BrandTransactionHistory() {
                         </Link>
                     </div>
                 ) : (
-                    <div className="custom-scrollbar max-h-[500px] overflow-y-auto">
-                        <table className="w-full">
-                            <thead className="sticky top-0 bg-[#0B0B0B]">
-                                <tr className="border-b border-white/10 text-left text-sm text-zinc-400">
-                                    <th className="px-6 py-4">ID</th>
-                                    <th className="px-6 py-4">Date</th>
-                                    <th className="px-6 py-4">Type</th>
-                                    <th className="px-6 py-4">Description</th>
-                                    <th className="px-6 py-4">Amount</th>
-                                    <th className="px-6 py-4">Method</th>
-                                    <th className="px-6 py-4">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredTransactions.map((t, index) => {
-                                    const meta = TXN_META[t.type] || TXN_META.deposit;
-                                    const Icon = meta.icon;
-                                    return (
-                                        <tr key={t.id} className="border-b border-white/5 transition hover:bg-white/[0.03]">
-                                            <td className="px-6 py-5 font-medium">{index + 1}</td>
-                                            <td className="px-6 py-5 text-zinc-400">{t.date}</td>
-                                            <td className="px-6 py-5">
-                                                <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${meta.bg} ${meta.color}`}>
-                                                    <Icon size={12} />
-                                                    {meta.label}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-5">{t.label}</td>
-                                            <td className={`px-6 py-5 font-semibold ${meta.color}`}>
-                                                {meta.sign}₹{t.amount.toLocaleString("en-IN")}
-                                            </td>
-                                            <td className="px-6 py-5 text-zinc-300">{t.method}</td>
-                                            <td className="px-6 py-5">
-                                                <span
-                                                    className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
-                                                        t.status === "Completed"
-                                                            ? "bg-emerald-500/10 text-emerald-400"
-                                                            : t.status === "Processing"
-                                                            ? "bg-amber-500/10 text-amber-400"
-                                                            : "bg-red-500/10 text-red-400"
-                                                    }`}
-                                                >
-                                                    {t.status}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
+                    <>
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="bg-[#0B0B0B]">
+                                    <tr className="border-b border-white/10 text-left text-sm text-zinc-400">
+                                        <th className="px-6 py-4">ID</th>
+                                        <th className="px-6 py-4">Date</th>
+                                        <th className="px-6 py-4">Type</th>
+                                        <th className="px-6 py-4">Description</th>
+                                        <th className="px-6 py-4">Amount</th>
+                                        <th className="px-6 py-4">Method</th>
+                                        <th className="px-6 py-4">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {paginatedTransactions.map((t, index) => {
+                                        const meta = TXN_META[t.type] || TXN_META.deposit;
+                                        const Icon = meta.icon;
+                                        const displayId = pageStart + index + 1;
+                                        return (
+                                            <tr key={t.id} className="border-b border-white/5 transition hover:bg-white/[0.03]">
+                                                <td className="px-6 py-5 font-medium">{displayId}</td>
+                                                <td className="px-6 py-5 text-zinc-400">{t.date}</td>
+                                                <td className="px-6 py-5">
+                                                    <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${meta.bg} ${meta.color}`}>
+                                                        <Icon size={12} />
+                                                        {meta.label}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-5">{t.label}</td>
+                                                <td className={`px-6 py-5 font-semibold ${meta.color}`}>
+                                                    {meta.sign}₹{t.amount.toLocaleString("en-IN")}
+                                                </td>
+                                                <td className="px-6 py-5 text-zinc-300">{t.method}</td>
+                                                <td className="px-6 py-5">
+                                                    <span
+                                                        className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
+                                                            t.status === "Completed"
+                                                                ? "bg-emerald-500/10 text-emerald-400"
+                                                                : t.status === "Processing"
+                                                                ? "bg-amber-500/10 text-amber-400"
+                                                                : "bg-red-500/10 text-red-400"
+                                                        }`}
+                                                    >
+                                                        {t.status}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div className="flex flex-col gap-4 border-t border-white/10 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+                            <p className="text-sm text-zinc-500">
+                                Showing {pageStart + 1}–{Math.min(pageStart + PAGE_SIZE, filteredTransactions.length)} of{" "}
+                                {filteredTransactions.length}
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                    disabled={currentPage <= 1}
+                                    className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-sm font-medium transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    <ArrowLeft size={14} />
+                                    Prev
+                                </button>
+                                <span className="rounded-xl bg-white/5 px-3 py-2 text-sm text-zinc-300">
+                                    Page {currentPage} of {totalPages}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                                    disabled={currentPage >= totalPages}
+                                    className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-sm font-medium transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    Next
+                                    <ArrowRight size={14} />
+                                </button>
+                            </div>
+                        </div>
+                    </>
                 )}
             </section>
         </div>
