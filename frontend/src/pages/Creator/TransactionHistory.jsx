@@ -77,6 +77,62 @@ function normalizeStatus(rawStatus) {
     return status.replace(/^./, (c) => c.toUpperCase());
 }
 
+function formatWithdrawalDescription(transaction) {
+    const methodRaw = (
+        transaction.paymentMethod
+        || transaction.payment_method
+        || ""
+    ).toString().toLowerCase();
+    const details = (
+        transaction.paymentDetails
+        || transaction.payment_details
+        || transaction.external_ref
+        || transaction.externalRef
+        || ""
+    ).toString().trim();
+
+    const isUpi =
+        methodRaw.includes("upi")
+        || (details.includes("@") && !details.includes("|"));
+    const isBank =
+        methodRaw.includes("bank")
+        || details.includes("|");
+
+    if (isUpi) {
+        const upiId = details.includes("|")
+            ? details.split("|").pop().trim()
+            : details;
+        return upiId
+            ? `Withdrawal via UPI · ${upiId}`
+            : "Withdrawal via UPI";
+    }
+
+    if (isBank) {
+        const parts = details.split("|").map((part) => part.trim()).filter(Boolean);
+        // Stored as: "Holder | Bank Name | Account Number"
+        if (parts.length >= 3) {
+            const bankName = parts[1];
+            const accountNumber = parts[2];
+            const last4 = accountNumber.slice(-4);
+            return `Withdrawal via Bank Transfer · ${bankName} •••• ${last4}`;
+        }
+        if (parts.length === 2) {
+            return `Withdrawal via Bank Transfer · ${parts[0]} · ${parts[1]}`;
+        }
+        return details
+            ? `Withdrawal via Bank Transfer · ${details}`
+            : "Withdrawal via Bank Transfer";
+    }
+
+    if (methodRaw.includes("paypal")) {
+        return details ? `Withdrawal via PayPal · ${details}` : "Withdrawal via PayPal";
+    }
+
+    return details
+        ? `Withdrawal to ${details}`
+        : "Earned money withdrawal";
+}
+
 export function normalizeCreatorWalletTransaction(transaction) {
     const rawType = (
         transaction.transactionType
@@ -120,8 +176,27 @@ export function normalizeCreatorWalletTransaction(transaction) {
         label = "Money added to wallet";
     } else if (type === "transfer") {
         label = "Earned money transferred to gig wallet";
-    } else if (type === "withdrawal" && (!rawLabel || /paypal|upi|bank/i.test(rawLabel))) {
-        label = rawLabel ? `Earned money withdrawal · ${rawLabel}` : "Earned money withdrawal";
+    } else if (type === "withdrawal") {
+        label = formatWithdrawalDescription(transaction);
+    }
+
+    const methodRaw = (
+        transaction.paymentMethod
+        || transaction.payment_method
+        || ""
+    ).toString().toLowerCase();
+    let method =
+        transaction.paymentMethod
+        || transaction.payment_method
+        || (type === "deposit" ? "Razorpay" : type === "transfer" ? "Internal" : "Wallet");
+    if (type === "withdrawal") {
+        if (methodRaw.includes("upi") || (rawLabel.includes("@") && !rawLabel.includes("|"))) {
+            method = "UPI";
+        } else if (methodRaw.includes("bank") || rawLabel.includes("|")) {
+            method = "Bank Transfer";
+        } else if (methodRaw.includes("paypal")) {
+            method = "PayPal";
+        }
     }
 
     return {
@@ -136,10 +211,7 @@ export function normalizeCreatorWalletTransaction(transaction) {
         type,
         label,
         amount: Number(transaction.amount || 0),
-        method:
-            transaction.paymentMethod
-            || transaction.payment_method
-            || (type === "deposit" ? "Razorpay" : type === "transfer" ? "Internal" : "Wallet"),
+        method,
         status: normalizeStatus(transaction.status),
         createdAt: transaction.createdAt || transaction.created_at,
     };

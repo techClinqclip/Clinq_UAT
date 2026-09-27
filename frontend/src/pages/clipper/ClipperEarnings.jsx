@@ -105,6 +105,26 @@ export default function ClipperEarnings() {
                 .slice(0, 5)
                 .map((payout) => {
                     const isCredit = payout.transactionType === "Earning";
+                    const methodRaw = (payout.paymentMethod || payout.payment_method || "").toString().toLowerCase();
+                    const details = (payout.paymentDetails || payout.payment_details || payout.external_ref || "").toString().trim();
+                    const isUpi = methodRaw.includes("upi") || (details.includes("@") && !details.includes("|"));
+                    const isBank = methodRaw.includes("bank") || details.includes("|");
+
+                    let withdrawalMethod = "Wallet Withdrawal";
+                    if (!isCredit) {
+                        if (isUpi) {
+                            withdrawalMethod = details ? `Withdrawal via UPI · ${details}` : "Withdrawal via UPI";
+                        } else if (isBank) {
+                            const parts = details.split("|").map((part) => part.trim()).filter(Boolean);
+                            withdrawalMethod = parts.length >= 3
+                                ? `Withdrawal via Bank Transfer · ${parts[1]} •••• ${parts[2].slice(-4)}`
+                                : details
+                                    ? `Withdrawal via Bank Transfer · ${details}`
+                                    : "Withdrawal via Bank Transfer";
+                        } else if (details) {
+                            withdrawalMethod = `Withdrawal to ${details}`;
+                        }
+                    }
 
                     return {
                         id: payout.id,
@@ -117,9 +137,7 @@ export default function ClipperEarnings() {
                               payout.external_ref ||
                               "Campaign earnings"
                             : null,
-                        method: isCredit
-                            ? "Campaign Submission"
-                            : payout.paymentMethod || payout.paymentDetails || "Wallet Withdrawal",
+                        method: isCredit ? "Campaign Submission" : withdrawalMethod,
                     };
                 }),
         [overview.recent_transactions]

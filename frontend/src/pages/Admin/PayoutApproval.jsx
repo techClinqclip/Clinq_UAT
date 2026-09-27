@@ -1,15 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  Building2,
   CheckCircle2,
   CircleDollarSign,
   Clock3,
   RefreshCw,
   ShieldAlert,
+  Smartphone,
   XCircle,
 } from "lucide-react";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import useToast from "../../hooks/useToast";
 import { api } from "../../lib/api";
+import ManualPayoutModal from "./components/ManualPayoutModal";
+import RejectPayoutModal from "./components/RejectPayoutModal";
 
 const MODE_LABELS = {
   manual: "Manual Pay",
@@ -93,11 +97,20 @@ export default function AdminPayoutApproval() {
   const [savingToggle, setSavingToggle] = useState(false);
   const [confirmConfig, setConfirmConfig] = useState(null);
   const [actionId, setActionId] = useState(null);
+  const [manualItem, setManualItem] = useState(null);
+  const [rejectItem, setRejectItem] = useState(null);
 
   const applySettings = (data) => {
     setManualPay(Boolean(data.manualPay));
     setRequireApproval(Boolean(data.requirePayoutApproval));
-    setMode(data.mode || (data.manualPay ? "manual" : data.requirePayoutApproval ? "razorpay_with_approval" : "razorpay_autopay"));
+    setMode(
+      data.mode ||
+        (data.manualPay
+          ? "manual"
+          : data.requirePayoutApproval
+            ? "razorpay_with_approval"
+            : "razorpay_autopay")
+    );
   };
 
   const loadQueue = async () => {
@@ -137,8 +150,8 @@ export default function AdminPayoutApproval() {
       value: nextValue,
       title: nextValue ? "Enable Manual Pay?" : "Disable Manual Pay?",
       body: nextValue
-        ? "Admin will pay each withdrawal manually and enter payout details to mark it approved. RazorpayX autopay will not run."
-        : "System will switch to RazorpayX autopay. Use the “With approval” switch to decide whether admin approval is required before transfer.",
+        ? "Admin will pay each withdrawal manually and enter UTR/reference to mark it paid. RazorpayX autopay will not run."
+        : "System will switch to RazorpayX autopay. Use “With approval” to decide whether admin approval is required before transfer.",
       confirmLabel: nextValue ? "Enable Manual Pay" : "Use RazorpayX Autopay",
       confirmClassName: nextValue ? "bg-violet-600 hover:bg-violet-500" : "bg-amber-600 hover:bg-amber-500",
     });
@@ -150,8 +163,8 @@ export default function AdminPayoutApproval() {
       value: nextValue,
       title: nextValue ? "Enable approval for RazorpayX?" : "Disable approval for RazorpayX?",
       body: nextValue
-        ? "New withdrawal requests will wait for admin approval. After approval, RazorpayX will transfer money and save data automatically."
-        : "New withdrawal requests will transfer money via RazorpayX immediately and save data automatically. Admin approval will not be required.",
+        ? "New withdrawal requests will wait for admin approval. After approval, RazorpayX transfers money and stores data automatically."
+        : "New withdrawal requests will transfer via RazorpayX immediately and store data automatically.",
       confirmLabel: nextValue ? "Enable With Approval" : "Disable Approval (full autopay)",
       confirmClassName: nextValue ? "bg-violet-600 hover:bg-violet-500" : "bg-amber-600 hover:bg-amber-500",
     });
@@ -182,28 +195,24 @@ export default function AdminPayoutApproval() {
     }
   };
 
-  const approveWithdrawal = async (id) => {
+  const handleApproveClick = (item) => {
+    if (manualPay) {
+      setManualItem(item);
+      return;
+    }
+    approveWithRazorpay(item.id);
+  };
+
+  const approveWithRazorpay = async (id) => {
     setActionId(id);
     try {
-      const body = { transactionId: id };
-      if (manualPay) {
-        const paymentReference =
-          window.prompt("Enter UTR / payment reference (optional):") || "";
-        const notes = window.prompt("Optional notes for this manual payout:") || "";
-        body.paymentReference = paymentReference;
-        body.notes = notes;
-      }
       const result = await api("/api/earnings/payout/admin-approve/", {
         method: "POST",
-        body,
+        body: { transactionId: id },
       });
       showToast({
         type: "success",
-        message:
-          result?.message ||
-          (manualPay
-            ? "Withdrawal marked paid manually."
-            : "Withdrawal approved and RazorpayX payout triggered."),
+        message: result?.message || "Withdrawal approved and RazorpayX payout triggered.",
       });
       await loadQueue();
     } catch (error) {
@@ -213,18 +222,38 @@ export default function AdminPayoutApproval() {
     }
   };
 
-  const rejectWithdrawal = async (id) => {
-    const reason = window.prompt("Optional rejection reason:") || "";
-    setActionId(id);
+  const confirmManualPaid = async ({ transactionId, paymentReference, notes }) => {
+    setActionId(transactionId);
+    try {
+      const result = await api("/api/earnings/payout/admin-approve/", {
+        method: "POST",
+        body: { transactionId, paymentReference, notes },
+      });
+      showToast({
+        type: "success",
+        message: result?.message || "Withdrawal marked paid manually.",
+      });
+      setManualItem(null);
+      await loadQueue();
+    } catch (error) {
+      showToast({ type: "error", message: error?.message || "Unable to mark withdrawal as paid." });
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const confirmReject = async ({ transactionId, reason }) => {
+    setActionId(transactionId);
     try {
       const result = await api("/api/earnings/payout/admin-reject/", {
         method: "POST",
-        body: { transactionId: id, reason },
+        body: { transactionId, reason },
       });
       showToast({
         type: "success",
         message: result?.message || "Withdrawal rejected and balance restored.",
       });
+      setRejectItem(null);
       await loadQueue();
     } catch (error) {
       showToast({ type: "error", message: error?.message || "Unable to reject withdrawal." });
@@ -243,8 +272,8 @@ export default function AdminPayoutApproval() {
         </span>
         <h1 className="mt-5 text-4xl font-bold">Payout Approval</h1>
         <p className="mt-4 max-w-3xl leading-7 text-zinc-400">
-          Choose Manual Pay or RazorpayX Autopay. For RazorpayX, decide whether admin approval is
-          required before money is transferred.
+          Choose Manual Pay or RazorpayX Autopay. For manual payouts, review destination details, enter
+          UTR/reference, then mark the request paid.
         </p>
       </section>
 
@@ -271,7 +300,7 @@ export default function AdminPayoutApproval() {
           title="Manual Pay"
           description={
             manualPay
-              ? "ON: pay each request manually and enter payout data to mark it approved. RazorpayX will not run."
+              ? "ON: pay each request offline, then mark paid with UTR/reference. RazorpayX will not run."
               : "OFF: RazorpayX autopay is active. Use “With approval” below for gated or full autopay."
           }
           enabled={manualPay}
@@ -298,7 +327,7 @@ export default function AdminPayoutApproval() {
             <h2 className="text-xl font-semibold">Pending withdrawals</h2>
             <p className="mt-1 text-sm text-zinc-500">
               {manualPay
-                ? "Mark paid after sending money manually, or reject to restore balance."
+                ? "Open a request, transfer money to the shown destination, then mark paid with UTR."
                 : "Approve to send via RazorpayX, or reject to restore balance."}
             </p>
           </div>
@@ -325,45 +354,67 @@ export default function AdminPayoutApproval() {
           <p className="p-6 text-zinc-400">No pending withdrawals right now.</p>
         ) : (
           <div className="divide-y divide-white/5">
-            {queue.map((item) => (
-              <div
-                key={item.id}
-                className="flex flex-col gap-4 px-6 py-5 lg:flex-row lg:items-center lg:justify-between"
-              >
-                <div className="min-w-0">
-                  <p className="font-medium text-white">{item.userEmail || `User #${item.userId}`}</p>
-                  <p className="mt-1 text-sm text-zinc-500">
-                    {item.paymentMethod === "upi" ? "UPI" : "Bank"} · {item.paymentDetails || "—"}
-                  </p>
-                  <p className="mt-1 text-xs text-zinc-600">
-                    Requested {item.createdAt ? new Date(item.createdAt).toLocaleString() : "—"}
-                  </p>
+            {queue.map((item) => {
+              const isUpi = item.paymentMethod === "upi";
+              const MethodIcon = isUpi ? Smartphone : Building2;
+              return (
+                <div
+                  key={item.id}
+                  className="flex flex-col gap-4 px-6 py-5 lg:flex-row lg:items-center lg:justify-between"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium text-white">{item.userEmail || `User #${item.userId}`}</p>
+                      <span className="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-300">
+                        Pending
+                      </span>
+                    </div>
+                    <div className="mt-3 flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-500/10">
+                        <MethodIcon size={15} className="text-violet-300" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs uppercase tracking-wide text-zinc-500">
+                          {isUpi ? "UPI destination" : "Bank destination"}
+                        </p>
+                        <p className="mt-1 text-sm text-zinc-200 break-all">
+                          {item.destinationLabel || item.paymentDetails || "—"}
+                        </p>
+                        {item.destinationHint ? (
+                          <p className="mt-1 text-xs text-zinc-500">{item.destinationHint}</p>
+                        ) : null}
+                      </div>
+                    </div>
+                    <p className="mt-2 text-xs text-zinc-600">
+                      Requested {item.createdAt ? new Date(item.createdAt).toLocaleString() : "—"} · ID #{item.id}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3 lg:justify-end">
+                    <span className="text-lg font-semibold text-white">
+                      ₹{Number(item.amount || 0).toLocaleString()}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={actionId === item.id}
+                      onClick={() => handleApproveClick(item)}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:opacity-50"
+                    >
+                      <CheckCircle2 size={14} />
+                      {manualPay ? "Mark paid" : "Approve & pay"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={actionId === item.id}
+                      onClick={() => setRejectItem(item)}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3.5 py-2 text-sm font-medium text-rose-300 transition hover:bg-rose-500/20 disabled:opacity-50"
+                    >
+                      <XCircle size={14} />
+                      Reject
+                    </button>
+                  </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <span className="text-lg font-semibold text-white">
-                    ₹{Number(item.amount || 0).toLocaleString()}
-                  </span>
-                  <button
-                    type="button"
-                    disabled={actionId === item.id}
-                    onClick={() => approveWithdrawal(item.id)}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:opacity-50"
-                  >
-                    <CheckCircle2 size={14} />
-                    {manualPay ? "Mark paid" : "Approve & pay"}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={actionId === item.id}
-                    onClick={() => rejectWithdrawal(item.id)}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3.5 py-2 text-sm font-medium text-rose-300 transition hover:bg-rose-500/20 disabled:opacity-50"
-                  >
-                    <XCircle size={14} />
-                    Reject
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
@@ -380,6 +431,28 @@ export default function AdminPayoutApproval() {
           setConfirmConfig(null);
         }}
         onConfirm={confirmToggle}
+      />
+
+      <ManualPayoutModal
+        open={Boolean(manualItem)}
+        item={manualItem}
+        busy={actionId === manualItem?.id}
+        onClose={() => {
+          if (actionId === manualItem?.id) return;
+          setManualItem(null);
+        }}
+        onConfirm={confirmManualPaid}
+      />
+
+      <RejectPayoutModal
+        open={Boolean(rejectItem)}
+        item={rejectItem}
+        busy={actionId === rejectItem?.id}
+        onClose={() => {
+          if (actionId === rejectItem?.id) return;
+          setRejectItem(null);
+        }}
+        onConfirm={confirmReject}
       />
     </div>
   );

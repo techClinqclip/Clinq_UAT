@@ -564,6 +564,42 @@ def mark_withdrawal_completed(txn: Transaction, *, payout_id: str = '', razorpay
         return locked
 
 
+def build_withdrawal_destination_display(txn: Transaction) -> dict:
+    """Normalized destination fields for admin payout UI."""
+    destination = _parse_withdrawal_destination(txn)
+    method = (destination.get('payout_method') or txn.payment_method or '').strip().lower()
+    if method == 'bank':
+        method = 'bank_transfer'
+
+    upi_id = (destination.get('upi_id') or '').strip()
+    holder = (destination.get('bank_account_holder') or '').strip()
+    bank_name = (destination.get('bank_name') or '').strip()
+    account_number = (destination.get('bank_account_number') or '').strip()
+    ifsc = (destination.get('bank_ifsc') or '').strip()
+
+    if method == 'upi' or (upi_id and '@' in upi_id):
+        label = upi_id or (txn.payment_details or '').strip() or (txn.external_ref or '').strip()
+        return {
+            'paymentMethod': 'upi',
+            'upiId': label,
+            'destinationLabel': label or 'UPI ID unavailable',
+            'destinationHint': 'Transfer via UPI to this VPA',
+        }
+
+    masked = f"•••• {account_number[-4:]}" if len(account_number) >= 4 else account_number
+    label_parts = [part for part in (holder, bank_name, masked) if part]
+    hint_parts = [part for part in (ifsc and f'IFSC {ifsc}', account_number and f'A/C {account_number}') if part]
+    return {
+        'paymentMethod': 'bank_transfer',
+        'bankAccountHolder': holder,
+        'bankName': bank_name,
+        'bankAccountNumber': account_number,
+        'bankIfsc': ifsc,
+        'destinationLabel': ' · '.join(label_parts) if label_parts else ((txn.payment_details or '').strip() or 'Bank details unavailable'),
+        'destinationHint': ' · '.join(hint_parts) if hint_parts else 'Transfer via NEFT/IMPS/RTGS',
+    }
+
+
 def mark_withdrawal_paid_manually(
     txn: Transaction,
     *,
@@ -578,6 +614,13 @@ def mark_withdrawal_paid_manually(
         raise PaymentValidationError('Only pending withdrawals can be marked paid.')
 
     reference = (payment_reference or '').strip()
+    if not reference:
+        raise PaymentValidationError('UTR / payment reference is required for manual payout.')
+
+    display = build_withdrawal_destination_display(txn)
+    method_label = 'UPI' if display.get('paymentMethod') == 'upi' else 'Bank Transfer'
+    destination_label = display.get('destinationLabel') or 'destination'
+
     with db_transaction.atomic():
         locked = (
             Transaction.objects.select_for_update()
@@ -588,8 +631,9 @@ def mark_withdrawal_paid_manually(
             raise PaymentValidationError('Withdrawal is no longer pending.')
 
         locked.status = 'completed'
-        if reference:
-            locked.external_ref = reference
+        locked.external_ref = reference
+        # Keep destination readable in history while recording the UTR.
+        locked.payment_details = f'{destination_label} · UTR {reference}'
         locked.bot_notes = merge_withdrawal_notes(
             locked,
             {
@@ -598,10 +642,12 @@ def mark_withdrawal_paid_manually(
                     'paymentReference': reference,
                     'notes': (notes or '').strip(),
                     'paidBy': admin_email or '',
+                    'method': method_label,
+                    'destination': destination_label,
                 }
             },
         )
-        locked.save(update_fields=['status', 'external_ref', 'bot_notes', 'updated_at'])
+        locked.save(update_fields=['status', 'external_ref', 'payment_details', 'bot_notes', 'updated_at'])
 
     return {
         'transactionId': locked.id,
@@ -609,6 +655,8 @@ def mark_withdrawal_paid_manually(
         'status': locked.status,
         'paymentReference': locked.external_ref,
         'mode': 'manual',
+        'destinationLabel': destination_label,
+        'method': method_label,
     }
 
 

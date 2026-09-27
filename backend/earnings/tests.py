@@ -503,6 +503,21 @@ class AdminPayoutApprovalTests(TestCase):
         self.txn.refresh_from_db()
         self.assertEqual(self.txn.status, 'completed')
         self.assertEqual(self.txn.external_ref, 'UTR123456')
+        self.assertIn('UTR123456', self.txn.payment_details)
+
+    @patch('notifications.helpers.notify_user_event')
+    def test_admin_manual_pay_requires_payment_reference(self, _notify):
+        PlatformPayoutSettings.objects.update_or_create(
+            pk=1,
+            defaults={'manual_pay': True},
+        )
+        response = self.client.post(
+            '/api/earnings/payout/admin-approve/',
+            {'transactionId': self.txn.id, 'notes': 'Missing UTR'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('reference', response.data['error'].lower())
 
     @patch('notifications.helpers.notify_user_event')
     def test_admin_reject_restores_balance(self, _notify):

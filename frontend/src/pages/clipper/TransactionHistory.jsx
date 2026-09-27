@@ -35,18 +35,44 @@ export default function TransactionHistory() {
                 // else is money going OUT of the wallet as a withdrawal (debit).
                 setTransactions(source.map((item) => {
                     const isCredit = item.transactionType === "Earning";
+                    const methodRaw = (item.paymentMethod || item.payment_method || "").toString().toLowerCase();
+                    const details = (item.paymentDetails || item.payment_details || item.external_ref || "").toString().trim();
+                    const isUpi = methodRaw.includes("upi") || (details.includes("@") && !details.includes("|"));
+                    const isBank = methodRaw.includes("bank") || details.includes("|");
+
+                    let withdrawalLabel = "Wallet Withdrawal";
+                    if (!isCredit) {
+                        if (isUpi) {
+                            withdrawalLabel = details ? `Withdrawal via UPI · ${details}` : "Withdrawal via UPI";
+                        } else if (isBank) {
+                            const parts = details.split("|").map((part) => part.trim()).filter(Boolean);
+                            if (parts.length >= 3) {
+                                withdrawalLabel = `Withdrawal via Bank Transfer · ${parts[1]} •••• ${parts[2].slice(-4)}`;
+                            } else {
+                                withdrawalLabel = details
+                                    ? `Withdrawal via Bank Transfer · ${details}`
+                                    : "Withdrawal via Bank Transfer";
+                            }
+                        } else if (details) {
+                            withdrawalLabel = `Withdrawal to ${details}`;
+                        }
+                    }
 
                     return {
                         id: item.submissionId || item.id,
                         date: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '',
                         campaign: isCredit
                             ? (item.contentTitle || item.paymentDetails || item.external_ref || 'Campaign earnings')
-                            : null,
+                            : withdrawalLabel,
                         amount: Number(item.amount || 0),
                         isCredit,
                         method: isCredit
                             ? 'Campaign Submission'
-                            : (item.paymentMethod || item.paymentDetails || 'Wallet Withdrawal'),
+                            : isUpi
+                                ? 'UPI'
+                                : isBank
+                                    ? 'Bank Transfer'
+                                    : (item.paymentMethod || 'Wallet Withdrawal'),
                     };
                 }));
             } catch (error) {

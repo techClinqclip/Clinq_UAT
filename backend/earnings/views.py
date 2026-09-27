@@ -27,6 +27,7 @@ from .payments import (
     create_razorpay_withdrawal_payout,
     create_wallet_topup_order,
     mark_wallet_topup_failed,
+    build_withdrawal_destination_display,
     mark_withdrawal_paid_manually,
     reconcile_pending_wallet_topups,
     restore_withdrawal_balance,
@@ -247,13 +248,21 @@ class PayoutViewSet(viewsets.ViewSet):
 
         results = []
         for txn in withdrawals:
+            destination = build_withdrawal_destination_display(txn)
             results.append({
                 'id': txn.id,
                 'amount': float(txn.amount),
                 'status': txn.status,
-                'paymentMethod': txn.payment_method,
+                'paymentMethod': destination.get('paymentMethod') or txn.payment_method,
                 'paymentDetails': txn.payment_details,
                 'externalRef': txn.external_ref,
+                'upiId': destination.get('upiId') or '',
+                'bankAccountHolder': destination.get('bankAccountHolder') or '',
+                'bankName': destination.get('bankName') or '',
+                'bankAccountNumber': destination.get('bankAccountNumber') or '',
+                'bankIfsc': destination.get('bankIfsc') or '',
+                'destinationLabel': destination.get('destinationLabel') or '',
+                'destinationHint': destination.get('destinationHint') or '',
                 'createdAt': txn.created_at,
                 'updatedAt': txn.updated_at,
                 'userEmail': getattr(txn.user, 'email', ''),
@@ -307,6 +316,11 @@ class PayoutViewSet(viewsets.ViewSet):
         from notifications.helpers import notify_user_event
 
         if payout_settings.manual_pay:
+            if not payment_reference:
+                return Response(
+                    {'error': 'UTR / payment reference is required for manual payout.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             try:
                 payout_result = mark_withdrawal_paid_manually(
                     txn,
@@ -379,6 +393,8 @@ class PayoutViewSet(viewsets.ViewSet):
         reason = str(request.data.get('reason') or '').strip()
         if not txn_id:
             return Response({'error': 'transactionId is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not reason:
+            return Response({'error': 'Rejection reason is required.'}, status=status.HTTP_400_BAD_REQUEST)
         try:
             txn = Transaction.objects.select_related('user').get(
                 pk=txn_id,
