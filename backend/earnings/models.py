@@ -26,6 +26,7 @@ class Transaction(models.Model):
         ('deposit', 'Wallet Deposit'),      # Brand/creator wallet top-up
         ('lock', 'Budget Lock'),            # Funds locked into campaign/gig budget
         ('settlement', 'Campaign Settlement'),  # Remaining budget returned to wallet
+        ('transfer', 'Earnings Transfer'),  # Creator: earnings → gig wallet
         ('commission', 'Platform Fee'),     # Your platform cut
         ('listing_fee', 'Premium Listing'), # Creator "Gig of the Day" payment
         ('bid_fee', 'Premium Bid Fee'),     # Clipper bidding fee

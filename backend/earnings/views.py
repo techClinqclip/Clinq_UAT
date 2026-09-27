@@ -2,7 +2,7 @@ from decimal import Decimal
 from datetime import datetime, timedelta
 from django.utils import timezone
 from django.db.models import Sum, Q, F, Count
-from django.db.models.functions import TruncMonth
+from django.db.models.functions import Greatest, TruncMonth
 from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
@@ -11,6 +11,7 @@ from django.db import transaction as db_transaction
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 from .serializers import (
+    EarningsTransferSerializer,
     PayoutSerializer,
     TransactionSerializer,
     WalletTopUpConfirmSerializer,
@@ -438,6 +439,76 @@ class EarningsViewSet(viewsets.ViewSet):
         return Response(payload, status=status.HTTP_200_OK)
 
     @extend_schema(
+        summary='Transfer earnings to gig wallet',
+        description='Move available earnings into the creator campaign/gig spend wallet.',
+        request=EarningsTransferSerializer,
+        tags=['Earnings'],
+    )
+    @action(detail=False, methods=['post'], url_path='wallet/transfer-to-spend')
+    def transfer_earnings_to_spend(self, request):
+        if getattr(request.user, 'type', None) != 'creator':
+            return Response(
+                {'error': 'Only creators can transfer earnings to the gig wallet.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        serializer = EarningsTransferSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        amount = serializer.validated_data['amount']
+
+        try:
+            with db_transaction.atomic():
+                profile = Profile.objects.select_for_update().get(user=request.user)
+
+                # Match Creator wallet "available earnings": approved submission
+                # earnings minus completed withdrawals and prior transfers.
+                earned = CampaignSubmission.objects.filter(
+                    participant__clipper=request.user,
+                    status='approved',
+                ).aggregate(total=Sum('earning'))['total'] or Decimal('0')
+                already_moved = Transaction.objects.filter(
+                    user=request.user,
+                    transaction_type__in=['withdrawal', 'transfer'],
+                    status__in=['pending', 'completed'],
+                ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+                available = max(Decimal(str(earned)) - Decimal(str(already_moved)), Decimal('0'))
+
+                if amount > available:
+                    return Response(
+                        {'error': f'Insufficient earnings. Available: ₹{available}'},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                from django.db.models import Value
+                Profile.objects.filter(pk=profile.pk).update(
+                    total_earnings=Greatest(F('total_earnings') - amount, Value(Decimal('0.00'))),
+                    wallet_balance=F('wallet_balance') + amount,
+                )
+                txn = Transaction.objects.create(
+                    user=request.user,
+                    amount=amount,
+                    transaction_type='transfer',
+                    status='completed',
+                    payment_method='',
+                    payment_details='Earned money transferred to gig wallet',
+                    external_ref=f'earnings-transfer-{request.user.id}-{timezone.now().timestamp()}',
+                )
+                profile.refresh_from_db()
+        except Profile.DoesNotExist:
+            return Response({'error': 'Profile not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response(
+            {
+                'transactionId': txn.id,
+                'amount': float(amount),
+                'status': 'completed',
+                'walletBalance': float(profile.wallet_balance or 0),
+                'availableEarnings': float(profile.total_earnings or 0),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
         summary='Sync pending wallet top-ups',
         description=(
             'Ask Razorpay whether any pending deposit orders were already paid. '
@@ -660,8 +731,13 @@ class EarningsViewSet(viewsets.ViewSet):
                 'amount': monthly_totals.get(month_key, 0.0),
             })
         
-        # Get available balance for withdrawal
-        available_earnings = total_earnings
+        # Available earnings = approved clip earnings minus withdrawals/transfers out.
+        moved_out = Transaction.objects.filter(
+            user=user,
+            transaction_type__in=['withdrawal', 'transfer'],
+            status__in=['pending', 'completed'],
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        available_earnings = max(float(total_earnings) - float(moved_out), 0.0)
         pending_earnings = float(earnings_totals['pending_earnings'] or 0)
         
         total_withdrawn = float(profile.total_withdrawn or 0) if profile else 0

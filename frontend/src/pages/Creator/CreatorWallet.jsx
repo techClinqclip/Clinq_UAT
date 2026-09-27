@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
     Wallet,
@@ -18,8 +18,10 @@ import Breadcrumbs from "../../components/Breadcrumbs";
 import EarningsChartCard from "../clipper/components/EarningsChartCard";
 import AddFundsModal from "../../shared/wallet/AddFundsModal";
 import { syncPendingWalletTopups } from "../../shared/wallet/syncPendingTopups";
+import { notifyWalletBalanceChanged } from "../../shared/wallet/walletBalanceEvents";
 import WithdrawModal from "./components/WithdrawModal";
 import TransferToCampaignModal from "./components/TransferToCampaignModal";
+import { normalizeCreatorWalletTransaction } from "./TransactionHistory";
 import { api } from "../../lib/api"; // ADJUST to match this file's actual path
 
 /*
@@ -162,34 +164,13 @@ function getSavedPaymentMethodDisplay(profile) {
     return null;
 }
 
-const TXN_STYLES = {
+const RECENT_TXN_STYLES = {
     deposit: { icon: ArrowUpCircle, bg: "bg-emerald-500/10", color: "text-emerald-400", sign: "+" },
-    earning: { icon: ArrowUpCircle, bg: "bg-violet-500/10", color: "text-violet-400", sign: "+" },
-    transfer: { icon: ArrowRightLeft, bg: "bg-amber-500/10", color: "text-amber-400", sign: "\u2192" },
-    spend: { icon: ArrowDownCircle, bg: "bg-rose-500/10", color: "text-rose-400", sign: "\u2212" },
-    withdrawal: { icon: ArrowDownCircle, bg: "bg-sky-500/10", color: "text-sky-400", sign: "\u2212" },
+    lock: { icon: ArrowDownCircle, bg: "bg-rose-500/10", color: "text-rose-400", sign: "−" },
+    settlement: { icon: ArrowUpCircle, bg: "bg-sky-500/10", color: "text-sky-400", sign: "+" },
+    transfer: { icon: ArrowRightLeft, bg: "bg-amber-500/10", color: "text-amber-400", sign: "→" },
+    withdrawal: { icon: ArrowDownCircle, bg: "bg-violet-500/10", color: "text-violet-400", sign: "−" },
 };
-
-function getTransactionMeta(txn) {
-    const rawType = (txn?.transactionType ?? txn?.transaction_type ?? txn?.type ?? "earning").toString().toLowerCase();
-    const cleanedType = rawType.includes("withdraw") ? "withdrawal" : rawType.includes("deposit") ? "deposit" : rawType.includes("transfer") ? "transfer" : rawType.includes("spend") ? "spend" : rawType.includes("earning") || rawType.includes("viral") ? "earning" : rawType;
-
-    const labelMap = {
-        earning: "Earning",
-        withdrawal: "Withdrawal",
-        deposit: "Deposit",
-        transfer: "Transfer",
-        spend: "Locked",
-    };
-
-    return {
-        type: cleanedType,
-        label: txn?.paymentDetails || txn?.payment_details || txn?.label || labelMap[cleanedType] || "Transaction",
-        status: (txn?.status ?? "Completed").toString(),
-        amount: Number(txn?.amount ?? 0),
-        createdAt: txn?.createdAt ?? txn?.created_at ?? txn?.date ?? new Date().toISOString(),
-    };
-}
 
 // Pulsing-block loader, matching the skeleton pattern used across the
 // Clipper pages — shown while the wallet API call is in flight instead of
@@ -250,82 +231,6 @@ function WalletSkeleton() {
     );
 }
 
-// Splits a mixed transaction feed into the two sides of a creator's
-// wallet: the gig wallet (money added + spent funding your own gigs,
-// including transfers that just landed there) and earnings (money
-// credited from gigs you clipped for, transferred out, or withdrawn).
-// A transfer touches both — it's the same rupee leaving one balance and
-// landing in the other — so it appears once in each table.
-function splitWalletActivity(rows) {
-    const wallet = [];
-    const earnings = [];
-    rows.forEach((txn) => {
-        const type = getTransactionMeta(txn).type;
-        if (type === "deposit" || type === "spend" || type === "transfer") wallet.push(txn);
-        if (type === "earning" || type === "transfer" || type === "withdrawal") earnings.push(txn);
-    });
-    return { wallet, earnings };
-}
-
-function ActivityTable({ title, subtitle, rows, emptyIcon: EmptyIcon, emptyTitle, emptyMessage }) {
-    return (
-        <div>
-            <h3 className="text-lg font-semibold text-white">{title}</h3>
-            <p className="mt-1 text-sm text-zinc-400">{subtitle}</p>
-
-            <div className="mt-4 overflow-hidden rounded-2xl border border-white/10">
-                {rows.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
-                        <EmptyIcon size={36} className="text-zinc-600" />
-                        <h4 className="mt-4 text-base font-semibold text-white">{emptyTitle}</h4>
-                        <p className="mt-2 max-w-xs text-sm text-zinc-500">{emptyMessage}</p>
-                    </div>
-                ) : (
-                    <div className="custom-scrollbar max-h-[360px] overflow-y-auto">
-                        <table className="min-w-full">
-                            <thead className="sticky top-0 z-10 bg-[#11111A]/95 backdrop-blur-md">
-                                <tr className="border-b border-white/10 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                                    <th className="px-5 py-3">Date</th>
-                                    <th className="px-5 py-3">Description</th>
-                                    <th className="px-5 py-3">Amount</th>
-                                    <th className="px-5 py-3">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {rows.map((txn) => {
-                                    const meta = getTransactionMeta(txn);
-                                    const style = TXN_STYLES[meta.type] ?? TXN_STYLES.spend;
-                                    return (
-                                        <tr key={txn.id} className="border-b border-white/5 transition hover:bg-white/[0.03]">
-                                            <td className="px-5 py-4 text-sm text-zinc-400">
-                                                {new Date(meta.createdAt).toLocaleDateString()}
-                                            </td>
-                                            <td className="px-5 py-4 text-sm text-white">{meta.label}</td>
-                                            <td className={`px-5 py-4 text-sm font-semibold ${style.color}`}>
-                                                {style.sign}{formatINR(meta.amount)}
-                                            </td>
-                                            <td className="px-5 py-4">
-                                                <span
-                                                    className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${(meta.status || "Completed").toLowerCase() === "completed"
-                                                            ? "bg-emerald-500/10 text-emerald-400"
-                                                            : "bg-amber-500/10 text-amber-400"
-                                                        }`}
-                                                >
-                                                    {(meta.status || "Completed").charAt(0).toUpperCase() + (meta.status || "Completed").slice(1)}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-}
-
 export default function CreatorWallet() {
     const [selectedFilter, setSelectedFilter] = useState("30 Days");
     const [chartView, setChartView] = useState("earnings"); // "earnings" | "spend"
@@ -346,13 +251,13 @@ export default function CreatorWallet() {
 
     const [profile, setProfile] = useState(null);
 
-    const sortedTransactions = [...transactions].sort((a, b) => {
-        const aDate = new Date(getTransactionMeta(a).createdAt).getTime();
-        const bDate = new Date(getTransactionMeta(b).createdAt).getTime();
-        return bDate - aDate;
-    });
-
-    const { wallet: walletActivity, earnings: earningsActivity } = splitWalletActivity(sortedTransactions);
+    const recentTransactions = useMemo(() => {
+        return (transactions || [])
+            .map(normalizeCreatorWalletTransaction)
+            .filter(Boolean)
+            .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+            .slice(0, 5);
+    }, [transactions]);
 
     // Load wallet data from API
     useEffect(() => {
@@ -362,7 +267,10 @@ export default function CreatorWallet() {
             try {
                 setLoading(true);
                 setError("");
-                await syncPendingWalletTopups();
+                const synced = await syncPendingWalletTopups();
+                if (synced && typeof synced.walletBalance === "number") {
+                    notifyWalletBalanceChanged(synced.walletBalance);
+                }
                 const data = await api("/api/earnings/wallet/");
                 if (!mounted) return;
 
@@ -372,6 +280,9 @@ export default function CreatorWallet() {
                 setWalletBalance(data.wallet_balance ?? 0);
                 setTotalDeposited(data.total_deposited ?? 0);
                 setTransactions(data.recent_transactions ?? []);
+                if (typeof data.wallet_balance === "number") {
+                    notifyWalletBalanceChanged(data.wallet_balance);
+                }
             } catch (err) {
                 if (!mounted) return;
                 setError(err?.message || "Failed to load wallet data");
@@ -404,33 +315,56 @@ export default function CreatorWallet() {
 
     const savedMethod = getSavedPaymentMethodDisplay(profile);
 
-    const pushTransaction = (entry) => {
-        setTransactions((t) => [{ id: Date.now(), date: "Just now", status: "Completed", ...entry }, ...t]);
+    const reloadWallet = async () => {
+        const data = await api("/api/earnings/wallet/");
+        setWalletData(data);
+        setAvailableEarnings(data.available_earnings ?? 0);
+        setTotalWithdrawn(data.total_withdrawn ?? 0);
+        setWalletBalance(data.wallet_balance ?? 0);
+        setTotalDeposited(data.total_deposited ?? 0);
+        setTransactions(data.recent_transactions ?? []);
+        if (typeof data.wallet_balance === "number") {
+            notifyWalletBalanceChanged(data.wallet_balance);
+        }
+        return data;
     };
 
-    const handleFundsAdded = (result) => {
-        const amount = Number(result?.amount ?? result ?? 0);
-        const nextBalance = typeof result?.walletBalance === "number"
-            ? result.walletBalance
-            : walletBalance + amount;
-        const nextDeposited = typeof result?.totalDeposited === "number"
-            ? result.totalDeposited
-            : totalDeposited + amount;
-        setWalletBalance(nextBalance);
-        setTotalDeposited(nextDeposited);
-        pushTransaction({ type: "deposit", label: "Added via Razorpay", amount });
+    const handleFundsAdded = async (result) => {
+        if (typeof result?.walletBalance === "number") {
+            setWalletBalance(result.walletBalance);
+            notifyWalletBalanceChanged(result.walletBalance);
+        }
+        if (typeof result?.totalDeposited === "number") {
+            setTotalDeposited(result.totalDeposited);
+        }
+        try {
+            await reloadWallet();
+        } catch (err) {
+            console.error("Failed to refresh wallet after deposit", err);
+        }
     };
 
-    const handleWithdraw = (amount) => {
-        setAvailableEarnings((b) => b - amount);
-        setTotalWithdrawn((w) => w + amount);
-        pushTransaction({ type: "withdrawal", label: `Withdrawn via ${savedMethod?.label || "payment method"}`, amount, status: "Processing" });
+    const handleWithdraw = async () => {
+        try {
+            await reloadWallet();
+        } catch (err) {
+            console.error("Failed to refresh wallet after withdrawal", err);
+        }
     };
 
-    const handleTransfer = (amount) => {
-        setAvailableEarnings((b) => b - amount);
-        setWalletBalance((b) => b + amount);
-        pushTransaction({ type: "transfer", label: "Earnings moved to gig wallet", amount });
+    const handleTransfer = async (result) => {
+        if (typeof result?.walletBalance === "number") {
+            setWalletBalance(result.walletBalance);
+            notifyWalletBalanceChanged(result.walletBalance);
+        }
+        if (typeof result?.availableEarnings === "number") {
+            setAvailableEarnings(result.availableEarnings);
+        }
+        try {
+            await reloadWallet();
+        } catch (err) {
+            console.error("Failed to refresh wallet after transfer", err);
+        }
     };
 
     // Use API data if available, otherwise fallback to state
@@ -784,41 +718,94 @@ export default function CreatorWallet() {
                 </div>
             </section>
 
-            {/* Recent Transactions */}
+            {/* Recent Transactions — same layout as Brand wallet */}
             <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.03] p-8">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div>
-                        <h2 className="text-2xl font-semibold">Recent Activity</h2>
-                        <p className="mt-2 text-sm text-zinc-400">Earnings, spend, deposits, withdrawals and transfers.</p>
+                        <h2 className="text-2xl font-semibold">Recent Transactions</h2>
+                        <p className="mt-2 text-sm text-zinc-400">
+                            Add money, locks, settlements, transfers, and withdrawals.
+                        </p>
                     </div>
 
-                    <Link
-                        to="/creator/transactions"
-                        className="inline-flex items-center gap-2 self-start rounded-xl border border-white/10 px-4 py-2 text-sm font-medium transition hover:bg-white/5 md:self-auto"
-                    >
-                        View All
-                        <ArrowRight size={16} />
-                    </Link>
+                    {recentTransactions.length > 0 && (
+                        <Link
+                            to="/creator/transactions"
+                            className="inline-flex items-center gap-2 self-start rounded-xl border border-white/10 px-4 py-2 text-sm font-medium transition hover:bg-white/5 md:self-auto"
+                        >
+                            View All
+                            <ArrowRight size={16} />
+                        </Link>
+                    )}
                 </div>
 
-                <div className="mt-8 grid gap-8 lg:grid-cols-2">
-                    <ActivityTable
-                        title="Gig Wallet Activity"
-                        subtitle="Money added to your wallet, and what's been locked to fund your own gigs."
-                        rows={walletActivity}
-                        emptyIcon={Wallet}
-                        emptyTitle="No Wallet Activity Yet"
-                        emptyMessage="Deposits and gig spend will show up here."
-                    />
-                    <ActivityTable
-                        title="Earnings Activity"
-                        subtitle="What you've earned by making content for others, transferred out, or withdrawn."
-                        rows={earningsActivity}
-                        emptyIcon={ArrowRightLeft}
-                        emptyTitle="No Earnings Activity Yet"
-                        emptyMessage="Payouts, transfers and withdrawals will show up here."
-                    />
-                </div>
+                {recentTransactions.length > 0 ? (
+                    <div className="mt-8 space-y-4">
+                        {recentTransactions.map((txn) => {
+                            const style = RECENT_TXN_STYLES[txn.type] || RECENT_TXN_STYLES.deposit;
+                            const Icon = style.icon;
+                            const date = txn.createdAt
+                                ? new Date(txn.createdAt).toLocaleString("en-IN", {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                })
+                                : txn.date;
+                            return (
+                                <div
+                                    key={txn.id}
+                                    className="flex flex-col gap-4 rounded-2xl border border-white/10 p-5 transition hover:bg-white/[0.03] md:flex-row md:items-center md:justify-between"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${style.bg}`}>
+                                            <Icon size={18} className={style.color} />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-medium">{txn.label}</h4>
+                                            <p className="mt-1 text-sm text-zinc-500">{date}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-6 md:gap-8">
+                                        <h4 className={`text-xl font-semibold ${style.color}`}>
+                                            {style.sign}₹{Number(txn.amount || 0).toLocaleString("en-IN")}
+                                        </h4>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-medium ${
+                                                String(txn.status).toLowerCase() === "completed"
+                                                    ? "bg-emerald-500/10 text-emerald-400"
+                                                    : String(txn.status).toLowerCase() === "failed"
+                                                    ? "bg-red-500/10 text-red-400"
+                                                    : "bg-amber-500/10 text-amber-400"
+                                            }`}
+                                        >
+                                            {txn.status}
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <div className="mt-8 flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/10 py-16 text-center">
+                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03]">
+                            <Wallet size={24} className="text-zinc-500" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-white">No transactions yet</h3>
+                        <p className="max-w-sm text-sm text-zinc-500">
+                            Add money, transfer earnings, or fund a gig to see activity here.
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => setAddFundsOpen(true)}
+                            className="mt-2 inline-flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-500"
+                        >
+                            <Plus size={16} />
+                            Add Money
+                        </button>
+                    </div>
+                )}
             </section>
 
             <AddFundsModal
