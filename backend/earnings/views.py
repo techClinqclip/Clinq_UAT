@@ -30,6 +30,7 @@ from .payments import (
 )
 from accounts.models import Profile
 from content.models import CampaignSubmission
+from .utils import get_available_withdrawable_earnings, get_total_withdrawn
 
 class PayoutViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
@@ -68,10 +69,11 @@ class PayoutViewSet(viewsets.ViewSet):
         try:
             with db_transaction.atomic():
                 profile = Profile.objects.select_for_update().get(user=request.user)
+                available = get_available_withdrawable_earnings(request.user)
 
-                if profile.total_earnings < amount:
+                if amount > available:
                     return Response(
-                        {"error": f"Insufficient balance. Your earnings: ₹{profile.total_earnings}"},
+                        {"error": f"Insufficient balance. Available: ₹{available}"},
                         status=status.HTTP_400_BAD_REQUEST
                     )
 
@@ -87,7 +89,7 @@ class PayoutViewSet(viewsets.ViewSet):
                     payment_details = 'PayPal'
                     external_ref = 'PayPal'
 
-                Transaction.objects.create(
+                txn = Transaction.objects.create(
                     user=request.user,
                     amount=amount,
                     transaction_type='withdrawal',
@@ -97,10 +99,13 @@ class PayoutViewSet(viewsets.ViewSet):
                     external_ref=external_ref,
                 )
 
+                from django.db.models import Value
                 Profile.objects.filter(user=request.user).update(
-                    total_earnings=F('total_earnings') - amount
+                    total_earnings=Greatest(F('total_earnings') - amount, Value(Decimal('0.00'))),
+                    total_withdrawn=F('total_withdrawn') + amount,
                 )
                 profile.refresh_from_db()
+                remaining = get_available_withdrawable_earnings(request.user)
                 from notifications.helpers import notify_user_event
                 notify_user_event(
                     user_id=request.user.id,
@@ -109,10 +114,10 @@ class PayoutViewSet(viewsets.ViewSet):
                     message=f'Your withdrawal request for ₹{amount} is pending review.',
                     category='earnings',
                     entity_type='transaction',
-                    entity_id=None,
+                    entity_id=txn.id,
                     payload={'amount': str(amount), 'payment_method': payout_method},
                     email=True,
-                    idempotency_key=f'earnings.withdrawal_requested:{request.user.id}:{external_ref}:{amount}',
+                    idempotency_key=f'earnings.withdrawal_requested:{request.user.id}:{txn.id}:{amount}',
                 )
         except Profile.DoesNotExist:
             return Response(
@@ -130,9 +135,11 @@ class PayoutViewSet(viewsets.ViewSet):
 
         return Response({
             "status": "Success",
-            "message": "Withdrawal requested. Processing takes 3 business days.",
+            "message": "Withdrawal requested. Processing takes 1–3 business days.",
             "amount": float(amount),
-            "remaining_balance": float(profile.total_earnings)
+            "remaining_balance": float(remaining),
+            "total_withdrawn": float(get_total_withdrawn(request.user)),
+            "transactionId": txn.id,
         }, status=status.HTTP_201_CREATED)
 
     @extend_schema(
@@ -252,12 +259,11 @@ class EarningsViewSet(viewsets.ViewSet):
         if float(pending_earnings) == 0 and float(campaign_submission_pending) > 0:
             pending_earnings = campaign_submission_pending
 
-        available_balance = max(Decimal('0.00'), settled_earnings)
-        if float(available_balance) == 0 and float(campaign_submission_earnings) > 0:
-            available_balance = campaign_submission_earnings
+        # Withdrawable = approved clip earnings minus withdrawals/transfers.
+        available_balance = get_available_withdrawable_earnings(user)
 
         # Calculate withdrawals
-        total_withdrawals = transaction_totals['total_withdrawals'] or Decimal('0.00')
+        total_withdrawals = get_total_withdrawn(user)
         pending_withdrawals = transaction_totals['pending_withdrawals'] or Decimal('0.00')
 
         # Recent transactions
@@ -460,18 +466,7 @@ class EarningsViewSet(viewsets.ViewSet):
             with db_transaction.atomic():
                 profile = Profile.objects.select_for_update().get(user=request.user)
 
-                # Match Creator wallet "available earnings": approved submission
-                # earnings minus completed withdrawals and prior transfers.
-                earned = CampaignSubmission.objects.filter(
-                    participant__clipper=request.user,
-                    status='approved',
-                ).aggregate(total=Sum('earning'))['total'] or Decimal('0')
-                already_moved = Transaction.objects.filter(
-                    user=request.user,
-                    transaction_type__in=['withdrawal', 'transfer'],
-                    status__in=['pending', 'completed'],
-                ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
-                available = max(Decimal(str(earned)) - Decimal(str(already_moved)), Decimal('0'))
+                available = get_available_withdrawable_earnings(request.user)
 
                 if amount > available:
                     return Response(
@@ -494,6 +489,7 @@ class EarningsViewSet(viewsets.ViewSet):
                     external_ref=f'earnings-transfer-{request.user.id}-{timezone.now().timestamp()}',
                 )
                 profile.refresh_from_db()
+                remaining = get_available_withdrawable_earnings(request.user)
         except Profile.DoesNotExist:
             return Response({'error': 'Profile not found.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -503,7 +499,7 @@ class EarningsViewSet(viewsets.ViewSet):
                 'amount': float(amount),
                 'status': 'completed',
                 'walletBalance': float(profile.wallet_balance or 0),
-                'availableEarnings': float(profile.total_earnings or 0),
+                'availableEarnings': float(remaining),
             },
             status=status.HTTP_200_OK,
         )
@@ -706,16 +702,9 @@ class EarningsViewSet(viewsets.ViewSet):
             reverse=True,
         )[:50]
         
-        # Available earnings = approved clip earnings minus withdrawals/transfers out.
-        moved_out = Transaction.objects.filter(
-            user=user,
-            transaction_type__in=['withdrawal', 'transfer'],
-            status__in=['pending', 'completed'],
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
-        available_earnings = max(float(total_earnings) - float(moved_out), 0.0)
+        available_earnings = float(get_available_withdrawable_earnings(user))
         pending_earnings = float(earnings_totals['pending_earnings'] or 0)
-
-        total_withdrawn = float(profile.total_withdrawn or 0) if profile else 0
+        total_withdrawn = float(get_total_withdrawn(user))
 
         # Chart source rows: earnings (as clipper) + spend (as campaign/gig owner).
         earning_events = list(

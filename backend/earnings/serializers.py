@@ -33,7 +33,11 @@ class EarningsTransferSerializer(serializers.Serializer):
 # Serializer for handling the withdrawal request body
 class PayoutSerializer(serializers.Serializer):
     amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal('2500.00'))
-    payoutMethod = serializers.ChoiceField(choices=['upi', 'bank_transfer', 'paypal'], source='payout_method')
+    # Profile UIs historically save "bank"; API canonical value is bank_transfer.
+    payoutMethod = serializers.ChoiceField(
+        choices=['upi', 'bank_transfer', 'bank', 'paypal'],
+        source='payout_method',
+    )
     upiId = serializers.CharField(max_length=100, required=False, allow_blank=True, source='upi_id')
     bankAccountHolder = serializers.CharField(max_length=150, required=False, allow_blank=True, source='bank_account_holder')
     bankAccountNumber = serializers.CharField(max_length=50, required=False, allow_blank=True, source='bank_account_number')
@@ -47,6 +51,10 @@ class PayoutSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         payout_method = attrs.get('payout_method')
+        if payout_method == 'bank':
+            payout_method = 'bank_transfer'
+            attrs['payout_method'] = 'bank_transfer'
+
         if payout_method == 'upi' and not attrs.get('upi_id'):
             raise serializers.ValidationError({'upiId': 'UPI ID is required for UPI payouts.'})
 

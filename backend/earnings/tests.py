@@ -223,3 +223,115 @@ class WalletTopUpTests(TestCase):
         self.assertEqual(deposit.status, 'completed')
         profile = Profile.objects.get(user=self.brand)
         self.assertEqual(profile.wallet_balance, Decimal('1500.00'))
+
+
+class WithdrawalRequestTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email='withdraw@example.com',
+            password='testpass123',
+            type='clipper',
+        )
+        self.profile, _ = Profile.objects.get_or_create(user=self.user)
+        self.profile.payment_method = 'upi'
+        self.profile.upi_id = 'clipper@upi'
+        self.profile.total_earnings = Decimal('5000.00')
+        self.profile.save()
+
+        self.creator = get_user_model().objects.create_user(
+            email='withdraw-creator@example.com',
+            password='testpass123',
+            type='creator',
+        )
+        campaign = Campaign.objects.create(
+            creator=self.creator,
+            name='Payout Campaign',
+            brand_name='Test Brand',
+            category='technology',
+            budget=Decimal('10000.00'),
+            reward_per_1k=Decimal('10.00'),
+            max_earnings=Decimal('10000.00'),
+            status='active',
+        )
+        participant = CampaignParticipant.objects.create(
+            campaign=campaign,
+            clipper=self.user,
+            status='submitted',
+        )
+        submission = CampaignSubmission(
+            participant=participant,
+            platform='instagram',
+            platform_username='clipper',
+            content_url='https://example.com/post-withdraw',
+            earning=Decimal('5000.00'),
+            pending_earning=Decimal('0.00'),
+            views=50000,
+            status='approved',
+        )
+        submission.save(skip_earning_update=True)
+        self.client.force_authenticate(self.user)
+
+    @patch('notifications.helpers.notify_user_event')
+    def test_request_payout_creates_pending_withdrawal(self, _notify):
+        response = self.client.post(
+            '/api/earnings/payout/request-payout/',
+            {
+                'amount': '2500.00',
+                'payoutMethod': 'upi',
+                'upiId': 'clipper@upi',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['amount'], 2500.0)
+        self.assertEqual(response.data['remaining_balance'], 2500.0)
+
+        overview = self.client.get('/api/earnings/overview/')
+        self.assertEqual(overview.status_code, 200)
+        self.assertEqual(overview.data['available_balance'], 2500.0)
+        self.assertEqual(overview.data['total_withdrawals'], 2500.0)
+
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.total_withdrawn, Decimal('2500.00'))
+
+    @patch('notifications.helpers.notify_user_event')
+    def test_request_payout_accepts_bank_alias(self, _notify):
+        self.profile.payment_method = 'bank'
+        self.profile.bank_account_holder = 'Clipper User'
+        self.profile.bank_account_number = '1234567890'
+        self.profile.bank_ifsc = 'SBIN0001234'
+        self.profile.bank_name = 'SBI'
+        self.profile.save()
+
+        response = self.client.post(
+            '/api/earnings/payout/request-payout/',
+            {
+                'amount': '2500.00',
+                'payoutMethod': 'bank',
+                'bankAccountHolder': 'Clipper User',
+                'bankAccountNumber': '1234567890',
+                'bankIfsc': 'SBIN0001234',
+                'bankName': 'SBI',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['remaining_balance'], 2500.0)
+
+    @patch('notifications.helpers.notify_user_event')
+    def test_request_payout_rejects_over_available(self, _notify):
+        response = self.client.post(
+            '/api/earnings/payout/request-payout/',
+            {
+                'amount': '6000.00',
+                'payoutMethod': 'upi',
+                'upiId': 'clipper@upi',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Insufficient', response.data['error'])

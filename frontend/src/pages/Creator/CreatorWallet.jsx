@@ -141,12 +141,17 @@ function getSavedPaymentMethodDisplay(profile) {
         return upiId ? { method, label: "UPI", detail: upiId, icon: Smartphone } : null;
     }
 
-    if (method === "bank") {
+    if (method === "bank" || method === "bank_transfer") {
         const bankName = profile?.bank_name || profile?.onboarding_data?.bankName;
         const accountNumber = profile?.bank_account_number || profile?.onboarding_data?.bankAccountNumber;
-        if (!bankName) return null;
+        if (!bankName && !accountNumber) return null;
         const last4 = accountNumber ? String(accountNumber).slice(-4) : "";
-        return { method, label: "Bank Transfer", detail: `${bankName}${last4 ? ` •••• ${last4}` : ""}`, icon: Building2 };
+        return {
+            method: "bank_transfer",
+            label: "Bank Transfer",
+            detail: `${bankName || "Bank"}${last4 ? ` •••• ${last4}` : ""}`,
+            icon: Building2,
+        };
     }
 
     if (method === "debit" || method === "credit") {
@@ -835,8 +840,10 @@ export default function CreatorWallet() {
                 isOpen={withdrawOpen}
                 onClose={() => setWithdrawOpen(false)}
                 availableBalance={availableEarnings}
+                minimumWithdrawal={2500}
                 onSuccess={handleWithdraw}
                 savedMethod={savedMethod}
+                profile={profile}
             />
 
             <TransferToCampaignModal
