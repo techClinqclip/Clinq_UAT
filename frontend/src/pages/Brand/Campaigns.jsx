@@ -111,21 +111,22 @@ function CampaignCard({ campaign, onRequestAction, isToggling }) {
 
   const openCampaign = () => navigate(`/brand/campaigns/${campaign.accessKey}`);
 
+  const requestAction = (event, action) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onRequestAction?.(action, campaign);
+  };
+
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={openCampaign}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          openCampaign();
-        }
-      }}
-      className={`group relative flex cursor-pointer flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#11111A] shadow-2xl shadow-transparent transition-all duration-300 ease-out hover:z-10 hover:-translate-y-3 hover:scale-[1.03] hover:shadow-black/40 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${a.border} ${a.glow}`}
+      className={`group relative z-0 flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#11111A] shadow-2xl shadow-transparent transition-all duration-300 ease-out hover:z-10 hover:-translate-y-3 hover:scale-[1.03] hover:shadow-black/40 ${a.border} ${a.glow}`}
     >
       {/* Cover */}
-      <div className="relative h-36 overflow-hidden sm:h-40">
+      <button
+        type="button"
+        onClick={openCampaign}
+        className="relative h-36 overflow-hidden text-left sm:h-40"
+      >
         {thumbnail ? (
           <>
             <img
@@ -180,7 +181,7 @@ function CampaignCard({ campaign, onRequestAction, isToggling }) {
         <div className="absolute bottom-3 right-3 z-20 flex h-8 w-8 scale-75 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white opacity-0 backdrop-blur-sm transition-all duration-300 group-hover:scale-100 group-hover:opacity-100">
           <Maximize2 size={13} />
         </div>
-      </div>
+      </button>
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3 p-5">
@@ -241,9 +242,13 @@ function CampaignCard({ campaign, onRequestAction, isToggling }) {
         </div>
       </div>
 
-      <div className="grid grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-out lg:grid-rows-[0fr] lg:group-hover:grid-rows-[1fr] lg:group-focus-within:grid-rows-[1fr]">
+      <div className="relative z-30 grid grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-out lg:grid-rows-[0fr] lg:group-hover:grid-rows-[1fr] lg:group-focus-within:grid-rows-[1fr]">
   <div className="overflow-hidden">
-    <div className="mt-5 flex flex-wrap gap-2 border-t border-white/5 p-5 pt-5">
+    <div
+      className="mt-5 flex flex-wrap gap-2 border-t border-white/5 p-5 pt-5"
+      onMouseDown={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+    >
       
       {/* Open Campaign */}
       <Link
@@ -267,10 +272,8 @@ function CampaignCard({ campaign, onRequestAction, isToggling }) {
       ) : (
         <button
           type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onRequestAction("edit", campaign);
-          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => requestAction(e, "edit")}
           className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white transition hover:border-white/30"
         >
           Edit
@@ -291,10 +294,8 @@ function CampaignCard({ campaign, onRequestAction, isToggling }) {
         <button
           type="button"
           disabled={isToggling}
-          onClick={(e) => {
-            e.stopPropagation();
-            onRequestAction(isActive ? "pause" : "resume", campaign);
-          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => requestAction(e, isActive ? "pause" : "resume")}
           className={`rounded-xl border px-4 py-2.5 text-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${
             isActive
               ? "border-yellow-500/20 text-yellow-400 hover:bg-yellow-500/10"
