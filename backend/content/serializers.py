@@ -320,6 +320,34 @@ class CampaignSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Resources must be a list.')
         return value
 
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        instance = getattr(self, 'instance', None)
+
+        if instance is not None and 'budget' in attrs:
+            incoming_budget = Decimal(str(attrs.get('budget') or 0))
+            current_budget = Decimal(str(instance.budget or 0))
+            if incoming_budget != current_budget:
+                raise serializers.ValidationError({
+                    'budget': 'Budget cannot be changed after the campaign or gig is created.',
+                })
+            attrs.pop('budget', None)
+
+        budget = attrs.get('budget')
+        if budget is None and instance is not None:
+            budget = instance.budget
+        max_earnings = attrs.get('max_earnings')
+        if max_earnings is None and instance is not None:
+            max_earnings = instance.max_earnings
+
+        budget = Decimal(str(budget or 0))
+        max_earnings = Decimal(str(max_earnings or 0))
+        if max_earnings > 0 and budget > 0 and max_earnings > budget:
+            raise serializers.ValidationError({
+                'maxEarnings': 'Max earnings per clipper cannot be greater than the total budget.',
+            })
+        return attrs
+
     def _validate_brand_wallet_capacity(self, user, budget):
         if getattr(user, 'type', None) not in {'brand', 'creator'}:
             return

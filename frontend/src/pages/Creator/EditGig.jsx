@@ -54,7 +54,7 @@ export default function EditGig() {
         category: formData.category?.toLowerCase() || "",
         description: formData.description || "",
         clipperRequirements: formData.clipperRequirements || "",
-        budget: formData.budget || 0,
+        budget: existingGig?.budget || formData.budget || 0,
         rewardPer1k: formData.rewardPer1k || 0,
         maxEarnings: formData.maxEarnings || 0,
         platforms: formData.platforms,

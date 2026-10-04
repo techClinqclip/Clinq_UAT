@@ -196,6 +196,9 @@ function validateCampaignForm(form, mode = "create") {
     if (Number.isNaN(maxEarnings) || maxEarnings <= 0) {
       errors.maxEarnings =
         "Max earnings must be greater than ₹0, or left blank.";
+    } else if (!Number.isNaN(budget) && budget > 0 && maxEarnings > budget) {
+      errors.maxEarnings =
+        "Max earnings per clipper cannot be greater than the total budget.";
     }
   }
 
@@ -593,9 +596,24 @@ export default function CampaignForm({
         </Section>
 
         <Section title="Budget & Rewards">
+          {mode === "create" ? (
+            <div className="mb-6 flex items-start gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-sm text-amber-200">
+              <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-400" />
+              <p>
+                You cannot change the budget later. Set the total budget carefully
+                before publishing.
+              </p>
+            </div>
+          ) : (
+            <div className="mb-6 flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-zinc-400">
+              <AlertTriangle size={16} className="mt-0.5 shrink-0 text-zinc-500" />
+              <p>Total budget is locked and cannot be edited after creation.</p>
+            </div>
+          )}
           <div className="grid gap-6 md:grid-cols-3">
             <Field
               label="Total Budget (₹)"
+              hint={mode === "edit" ? "Locked" : "Cannot be changed later"}
               error={errors.budget}
             >
               <input
@@ -604,8 +622,12 @@ export default function CampaignForm({
                 placeholder="50000"
                 value={form.budget}
                 onChange={set("budget")}
+                disabled={mode === "edit"}
+                readOnly={mode === "edit"}
                 className={
-                  errors.budget
+                  mode === "edit"
+                    ? `${inputClasses} cursor-not-allowed opacity-70`
+                    : errors.budget
                     ? inputErrorClasses
                     : inputClasses
                 }
@@ -632,12 +654,13 @@ export default function CampaignForm({
 
             <Field
               label="Max Earnings / Clipper (₹)"
-              hint="Optional"
+              hint="Optional · cannot exceed total budget"
               error={errors.maxEarnings}
             >
               <input
                 type="number"
                 min="1"
+                max={form.budget || undefined}
                 placeholder="5000"
                 value={form.maxEarnings}
                 onChange={set("maxEarnings")}
