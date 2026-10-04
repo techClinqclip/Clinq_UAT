@@ -12,11 +12,14 @@ import {
   Dumbbell,
   LineChart,
   Play,
+  Pause,
+  Pencil,
   Video,
   Maximize2,
   AlertTriangle,
 } from "lucide-react";
 import CampaignCardSkeleton from "../../shared/ui/CampaignCardSkeleton";
+import ConfirmModal from "../../shared/ui/ComfirmModal";
 import useToast from "../../hooks/useToast";
 
 const ACCENTS = {
@@ -82,7 +85,7 @@ const capitalize = (value) =>
     ? `${value[0].toUpperCase()}${value.slice(1)}`
     : value;
 
-function CampaignCard({ campaign, onTogglePause }) {
+function CampaignCard({ campaign, onRequestAction, isToggling }) {
   const { name, category, status, thumbnail, views, submissions, budget, paidOut } = campaign;
   const navigate = useNavigate();
   const categoryLabel = capitalize(category);
@@ -262,13 +265,16 @@ function CampaignCard({ campaign, onTogglePause }) {
           Edit
         </button>
       ) : (
-        <Link
-          to={`/brand/campaigns/${campaign.accessKey}/edit`}
-          onClick={(e) => e.stopPropagation()}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRequestAction("edit", campaign);
+          }}
           className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white transition hover:border-white/30"
         >
           Edit
-        </Link>
+        </button>
       )}
 
       {/* Pause / Resume */}
@@ -284,17 +290,18 @@ function CampaignCard({ campaign, onTogglePause }) {
       ) : (
         <button
           type="button"
+          disabled={isToggling}
           onClick={(e) => {
             e.stopPropagation();
-            onTogglePause(campaign.id);
+            onRequestAction(isActive ? "pause" : "resume", campaign);
           }}
-          className={`rounded-xl border px-4 py-2.5 text-sm transition ${
+          className={`rounded-xl border px-4 py-2.5 text-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${
             isActive
               ? "border-yellow-500/20 text-yellow-400 hover:bg-yellow-500/10"
               : "border-green-500/20 text-green-400 hover:bg-green-500/10"
           }`}
         >
-          {isActive ? "Pause" : "Resume"}
+          {isToggling ? "Updating..." : isActive ? "Pause" : "Resume"}
         </button>
       )}
     </div>
@@ -305,11 +312,14 @@ function CampaignCard({ campaign, onTogglePause }) {
 }
 
 export default function Campaigns() {
+  const navigate = useNavigate();
   const [campaigns, setCampaigns] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
+  const [confirmation, setConfirmation] = useState(null);
+  const [togglingCampaignId, setTogglingCampaignId] = useState(null);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -330,32 +340,74 @@ export default function Campaigns() {
     loadCampaigns();
   }, []);
 
-  const handleTogglePause = async (id) => {
-    const previous = campaigns;
-    const updated = campaigns.map((campaign) =>
-      campaign.id === id
-        ? { ...campaign, status: campaign.status === "active" ? "paused" : "active" }
-        : campaign
-    );
+  const confirmationConfig = {
+    edit: {
+      title: "Edit this campaign?",
+      description: "You'll be taken to the edit form to update this campaign's details.",
+      icon: Pencil,
+      color: "violet",
+      confirmText: "Continue to Edit",
+    },
+    pause: {
+      title: "Pause this campaign?",
+      description: "Clippers won't be able to submit new clips while this campaign is paused. You can resume anytime.",
+      icon: Pause,
+      color: "yellow",
+      confirmText: "Pause",
+    },
+    resume: {
+      title: "Resume this campaign?",
+      description: "Clippers will be able to submit clips again once this campaign is resumed.",
+      icon: Play,
+      color: "green",
+      confirmText: "Resume",
+    },
+  };
 
-    setCampaigns(updated);
+  const handleTogglePause = async (campaign) => {
+    if (!campaign || togglingCampaignId === campaign.id) return;
+    const currentStatus = String(campaign.status || "").toLowerCase();
+    if (!["active", "paused"].includes(currentStatus)) return;
 
-    const campaign = updated.find((item) => item.id === id);
-    const nextStatus = campaign?.status || "active";
-
+    const nextStatus = currentStatus === "active" ? "paused" : "active";
+    setTogglingCampaignId(campaign.id);
     try {
-      await api(`/api/content/campaigns/${id}/`, {
+      await api(`/api/content/campaigns/${campaign.id}/`, {
         method: "PATCH",
         body: { status: nextStatus },
       });
+      setCampaigns((previous) =>
+        previous.map((item) =>
+          item.id === campaign.id ? { ...item, status: nextStatus } : item
+        )
+      );
+      showToast({
+        type: "success",
+        message: nextStatus === "paused" ? "Campaign paused." : "Campaign resumed.",
+      });
     } catch (err) {
       console.error("Failed to update campaign status", err);
-      setCampaigns(previous);
       showToast({
         type: "error",
         message: err.message || "Unable to update campaign status.",
       });
+    } finally {
+      setTogglingCampaignId(null);
     }
+  };
+
+  const handleConfirmAction = async () => {
+    const { action, campaign } = confirmation || {};
+    if (!action || !campaign) return;
+
+    if (action === "edit") {
+      setConfirmation(null);
+      navigate(`/brand/campaigns/${campaign.accessKey}/edit`);
+      return;
+    }
+
+    await handleTogglePause(campaign);
+    setConfirmation(null);
   };
 
   const filtered = campaigns.filter((c) => {
@@ -450,7 +502,14 @@ export default function Campaigns() {
           <div className="grid items-start gap-6 md:grid-cols-2 xl:grid-cols-3">
         {filtered.length > 0 ? (
           filtered.map((campaign) => (
-            <CampaignCard key={campaign.id} campaign={campaign} onTogglePause={handleTogglePause} />
+            <CampaignCard
+              key={campaign.id}
+              campaign={campaign}
+              isToggling={togglingCampaignId === campaign.id}
+              onRequestAction={(action, selectedCampaign) =>
+                setConfirmation({ action, campaign: selectedCampaign })
+              }
+            />
           ))
         ) : (
           <div className="col-span-full flex flex-col items-center justify-center rounded-3xl border border-white/10 bg-[#11111A] py-20 text-center">
@@ -477,6 +536,18 @@ export default function Campaigns() {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        open={Boolean(confirmation)}
+        title={confirmationConfig[confirmation?.action]?.title}
+        description={confirmationConfig[confirmation?.action]?.description}
+        icon={confirmationConfig[confirmation?.action]?.icon}
+        color={confirmationConfig[confirmation?.action]?.color}
+        confirmText={confirmationConfig[confirmation?.action]?.confirmText}
+        loading={togglingCampaignId === confirmation?.campaign?.id}
+        onCancel={() => setConfirmation(null)}
+        onConfirm={handleConfirmAction}
+      />
     </div>
   );
 }
