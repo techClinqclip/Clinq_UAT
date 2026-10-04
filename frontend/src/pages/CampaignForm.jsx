@@ -6,6 +6,7 @@ import {
   Check,
   Download,
   AlertTriangle,
+  Lock,
 } from "lucide-react";
 import { FaYoutube, FaInstagram, FaFacebook, FaXTwitter } from "react-icons/fa6";
 import DatePicker from "./DatePicker";
@@ -128,10 +129,12 @@ function Section({ title, children }) {
 
 function Field({ label, hint, error, children }) {
   return (
-    <div>
-      <div className="mb-2 flex items-baseline justify-between">
-        <label className="text-sm font-medium text-white">{label}</label>
-        {hint && <span className="text-xs text-zinc-500">{hint}</span>}
+    <div className="min-w-0">
+      <div className="mb-2">
+        <label className="block text-sm font-medium text-white">{label}</label>
+        {hint ? (
+          <p className="mt-1 text-xs leading-5 text-zinc-500">{hint}</p>
+        ) : null}
       </div>
       {children}
       {error && <p className="mt-1.5 text-xs text-red-400">{error}</p>}
@@ -597,7 +600,7 @@ export default function CampaignForm({
 
         <Section title="Budget & Rewards">
           {mode === "create" ? (
-            <div className="mb-6 flex items-start gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-sm text-amber-200">
+            <div className="mb-6 flex items-start gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-sm leading-6 text-amber-200">
               <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-400" />
               <p>
                 You cannot change the budget later. Set the total budget carefully
@@ -605,33 +608,47 @@ export default function CampaignForm({
               </p>
             </div>
           ) : (
-            <div className="mb-6 flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-zinc-400">
-              <AlertTriangle size={16} className="mt-0.5 shrink-0 text-zinc-500" />
+            <div className="mb-6 flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm leading-6 text-zinc-400">
+              <Lock size={16} className="mt-0.5 shrink-0 text-zinc-500" />
               <p>Total budget is locked and cannot be edited after creation.</p>
             </div>
           )}
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
             <Field
               label="Total Budget (₹)"
-              hint={mode === "edit" ? "Locked" : "Cannot be changed later"}
+              hint={
+                mode === "edit"
+                  ? "This amount was set at creation."
+                  : "This amount cannot be edited later."
+              }
               error={errors.budget}
             >
-              <input
-                type="number"
-                min="1"
-                placeholder="50000"
-                value={form.budget}
-                onChange={set("budget")}
-                disabled={mode === "edit"}
-                readOnly={mode === "edit"}
-                className={
-                  mode === "edit"
-                    ? `${inputClasses} cursor-not-allowed opacity-70`
-                    : errors.budget
-                    ? inputErrorClasses
-                    : inputClasses
-                }
-              />
+              <div className="relative">
+                <input
+                  type="number"
+                  min="1"
+                  placeholder="50000"
+                  value={form.budget}
+                  onChange={set("budget")}
+                  disabled={mode === "edit"}
+                  readOnly={mode === "edit"}
+                  className={`${
+                    mode === "edit"
+                      ? `${inputClasses} cursor-not-allowed pr-24 opacity-80`
+                      : errors.budget
+                      ? inputErrorClasses
+                      : inputClasses
+                  }`}
+                />
+                {mode === "edit" ? (
+                  <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-[#11111A] px-2.5 py-1 text-[11px] font-medium text-zinc-400">
+                      <Lock size={11} />
+                      Locked
+                    </span>
+                  </span>
+                ) : null}
+              </div>
             </Field>
 
             <Field
@@ -654,7 +671,7 @@ export default function CampaignForm({
 
             <Field
               label="Max Earnings / Clipper (₹)"
-              hint="Optional · cannot exceed total budget"
+              hint="Optional. Cannot be higher than the total budget."
               error={errors.maxEarnings}
             >
               <input
