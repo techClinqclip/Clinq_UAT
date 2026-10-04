@@ -613,16 +613,11 @@ export default function CampaignForm({
               <p>Total budget is locked and cannot be edited after creation.</p>
             </div>
           )}
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-            <Field
-              label="Total Budget (₹)"
-              hint={
-                mode === "edit"
-                  ? "This amount was set at creation."
-                  : "This amount cannot be edited later."
-              }
-              error={errors.budget}
-            >
+          <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-3">
+            <div className="flex min-w-0 flex-col">
+              <label className="mb-2 truncate whitespace-nowrap text-sm font-medium text-white">
+                Total Budget (₹)
+              </label>
               <div className="relative">
                 <input
                   type="number"
@@ -632,13 +627,13 @@ export default function CampaignForm({
                   onChange={set("budget")}
                   disabled={mode === "edit"}
                   readOnly={mode === "edit"}
-                  className={`${
+                  className={
                     mode === "edit"
                       ? `${inputClasses} cursor-not-allowed pr-24 opacity-80`
                       : errors.budget
                       ? inputErrorClasses
                       : inputClasses
-                  }`}
+                  }
                 />
                 {mode === "edit" ? (
                   <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
@@ -649,12 +644,15 @@ export default function CampaignForm({
                   </span>
                 ) : null}
               </div>
-            </Field>
+              <p className="mt-1.5 min-h-5 text-xs leading-5 text-red-400">
+                {errors.budget || "\u00A0"}
+              </p>
+            </div>
 
-            <Field
-              label="Reward / 1K Views (₹)"
-              error={errors.rewardPer1k}
-            >
+            <div className="flex min-w-0 flex-col">
+              <label className="mb-2 truncate whitespace-nowrap text-sm font-medium text-white">
+                Reward / 1K Views (₹)
+              </label>
               <input
                 type="number"
                 min="1"
@@ -662,18 +660,18 @@ export default function CampaignForm({
                 value={form.rewardPer1k}
                 onChange={set("rewardPer1k")}
                 className={
-                  errors.rewardPer1k
-                    ? inputErrorClasses
-                    : inputClasses
+                  errors.rewardPer1k ? inputErrorClasses : inputClasses
                 }
               />
-            </Field>
+              <p className="mt-1.5 min-h-5 text-xs leading-5 text-red-400">
+                {errors.rewardPer1k || "\u00A0"}
+              </p>
+            </div>
 
-            <Field
-              label="Max Earnings / Clipper (₹)"
-              hint="Optional. Cannot be higher than the total budget."
-              error={errors.maxEarnings}
-            >
+            <div className="flex min-w-0 flex-col">
+              <label className="mb-2 truncate whitespace-nowrap text-sm font-medium text-white">
+                Max Earnings / Clipper (₹)
+              </label>
               <input
                 type="number"
                 min="1"
@@ -682,12 +680,17 @@ export default function CampaignForm({
                 value={form.maxEarnings}
                 onChange={set("maxEarnings")}
                 className={
-                  errors.maxEarnings
-                    ? inputErrorClasses
-                    : inputClasses
+                  errors.maxEarnings ? inputErrorClasses : inputClasses
                 }
               />
-            </Field>
+              <p
+                className={`mt-1.5 min-h-5 text-xs leading-5 ${
+                  errors.maxEarnings ? "text-red-400" : "text-zinc-500"
+                }`}
+              >
+                {errors.maxEarnings || "Optional. Cannot exceed total budget."}
+              </p>
+            </div>
           </div>
         </Section>
 
