@@ -159,22 +159,24 @@ const inputErrorClasses =
 //   - resources: required — at least one resource link must be added
 //   - description, clipperRequirements, thumbnail, maxEarnings stay
 //     optional, matching the original form's intent
-function validateCampaignForm(form, mode = "create") {
+function validateCampaignForm(form, mode = "create", kind = "campaign") {
   const errors = {};
+  const noun = kind === "gig" ? "gig" : "campaign";
+  const Noun = kind === "gig" ? "Gig" : "Campaign";
 
   const trimmedName = form.name.trim();
 
   if (!trimmedName) {
-    errors.name = "Campaign name is required.";
+    errors.name = `${Noun} name is required.`;
   } else if (trimmedName.length < 3) {
-    errors.name = "Campaign name must be at least 3 characters.";
+    errors.name = `${Noun} name must be at least 3 characters.`;
   } else if (!/^[a-zA-Z0-9\s]+$/.test(trimmedName)) {
     errors.name =
-      "Campaign name can only contain letters, numbers, and spaces — no special characters.";
+      `${Noun} name can only contain letters, numbers, and spaces — no special characters.`;
   }
 
   if (!form.thumbnail) {
-    errors.thumbnail = "Upload a campaign thumbnail.";
+    errors.thumbnail = `Upload a ${noun} thumbnail.`;
   }
 
   const budget = Number(form.budget);
@@ -286,9 +288,14 @@ function validateCampaignForm(form, mode = "create") {
 export default function CampaignForm({
   initialData,
   mode = "create",
+  kind = "campaign",
   onSubmit,
   onSuccess,
 }) {
+  const isGig = kind === "gig";
+  const noun = isGig ? "gig" : "campaign";
+  const Noun = isGig ? "Gig" : "Campaign";
+
   const [form, setForm] = useState({
     ...emptyForm,
     ...initialData,
@@ -307,7 +314,7 @@ export default function CampaignForm({
   const SUBMIT_STEPS =
     mode === "edit"
       ? ["Saving your changes"]
-      : ["Creating your campaign"];
+      : [`Creating your ${noun}`];
 
   useEffect(() => {
     if (mode !== "create") return undefined;
@@ -462,7 +469,7 @@ export default function CampaignForm({
 
     if (submitting) return;
 
-    const validationErrors = validateCampaignForm(form, mode);
+    const validationErrors = validateCampaignForm(form, mode, kind);
 
     setErrors(validationErrors);
 
@@ -494,7 +501,7 @@ export default function CampaignForm({
         title:
           mode === "edit"
             ? "Couldn't save changes"
-            : "Couldn't create campaign",
+            : `Couldn't create ${noun}`,
         message:
           err?.message ||
           "Something went wrong. Please try again.",
@@ -507,10 +514,10 @@ export default function CampaignForm({
       <form onSubmit={handleSubmit} className="space-y-6">
         <Section title="Basics">
           <div className="space-y-6">
-            <Field label="Campaign Name" error={errors.name}>
+            <Field label={`${Noun} Name`} error={errors.name}>
               <input
                 type="text"
-                placeholder="Podcast Clips Campaign"
+                placeholder={isGig ? "Podcast Clips Gig" : "Podcast Clips Campaign"}
                 value={form.name}
                 onChange={set("name")}
                 className={
@@ -535,7 +542,7 @@ export default function CampaignForm({
               </Field>
 
               <Field
-                label="Campaign Thumbnail"
+                label={`${Noun} Thumbnail`}
                 error={errors.thumbnail}
               >
                 <label
@@ -576,7 +583,7 @@ export default function CampaignForm({
             <Field label="Description">
               <textarea
                 rows={4}
-                placeholder="Describe your campaign..."
+                placeholder={`Describe your ${noun}...`}
                 value={form.description}
                 onChange={set("description")}
                 className={inputClasses}
@@ -905,7 +912,7 @@ export default function CampaignForm({
         : "Creating…"
       : mode === "edit"
       ? "Save Changes"
-      : "Create Campaign"}
+      : `Create ${Noun}`}
   </button>
 </div>
 </form>
@@ -928,7 +935,7 @@ export default function CampaignForm({
   title={
     mode === "edit"
       ? "Saving your changes"
-      : "Creating your campaign"
+      : `Creating your ${noun}`
   }
   steps={SUBMIT_STEPS}
   currentStepIndex={submitStepIndex}

@@ -57,7 +57,7 @@ export default function CreateGig() {
         </p>
       </div>
 
-      <CampaignForm mode="create" onSubmit={handleCreate} />
+      <CampaignForm mode="create" kind="gig" onSubmit={handleCreate} />
     </div>
   );
 }
