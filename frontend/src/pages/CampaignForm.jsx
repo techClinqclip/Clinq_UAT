@@ -120,33 +120,39 @@ function getTodayDate() {
 
 function Section({ title, children }) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+    <section className="rounded-3xl border border-white/10 bg-[#11111A] p-6 sm:p-8">
       <h2 className="mb-6 text-xl font-semibold text-white">{title}</h2>
       {children}
-    </div>
+    </section>
   );
 }
 
 function Field({ label, hint, error, children }) {
   return (
-    <div className="min-w-0">
-      <div className="mb-2">
-        <label className="block text-sm font-medium text-white">{label}</label>
-        {hint ? (
-          <p className="mt-1 text-xs leading-5 text-zinc-500">{hint}</p>
-        ) : null}
-      </div>
+    <div className="flex min-w-0 flex-col">
+      <label className="mb-2 h-5 truncate text-sm font-medium leading-5 text-white">
+        {label}
+      </label>
       {children}
-      {error && <p className="mt-1.5 text-xs text-red-400">{error}</p>}
+      <p
+        className={`mt-1.5 min-h-5 text-xs leading-5 ${
+          error ? "text-red-400" : "text-zinc-500"
+        }`}
+      >
+        {error || hint || "\u00A0"}
+      </p>
     </div>
   );
 }
 
 const inputClasses =
-  "w-full rounded-2xl border border-white/10 bg-[#0B0B12] px-4 py-3 text-white outline-none transition focus:border-violet-500";
+  "h-[50px] w-full rounded-2xl border border-white/10 bg-[#0B0B12] px-4 text-white outline-none transition focus:border-violet-500";
+
+const textareaClasses =
+  "w-full resize-y rounded-2xl border border-white/10 bg-[#0B0B12] px-4 py-3 text-white outline-none transition focus:border-violet-500";
 
 const inputErrorClasses =
-  "w-full rounded-2xl border border-red-500/60 bg-[#0B0B12] px-4 py-3 text-white outline-none transition focus:border-red-500";
+  "h-[50px] w-full rounded-2xl border border-red-500/60 bg-[#0B0B12] px-4 text-white outline-none transition focus:border-red-500";
 
 
 // Full validation pass — returns { fieldKey: errorMessage } for anything
@@ -528,7 +534,7 @@ export default function CampaignForm({
               />
             </Field>
 
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-x-6 gap-y-2 md:grid-cols-2">
               <Field label="Category">
                 <select
                   value={form.category}
@@ -586,7 +592,7 @@ export default function CampaignForm({
                 placeholder={`Describe your ${noun}...`}
                 value={form.description}
                 onChange={set("description")}
-                className={inputClasses}
+                className={textareaClasses}
               />
             </Field>
 
@@ -599,7 +605,7 @@ export default function CampaignForm({
                 placeholder="Give instructions to clippers..."
                 value={form.clipperRequirements}
                 onChange={set("clipperRequirements")}
-                className={inputClasses}
+                className={textareaClasses}
               />
             </Field>
           </div>
@@ -620,11 +626,8 @@ export default function CampaignForm({
               <p>Total budget is locked and cannot be edited after creation.</p>
             </div>
           )}
-          <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-3">
-            <div className="flex min-w-0 flex-col">
-              <label className="mb-2 truncate whitespace-nowrap text-sm font-medium text-white">
-                Total Budget (₹)
-              </label>
+          <div className="grid grid-cols-1 gap-x-6 gap-y-2 md:grid-cols-3">
+            <Field label="Total Budget (₹)" error={errors.budget}>
               <div className="relative">
                 <input
                   type="number"
@@ -651,34 +654,24 @@ export default function CampaignForm({
                   </span>
                 ) : null}
               </div>
-              <p className="mt-1.5 min-h-5 text-xs leading-5 text-red-400">
-                {errors.budget || "\u00A0"}
-              </p>
-            </div>
+            </Field>
 
-            <div className="flex min-w-0 flex-col">
-              <label className="mb-2 truncate whitespace-nowrap text-sm font-medium text-white">
-                Reward / 1K Views (₹)
-              </label>
+            <Field label="Reward / 1K Views (₹)" error={errors.rewardPer1k}>
               <input
                 type="number"
                 min="1"
                 placeholder="20"
                 value={form.rewardPer1k}
                 onChange={set("rewardPer1k")}
-                className={
-                  errors.rewardPer1k ? inputErrorClasses : inputClasses
-                }
+                className={errors.rewardPer1k ? inputErrorClasses : inputClasses}
               />
-              <p className="mt-1.5 min-h-5 text-xs leading-5 text-red-400">
-                {errors.rewardPer1k || "\u00A0"}
-              </p>
-            </div>
+            </Field>
 
-            <div className="flex min-w-0 flex-col">
-              <label className="mb-2 truncate whitespace-nowrap text-sm font-medium text-white">
-                Max Earnings / Clipper (₹)
-              </label>
+            <Field
+              label="Max Earnings / Clipper (₹)"
+              hint="Optional. Cannot exceed total budget."
+              error={errors.maxEarnings}
+            >
               <input
                 type="number"
                 min="1"
@@ -686,23 +679,14 @@ export default function CampaignForm({
                 placeholder="5000"
                 value={form.maxEarnings}
                 onChange={set("maxEarnings")}
-                className={
-                  errors.maxEarnings ? inputErrorClasses : inputClasses
-                }
+                className={errors.maxEarnings ? inputErrorClasses : inputClasses}
               />
-              <p
-                className={`mt-1.5 min-h-5 text-xs leading-5 ${
-                  errors.maxEarnings ? "text-red-400" : "text-zinc-500"
-                }`}
-              >
-                {errors.maxEarnings || "Optional. Cannot exceed total budget."}
-              </p>
-            </div>
+            </Field>
           </div>
         </Section>
 
         <Section title="Platforms">
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             {PLATFORMS.map(({ name, icon: Icon }) => {
               const isSelected = form.platforms.includes(name);
 
@@ -712,7 +696,7 @@ export default function CampaignForm({
                   type="button"
                   onClick={() => togglePlatform(name)}
                   aria-pressed={isSelected}
-                  className={`group relative flex flex-col items-center justify-center gap-3 rounded-2xl border p-5 text-white transition ${
+                  className={`group relative flex min-h-[120px] flex-col items-center justify-center gap-3 rounded-2xl border p-5 text-white transition ${
                     isSelected
                       ? "border-violet-500 bg-violet-500/10"
                       : errors.platforms
@@ -749,12 +733,11 @@ export default function CampaignForm({
         <Section title="Resources">
           {resourceTemplate?.documentUrl && (
             <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-violet-500/25 bg-violet-500/5 p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
+              <div className="min-w-0">
                 <p className="text-sm font-medium text-white">
                   Need a starting point?
                 </p>
-
-                <p className="mt-1 text-xs text-zinc-400">
+                <p className="mt-1 text-xs leading-5 text-zinc-400">
                   Download the approved resource sample template
                   before adding your own links.
                 </p>
@@ -763,7 +746,7 @@ export default function CampaignForm({
               <button
                 type="button"
                 onClick={downloadTemplate}
-                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-violet-400/40 px-4 py-2.5 text-sm font-medium text-violet-200 transition hover:border-violet-300 hover:bg-violet-500/10"
+                className="inline-flex h-[50px] shrink-0 items-center justify-center gap-2 rounded-xl border border-violet-400/40 px-4 text-sm font-medium text-violet-200 transition hover:border-violet-300 hover:bg-violet-500/10"
               >
                 <Download size={16} />
                 Download template
@@ -771,62 +754,51 @@ export default function CampaignForm({
             </div>
           )}
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <input
-              value={resourceName}
-              onChange={(e) => setResourceName(e.target.value)}
-              placeholder="Resource Name"
-              className={
-                errors.resources
-                  ? inputErrorClasses
-                  : inputClasses
-              }
-            />
+          <div className="grid grid-cols-1 gap-x-6 gap-y-2 md:grid-cols-2">
+            <Field label="Resource Name" error={errors.resources}>
+              <input
+                value={resourceName}
+                onChange={(e) => setResourceName(e.target.value)}
+                placeholder="Episode footage"
+                className={errors.resources ? inputErrorClasses : inputClasses}
+              />
+            </Field>
 
-            <input
-              value={resourceUrl}
-              onChange={(e) => setResourceUrl(e.target.value)}
-              placeholder="Google Drive Link"
-              className={
-                errors.resources
-                  ? inputErrorClasses
-                  : inputClasses
-              }
-            />
+            <Field label="Google Drive Link">
+              <input
+                value={resourceUrl}
+                onChange={(e) => setResourceUrl(e.target.value)}
+                placeholder="https://drive.google.com/..."
+                className={errors.resources ? inputErrorClasses : inputClasses}
+              />
+            </Field>
           </div>
 
           <button
             type="button"
             onClick={addResource}
-            className="mt-4 flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-white transition hover:bg-violet-500"
+            className="mt-2 inline-flex h-[50px] items-center gap-2 rounded-xl bg-violet-600 px-4 text-white transition hover:bg-violet-500"
           >
             <Plus size={16} />
             Save Resource
           </button>
-
-          {errors.resources && (
-            <p className="mt-3 text-xs text-red-400">
-              {errors.resources}
-            </p>
-          )}
 
           {form.resources.length > 0 && (
             <div className="mt-6 space-y-3">
               {form.resources.map((resource) => (
                 <div
                   key={resource.id}
-                  className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#0B0B12] p-4"
+                  className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-[#0B0B12] p-4"
                 >
                   <div className="min-w-0">
-                    <h3 className="font-medium text-white">
+                    <h3 className="truncate font-medium text-white">
                       {resource.name}
                     </h3>
-
                     <a
                       href={resource.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="truncate text-sm text-violet-400"
+                      className="block truncate text-sm text-violet-400"
                     >
                       {resource.url}
                     </a>
@@ -835,11 +807,10 @@ export default function CampaignForm({
                   <button
                     type="button"
                     onClick={() => removeResource(resource.id)}
+                    className="shrink-0 rounded-lg p-2 text-red-400 transition hover:bg-red-500/10"
+                    aria-label="Remove resource"
                   >
-                    <Trash2
-                      size={18}
-                      className="text-red-400"
-                    />
+                    <Trash2 size={18} />
                   </button>
                 </div>
               ))}
@@ -848,7 +819,7 @@ export default function CampaignForm({
         </Section>
 
         <Section title="Timeline">
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-x-6 gap-y-2 md:grid-cols-2">
             <Field label="Start Date">
               <DatePicker
                 value={form.startDate}
@@ -884,37 +855,38 @@ export default function CampaignForm({
                 }
                 clearable
                 placeholder="Select end date"
+                className={errors.endDate ? "border-red-500/60 focus:border-red-500" : ""}
               />
             </Field>
           </div>
         </Section>
 
-        <div className="flex justify-end gap-3">
-  {mode === "edit" && (
-    <button
-      type="button"
-      onClick={handleDiscard}
-      disabled={submitting}
-      className="rounded-2xl border border-white/10 bg-white/5 px-6 py-3 font-medium text-zinc-300 transition hover:border-white/20 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
-    >
-      Discard
-    </button>
-  )}
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          {mode === "edit" && (
+            <button
+              type="button"
+              onClick={handleDiscard}
+              disabled={submitting}
+              className="h-[50px] rounded-2xl border border-white/10 bg-white/5 px-6 font-medium text-zinc-300 transition hover:border-white/20 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Discard
+            </button>
+          )}
 
-  <button
-    type="submit"
-    disabled={submitting}
-    className="rounded-2xl bg-violet-600 px-6 py-3 font-medium text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-60"
-  >
-    {submitting
-      ? mode === "edit"
-        ? "Saving…"
-        : "Creating…"
-      : mode === "edit"
-      ? "Save Changes"
-      : `Create ${Noun}`}
-  </button>
-</div>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="h-[50px] rounded-2xl bg-violet-600 px-6 font-medium text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {submitting
+              ? mode === "edit"
+                ? "Saving…"
+                : "Creating…"
+              : mode === "edit"
+              ? "Save Changes"
+              : `Create ${Noun}`}
+          </button>
+        </div>
 </form>
 
 <ConfirmModal
