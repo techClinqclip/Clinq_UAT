@@ -127,12 +127,19 @@ function Section({ title, children }) {
   );
 }
 
-function Field({ label, hint, error, children }) {
+function Field({ label, hint, optional = false, error, children }) {
   return (
     <div className="flex min-w-0 flex-col">
-      <label className="mb-2 h-5 truncate text-sm font-medium leading-5 text-white">
-        {label}
-      </label>
+      <div className="mb-2 flex h-5 items-center gap-2">
+        <label className="truncate text-sm font-medium leading-5 text-white">
+          {label}
+        </label>
+        {optional ? (
+          <span className="shrink-0 text-xs font-normal leading-5 text-zinc-500">
+            Optional
+          </span>
+        ) : null}
+      </div>
       {children}
       <p
         className={`mt-1.5 min-h-5 text-xs leading-5 ${
@@ -835,7 +842,7 @@ export default function CampaignForm({
 
             <Field
               label="End Date"
-              hint="Optional"
+              optional
               error={errors.endDate}
             >
               <DatePicker
