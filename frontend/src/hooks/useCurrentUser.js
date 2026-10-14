@@ -25,6 +25,10 @@ export default function useCurrentUser() {
     };
   });
 
+  const [isHydrating, setIsHydrating] = useState(() =>
+    Boolean(localStorage.getItem("access_token") || localStorage.getItem("access"))
+  );
+
   useEffect(() => {
     let active = true;
 
@@ -35,6 +39,7 @@ export default function useCurrentUser() {
       const storedUser = getStoredUser();
 
       if (!token) {
+        if (active) setIsHydrating(false);
         return;
       }
 
@@ -69,6 +74,7 @@ export default function useCurrentUser() {
 
         if (active) {
           setUser(nextUser);
+          setIsHydrating(false);
           localStorage.setItem("user", JSON.stringify({
             ...(storedUser || {}),
             ...profile,
@@ -91,7 +97,10 @@ export default function useCurrentUser() {
           name: storedUser?.name || storedUser?.email || "User",
         };
 
-        if (active) setUser(fallback);
+        if (active) {
+          setUser(fallback);
+          setIsHydrating(false);
+        }
       }
     }
 
@@ -101,5 +110,5 @@ export default function useCurrentUser() {
     };
   }, []);
 
-  return user;
+  return { ...user, isHydrating };
 }
