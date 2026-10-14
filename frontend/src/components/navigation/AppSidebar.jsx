@@ -21,11 +21,7 @@ export default function AppSidebar({ role: propRole }) {
 
   const role = String(propRole || user?.role || "").toLowerCase();
 
-  const roleLabel = role
-    ? role
-    : user?.loading
-      ? "Loading..."
-      : "guest";
+  const roleLabel = role || "";
 
   const exploreLinks = sidebarConfig.explore;
   const workspaceLinks = sidebarConfig.workspace[role] || [];
@@ -99,9 +95,11 @@ export default function AppSidebar({ role: propRole }) {
             </button>
           </div>
 
-          <p className="mt-2 text-xs uppercase tracking-[0.25em] text-zinc-500">
-            {roleLabel}
-          </p>
+          {role && (
+  <p className="mt-2 text-xs uppercase tracking-[0.25em] text-zinc-500">
+    {role}
+  </p>
+)}
         </div>
 
         <nav className="flex-1 overflow-y-auto px-4 py-6">
