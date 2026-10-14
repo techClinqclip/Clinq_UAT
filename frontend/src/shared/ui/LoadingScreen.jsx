@@ -24,6 +24,12 @@ export default function LoadingScreen({ isReady = false, messages = DEFAULT_MESS
   const [messageIndex, setMessageIndex] = useState(0);
   const [exiting, setExiting] = useState(false);
   const progressRef = useRef(0);
+  // Keep a ref to the latest onFinish so the exit timer always calls the
+  // current version without needing it as an effect dependency. This prevents
+  // Marketplace re-renders (which produce a new handleLoaderFinish reference
+  // each time) from cancelling and restarting the 450/950ms exit timers.
+  const onFinishRef = useRef(onFinish);
+  onFinishRef.current = onFinish;
 
   // Creeping progress simulation — slows down as it approaches the cap,
   // never reaches 100 on its own.
@@ -49,20 +55,22 @@ export default function LoadingScreen({ isReady = false, messages = DEFAULT_MESS
   //   450ms → start the exit fade (setExiting)
   //   950ms → call onFinish directly as a fallback, in case
   //            AnimatePresence.onExitComplete never fires (framer-motion edge case).
+  // Depends only on isReady (not onFinish) so that parent re-renders which
+  // produce a new onFinish reference don't cancel these timers mid-flight.
   useEffect(() => {
     if (!isReady) return;
     progressRef.current = 100;
     setProgress(100);
     const exitTimer = setTimeout(() => setExiting(true), 450);
-    const finishTimer = setTimeout(() => onFinish?.(), 950);
+    const finishTimer = setTimeout(() => onFinishRef.current?.(), 950);
     return () => {
       clearTimeout(exitTimer);
       clearTimeout(finishTimer);
     };
-  }, [isReady, onFinish]);
+  }, [isReady]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <AnimatePresence onExitComplete={onFinish}>
+    <AnimatePresence onExitComplete={() => onFinishRef.current?.()}>
       {!exiting && (
         <motion.div
           initial={{ opacity: 1 }}

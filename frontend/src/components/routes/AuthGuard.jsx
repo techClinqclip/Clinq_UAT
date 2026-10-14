@@ -37,15 +37,16 @@ export default function AuthGuard() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Start ready=true for routes that need no async auth check (callback,
-  // public pages, login/signup with no token). This prevents AuthGuard's
-  // own "Checking your session…" screen from flashing for one frame before
-  // those routes render — most visible when Google OAuth redirects back to
-  // /auth/callback.
+  // Decide upfront whether this render needs a blocking auth check.
+  // - No token at all → always ready (public visitor, show page now).
+  // - Token + public/auth/callback route → ready immediately; hydration runs
+  //   in the background. Public routes are safe to show without waiting.
+  // - Token + protected route (dashboard/onboarding) → block until hydration
+  //   confirms the session is still valid before revealing gated content.
   const [ready, setReady] = useState(() => {
     if (typeof window === 'undefined') return false;
     const { accessToken } = getStoredAuthState();
-    if (accessToken) return false; // need async hydration
+    if (!accessToken) return true;
     const p = window.location.pathname;
     return (
       p === '/auth/callback' ||
@@ -129,10 +130,9 @@ export default function AuthGuard() {
         }
       }
 
-      if (isCallbackRoute) {
+    
         setReady(true);
-        return;
-      }(true);
+      
     };
 
     run();

@@ -83,7 +83,7 @@ export default function Marketplace() {
 
       {!showLoader && (
        <MarketplaceLayout
-       role={user?.role || "creator"}
+       role={user?.role}
        campaigns={campaigns}
        loading={loading}
      >
