@@ -5,7 +5,7 @@ import RightSidebar from "../rightSidebar/RightSidebar";
 import TopNavbar from "../../../shared/navbar/TopNavbar";
 export default function MarketplaceLayout({
   children,
-  role = "creator",
+  role,
   campaigns = [],
   loading = false,
 }) {
@@ -13,7 +13,7 @@ export default function MarketplaceLayout({
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-zinc-950">
-      <AppSidebar />
+      <AppSidebar role={role} />
 
       {/* Main application area */}
       <main className="min-h-screen md:ml-64">

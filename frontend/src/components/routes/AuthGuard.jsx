@@ -110,7 +110,10 @@ export default function AuthGuard() {
         }
       }
 
-      setReady(true);
+      if (isCallbackRoute) {
+        setReady(true);
+        return;
+      }(true);
     };
 
     run();
