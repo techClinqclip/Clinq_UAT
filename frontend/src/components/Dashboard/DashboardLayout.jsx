@@ -1,8 +1,15 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import AppSidebar from "../navigation/AppSidebar";
 import TopNavbar from "../../shared/navbar/TopNavbar";
 
 export default function DashboardLayout({ role }) {
+  const location = useLocation();
+  const isAuthCallback = location.pathname === "/auth/callback";
+
+  if (isAuthCallback) {
+    return <Outlet />;
+  }
+
   return (
     <div className="min-h-screen bg-[#07070B]">
       <AppSidebar role={role} />
