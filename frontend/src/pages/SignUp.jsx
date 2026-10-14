@@ -492,6 +492,11 @@ export default function Signup() {
                         hasRole ? `/onboarding/${role}` : '/onboarding/role'
                       );
 
+                      // Supabase OAuth flow: loginWithGoogle calls window.location.assign()
+                      // and returns { pending: true } — the browser is already navigating
+                      // to Google. Skip all local navigation and storage in that case.
+                      if (payload?.pending) return;
+
                       if (payload?.access || payload?.refresh || payload?.user) {
                         setAuthStorage(payload);
                       }

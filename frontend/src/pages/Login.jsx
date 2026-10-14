@@ -225,7 +225,13 @@ export default function Login() {
               onClick={async () => {
                 try {
                   const payload = await loginWithGoogle(undefined, '/marketplace');
-                  navigate('/marketplace', { replace: true });
+                  // Supabase OAuth flow: loginWithGoogle calls window.location.assign()
+                  // and returns { pending: true } — the browser is already navigating
+                  // to Google. Don't call navigate() here or it flashes /marketplace
+                  // in the URL before the OAuth redirect takes effect.
+                  if (!payload?.pending) {
+                    navigate('/marketplace', { replace: true });
+                  }
                 } catch (err) {
                   showToast({
                     type: 'error',
