@@ -99,6 +99,7 @@ export async function hydrateAuthState() {
       user_type: userType,
       user: {
         ...getStoredUser(),
+        ...profile,
         user_type: userType,
       },
     };
