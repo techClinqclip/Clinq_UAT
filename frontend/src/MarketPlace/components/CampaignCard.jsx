@@ -83,7 +83,7 @@ export default function CampaignCard({ campaign }) {
 
         <div className="grid grid-cols-2 gap-3 p-5">
           <StatBox icon={<Eye size={15} className={a.text} />} iconBg={a.iconBg} label="Views" value={formatCompact(views)} />
-          <StatBox icon={<FileVideo size={15} className={a.text} />} iconBg={a.iconBg} label="Submissions" value={submissions} />
+          <StatBox icon={<FileVideo size={15} className={a.text} />} iconBg={a.iconBg} label="Submissions" value={formatCompact(submissions)} />
           <StatBox icon={<Wallet size={15} className={a.text} />} iconBg={a.iconBg} label="Budget" value={formatMoney(budget)} />
           <StatBox icon={<TrendingUp size={15} className="text-emerald-400" />} iconBg="bg-emerald-500/10" label="Paid Out" value={formatMoney(paidOut)} valueClass="text-emerald-400" />
         </div>
@@ -137,13 +137,13 @@ export default function CampaignCard({ campaign }) {
 
 function StatBox({ icon, iconBg, label, value, valueClass = "text-white" }) {
   return (
-    <div className="flex items-center gap-2.5 rounded-xl bg-white/[0.03] p-3">
-      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${iconBg}`}>
+    <div className="flex items-center gap-2 rounded-xl bg-white/[0.03] p-3">
+      <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${iconBg}`}>
         {icon}
       </div>
-      <div className="min-w-0">
-        <p className="text-[11px] text-zinc-500">{label}</p>
-        <p className={`truncate text-base font-bold ${valueClass}`}>{value}</p>
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] leading-none text-zinc-500">{label}</p>
+        <p className={`mt-0.5 text-sm font-bold leading-tight ${valueClass}`}>{value}</p>
       </div>
     </div>
   );
