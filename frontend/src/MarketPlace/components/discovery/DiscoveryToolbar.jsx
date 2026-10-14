@@ -130,7 +130,7 @@ export default function DiscoveryToolbar({ filters = {}, onFilterChange = () => 
               border-zinc-800
               bg-zinc-900
               pl-14
-              pr-5
+              pr-48
               text-white
               placeholder:text-zinc-500
               outline-none
@@ -139,6 +139,24 @@ export default function DiscoveryToolbar({ filters = {}, onFilterChange = () => 
               focus:border-violet-500
             "
           />
+
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+            <div className="w-px h-5 bg-zinc-700 mr-1" />
+            {platformIcons.map(({ name, icon: Icon }) => (
+              <button
+                key={name}
+                onClick={() => onFilterChange("platform", platform === name ? "All" : name)}
+                title={name}
+                className={`p-2 rounded-xl transition-all duration-200 ${
+                  platform === name
+                    ? "bg-violet-600 text-white shadow-md shadow-violet-600/30"
+                    : "text-zinc-500 hover:text-white hover:bg-zinc-800"
+                }`}
+              >
+                <Icon size={16} />
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -177,34 +195,6 @@ export default function DiscoveryToolbar({ filters = {}, onFilterChange = () => 
             placeholder="Sort By"
             isSearchable={false}
           />
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          <button
-            onClick={() => onFilterChange("platform", "All")}
-            className={`rounded-full px-5 py-2.5 text-sm font-medium transition-all duration-300 ${
-              platform === "All"
-                ? "bg-violet-600 text-white shadow-lg shadow-violet-600/30"
-                : "bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-white"
-            }`}
-          >
-            All
-          </button>
-
-          {platformIcons.map(({ name, icon: Icon }) => (
-            <button
-              key={name}
-              onClick={() => onFilterChange("platform", name)}
-              className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-all duration-300 ${
-                platform === name
-                  ? "bg-violet-600 text-white shadow-lg shadow-violet-600/30"
-                  : "bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-white"
-              }`}
-            >
-              <Icon size={16} />
-              {name}
-            </button>
-          ))}
         </div>
       </div>
     </section>
