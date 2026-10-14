@@ -20,7 +20,13 @@ export default function AppSidebar({ role: propRole }) {
   const location = useLocation();
 
   const role = String(propRole || user?.role || "").toLowerCase();
-  const roleLabel = role || "guest";
+
+  const roleLabel = role
+    ? role
+    : user?.loading
+      ? "Loading..."
+      : "guest";
+
   const exploreLinks = sidebarConfig.explore;
   const workspaceLinks = sidebarConfig.workspace[role] || [];
 
