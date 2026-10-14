@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useCallback } from "react";
 import { Image as ImageIcon, Smile, BarChart3, X, Plus } from "lucide-react";
 import Avatar from "./Avatar";
 import { useCommunity } from "../CommunityContext";
@@ -23,6 +23,7 @@ export default function PostComposer() {
   const [pollQuestion, setPollQuestion] = useState("");
   const [pollOptions, setPollOptions] = useState(["", ""]);
   const fileInputRef = useRef(null);
+  const textareaRef = useRef(null);
 
   const resetComposer = () => {
     setArticle("");
@@ -32,6 +33,9 @@ export default function PostComposer() {
     setPollOptions(["", ""]);
     setShowEmoji(false);
     setShowGif(false);
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
   };
 
   const handleFileUpload = (e) => {
@@ -100,11 +104,17 @@ export default function PostComposer() {
 
         <div className="min-w-0 flex-1 space-y-2">
           <textarea
+            ref={textareaRef}
             value={article}
-            onChange={(e) => setArticle(e.target.value)}
+            onChange={(e) => {
+              setArticle(e.target.value);
+              e.target.style.height = "auto";
+              e.target.style.height = e.target.scrollHeight + "px";
+            }}
             placeholder="Share something with the community..."
-            rows={3}
-            className="w-full resize-none bg-transparent text-sm text-white outline-none placeholder:text-zinc-500"
+            rows={1}
+            className="w-full resize-none overflow-hidden bg-transparent text-sm leading-relaxed text-white outline-none placeholder:text-zinc-500"
+            style={{ minHeight: "1.75rem" }}
           />
 
           {/* Media preview */}
