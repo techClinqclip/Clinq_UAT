@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { AlertCircle, RotateCcw, Sparkles } from "lucide-react";
+import { useMemo, useRef } from "react";
+import { AlertCircle, RotateCcw, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import CampaignCard from "./components/CampaignCard";
 import MarketplaceLoadingSkeleton from "../components/MarketplaceLoadingSkeleton";
 
@@ -14,11 +14,36 @@ export default function FeaturedCampaigns({ campaigns = [], loading = false, err
     return normalizeCampaignList(campaigns).slice(0, 8);
   }, [campaigns]);
 
+  const scrollRef = useRef(null);
+
+  const scroll = (dir) => {
+    if (!scrollRef.current) return;
+    scrollRef.current.scrollBy({ left: dir * 340, behavior: "smooth" });
+  };
+
   return (
     <section className="space-y-8">
-      <div>
-        <h2 className="text-3xl font-bold text-white">Featured Campaigns</h2>
-        <p className="mt-2 text-zinc-400">Hand-picked campaigns from top brands.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold text-white">Featured Campaigns</h2>
+          <p className="mt-2 text-zinc-400">Hand-picked campaigns from top brands.</p>
+        </div>
+        {!loading && !error && featuredCampaigns.length > 0 && (
+          <div className="flex gap-2">
+            <button
+              onClick={() => scroll(-1)}
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-700 bg-zinc-900 text-zinc-400 transition-all hover:border-violet-500 hover:bg-violet-600 hover:text-white"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              onClick={() => scroll(1)}
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-700 bg-zinc-900 text-zinc-400 transition-all hover:border-violet-500 hover:bg-violet-600 hover:text-white"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        )}
       </div>
 
       {loading ? (
@@ -58,9 +83,15 @@ export default function FeaturedCampaigns({ campaigns = [], loading = false, err
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div
+          ref={scrollRef}
+          className="flex gap-6 overflow-x-auto scroll-smooth pb-2"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
           {featuredCampaigns.map((campaign) => (
-            <CampaignCard key={campaign.id} campaign={campaign} />
+            <div key={campaign.id} className="flex-none w-80">
+              <CampaignCard campaign={campaign} />
+            </div>
           ))}
         </div>
       )}
