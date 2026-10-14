@@ -98,7 +98,7 @@ export default function PostComposer() {
       <div className="flex gap-3">
         <Avatar src={currentUser.avatar} name={currentUser.name} size={40} />
 
-        <div className="min-w-0 flex-1 space-y-3">
+        <div className="min-w-0 flex-1 space-y-2">
           <textarea
             value={article}
             onChange={(e) => setArticle(e.target.value)}
@@ -187,7 +187,7 @@ export default function PostComposer() {
           )}
 
           {/* Toolbar */}
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/5 pt-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/5 pt-2">
             <div className="flex items-center gap-1">
               <button
                 type="button"
