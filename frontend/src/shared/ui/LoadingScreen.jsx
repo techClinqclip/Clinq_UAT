@@ -45,13 +45,21 @@ export default function LoadingScreen({ isReady = false, messages = DEFAULT_MESS
   }, [messages.length]);
 
   // Once real data is ready, snap to 100% then fade out.
+  // Two timers run in parallel:
+  //   450ms → start the exit fade (setExiting)
+  //   950ms → call onFinish directly as a fallback, in case
+  //            AnimatePresence.onExitComplete never fires (framer-motion edge case).
   useEffect(() => {
     if (!isReady) return;
     progressRef.current = 100;
     setProgress(100);
-    const timer = setTimeout(() => setExiting(true), 450);
-    return () => clearTimeout(timer);
-  }, [isReady]);
+    const exitTimer = setTimeout(() => setExiting(true), 450);
+    const finishTimer = setTimeout(() => onFinish?.(), 950);
+    return () => {
+      clearTimeout(exitTimer);
+      clearTimeout(finishTimer);
+    };
+  }, [isReady, onFinish]);
 
   return (
     <AnimatePresence onExitComplete={onFinish}>

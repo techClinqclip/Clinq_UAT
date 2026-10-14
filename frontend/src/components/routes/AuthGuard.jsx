@@ -36,7 +36,26 @@ function isPublicPath(pathname) {
 export default function AuthGuard() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [ready, setReady] = useState(false);
+
+  // Start ready=true for routes that need no async auth check (callback,
+  // public pages, login/signup with no token). This prevents AuthGuard's
+  // own "Checking your session…" screen from flashing for one frame before
+  // those routes render — most visible when Google OAuth redirects back to
+  // /auth/callback.
+  const [ready, setReady] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const { accessToken } = getStoredAuthState();
+    if (accessToken) return false; // need async hydration
+    const p = window.location.pathname;
+    return (
+      p === '/auth/callback' ||
+      p === '/login' ||
+      p === '/signup' ||
+      p === '/forgot-password' ||
+      p === '/reset-password' ||
+      isPublicPath(p)
+    );
+  });
 
   useEffect(() => {
     let cancelled = false;

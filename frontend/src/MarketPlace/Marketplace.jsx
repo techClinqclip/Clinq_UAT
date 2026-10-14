@@ -36,6 +36,12 @@ export default function Marketplace() {
   useEffect(() => {
     let mounted = true;
 
+    // Hard cap: if the API never resolves (server down, network hang),
+    // force loading=false after 12s so the LoadingScreen isn't stuck forever.
+    const maxWait = setTimeout(() => {
+      if (mounted) setLoading(false);
+    }, 12000);
+
     async function loadCampaigns() {
       try {
         const response = await api("/api/content/campaigns/?scope=marketplace");
@@ -44,6 +50,7 @@ export default function Marketplace() {
       } catch {
         if (mounted) setCampaigns([]);
       } finally {
+        clearTimeout(maxWait);
         if (mounted) setLoading(false);
       }
     }
@@ -51,6 +58,7 @@ export default function Marketplace() {
     loadCampaigns();
     return () => {
       mounted = false;
+      clearTimeout(maxWait);
     };
   }, []);
 
