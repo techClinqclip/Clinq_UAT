@@ -3,6 +3,7 @@ import { Search, Eye, IndianRupee, TrendingUp, Send, ChevronLeft, ChevronRight }
 import { FaYoutube, FaInstagram, FaTiktok, FaXTwitter } from "react-icons/fa6";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import useToast from "../../hooks/useToast";
+import AdminLoadingSkeleton from "./components/AdminLoadingSkeleton";
 
 const VIEW_THRESHOLD = 1000;
 const PAGE_SIZE = 10;
@@ -27,11 +28,17 @@ const STATUS_OPTIONS = ["Eligible", "Not yet eligible", "Sent to approval", "All
 
 export default function PayoutEligibility() {
   const [items, setItems] = useState(initialItems);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [platformFilter, setPlatformFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("Eligible");
   const [page, setPage] = useState(1);
   const { showToast } = useToast();
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setLoading(false), 250);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const statusOf = (item) => {
     if (item.sentToApproval) return "Sent to approval";
@@ -90,6 +97,10 @@ export default function PayoutEligibility() {
     // TODO(backend): create/PATCH the corresponding pending-approval
     // record so it shows up in /admin/pending-approvals.
   };
+
+  if (loading) {
+    return <AdminLoadingSkeleton variant="default" />;
+  }
 
   return (
     <div className="min-h-screen bg-black text-white">

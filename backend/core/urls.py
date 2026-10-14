@@ -37,6 +37,9 @@ urlpatterns = [
     path('api/support/', include('support.urls')),
     path('api/creator/', include('creator.urls')),
 
+    # Payment webhooks (no auth; signature verified inside the view)
+    path('api/webhooks/razorpay/', include('earnings.webhook_urls')),
+
     # for Automated API docs
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/',SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui')

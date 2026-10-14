@@ -6,7 +6,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from .models import Campaign, CampaignParticipant, CampaignResource, CampaignSubmission, Content, Bid, ClipSubmission
 from .serializers import CampaignSerializer
@@ -1455,6 +1455,65 @@ class CampaignViewSetTest(TestCase):
         self.assertEqual(second_approval.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(hold_after_approval.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_new_pending_after_settlement_reopens_payout_queue(self):
+        """Same submission/campaign/user must reappear after views grow post-approval."""
+        clipper = User.objects.create_user(
+            email='payout-reopen@test.com',
+            password='testpass123',
+            type='clipper',
+        )
+        participant = CampaignParticipant.objects.create(
+            campaign=self.campaign,
+            clipper=clipper,
+            status='submitted',
+        )
+        submission = CampaignSubmission.objects.create(
+            participant=participant,
+            platform='instagram',
+            platform_username='@reopenclipper',
+            content_url='https://instagram.com/p/payout-reopen',
+            views=1000,
+            status='approved',
+        )
+        admin = User.objects.create_superuser(
+            email='payout-reopen-admin@test.com',
+            password='testpass123',
+        )
+        self.client.force_authenticate(user=admin)
+
+        settle = self.client.post(
+            f'/api/content/campaign-submissions/{submission.id}/settle-pending/',
+            {'notes': 'First settlement'},
+            format='json',
+        )
+        self.assertEqual(settle.status_code, status.HTTP_200_OK)
+        submission.refresh_from_db()
+        self.assertEqual(submission.payout_review_status, 'approved')
+        self.assertEqual(submission.pending_earning, Decimal('0.00'))
+
+        # More views accrue additional pending earnings.
+        submission.views = 2000
+        submission.update_earning()
+        submission.refresh_from_db()
+        self.assertGreater(submission.pending_earning, Decimal('0.00'))
+        self.assertEqual(submission.payout_review_status, 'pending')
+
+        queue = self.client.get('/api/content/campaign-submissions/?queue=payouts')
+        self.assertEqual(queue.status_code, status.HTTP_200_OK)
+        queued = next(item for item in queue.data if item['id'] == submission.id)
+        self.assertEqual(queued['payoutReviewStatus'], 'pending')
+        self.assertGreater(Decimal(str(queued['pendingEarning'])), Decimal('0'))
+
+        settle_again = self.client.post(
+            f'/api/content/campaign-submissions/{submission.id}/settle-pending/',
+            {'notes': 'Second settlement after new views'},
+            format='json',
+        )
+        self.assertEqual(settle_again.status_code, status.HTTP_200_OK)
+        submission.refresh_from_db()
+        self.assertEqual(submission.pending_earning, Decimal('0.00'))
+        self.assertEqual(submission.payout_review_status, 'approved')
+
     def test_admin_can_approve_and_reject_campaign_submissions(self):
         clipper = User.objects.create_user(email='queue-clipper@test.com', password='testpass123', type='clipper')
         participant = CampaignParticipant.objects.create(campaign=self.campaign, clipper=clipper, status='submitted')
@@ -2598,15 +2657,38 @@ class AdminScraperTests(TestCase):
         fake_engine = FakeEngine()
         self.client = APIClient()
         self.client.force_authenticate(user=admin)
-        with patch('content.scraper_service._load_engine', return_value=fake_engine):
+
+        with patch('content.scraper_service._load_engine', return_value=fake_engine), \
+             patch('threading.Thread') as thread_mock:
+            thread_mock.return_value.start = MagicMock()
             response = self.client.post('/api/content/campaigns/admin-scrape-insights/')
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['eligible'], 21)
-        self.assertEqual(response.data['processed'], 21)
-        self.assertEqual(response.data['updated'], 21)
-        self.assertEqual(len(fake_engine.calls), 2)
-        self.assertEqual([len(call) for call in fake_engine.calls], [20, 1])
-        eligible[0].refresh_from_db()
-        self.assertEqual(eligible[0].views, 100)
-        self.assertEqual(eligible[0].likes, 10)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        self.assertEqual(response.data['status'], 'queued')
+        self.assertEqual(response.data['mode'], 'inline')
+        self.assertTrue(response.data['taskId'])
+        thread_mock.assert_called_once()
+        thread_mock.return_value.start.assert_called_once()
+        self.assertEqual(fake_engine.calls, [])
+
+        status_response = self.client.get(
+            f"/api/content/campaigns/admin-scrape-insights-status/?taskId={response.data['taskId']}"
+        )
+        self.assertEqual(status_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(status_response.data['taskId'], response.data['taskId'])
+        self.assertEqual(status_response.data['status'], 'queued')
+        self.assertEqual(status_response.data['progress'], 0)
+
+    def test_admin_scraper_rejects_missing_engine_config(self):
+        admin = User.objects.create_superuser(
+            email='scraper-config-admin@test.com',
+            password='testpass123',
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(user=admin)
+
+        with patch('content.scraper_service._load_engine', side_effect=ValueError('Missing APIFY_TOKEN in .env file')):
+            response = self.client.post('/api/content/campaigns/admin-scrape-insights/')
+
+        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+        self.assertIn('APIFY_TOKEN', response.data['error'])

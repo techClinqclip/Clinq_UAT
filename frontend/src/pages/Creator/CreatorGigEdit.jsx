@@ -61,6 +61,7 @@ export default function EditGig() {
 
       <CampaignForm
         mode="edit"
+        kind="gig"
         initialData={existingGig}
         onSubmit={handleUpdate}
       />

@@ -693,6 +693,14 @@ class CampaignSubmission(models.Model):
             else:
                 self.earning = Decimal("0")
                 self.pending_earning = Decimal("0")
+
+            # If callers pass update_fields (e.g. views-only scrapes), keep
+            # reconciled earning/payout fields in the write set.
+            update_fields = kwargs.get("update_fields")
+            if update_fields is not None:
+                fields = set(update_fields)
+                fields.update({"earning", "pending_earning", "payout_review_status", "updated_at"})
+                kwargs["update_fields"] = list(fields)
         super().save(*args, **kwargs)
 
     def _should_recalculate_earning(self):
@@ -719,13 +727,19 @@ class CampaignSubmission(models.Model):
         previous = None
         if self.pk:
             try:
-                previous = self.__class__.objects.only("earning", "pending_earning").get(pk=self.pk)
+                previous = self.__class__.objects.only(
+                    "earning",
+                    "pending_earning",
+                    "payout_review_status",
+                ).get(pk=self.pk)
             except self.__class__.DoesNotExist:
                 previous = None
 
         if previous is None:
             self.earning = Decimal("0")
             self.pending_earning = target_total
+            if target_total > 0:
+                self.payout_review_status = "pending"
             return
 
         previous_active = Decimal(previous.earning or 0)
@@ -743,6 +757,14 @@ class CampaignSubmission(models.Model):
 
         self.earning = previous_active
         self.pending_earning = previous_pending + (target_total - previous_total)
+
+        # After an admin already settled once, newly accrued pending must
+        # re-enter the Pending Amt. Approval queue for the same submission.
+        if (
+            Decimal(self.pending_earning or 0) > previous_pending
+            and previous.payout_review_status == "approved"
+        ):
+            self.payout_review_status = "pending"
 
     def approve_pending_earning(self):
         """Move pending earnings into active earning after admin settlement."""
@@ -788,7 +810,16 @@ class CampaignSubmission(models.Model):
     def update_earning(self):
         """Refresh pending earning based on the latest approved views and cap."""
         self._reconcile_earnings_values()
-        self.save(update_fields=["views", "earning", "pending_earning", "updated_at"], skip_earning_update=True)
+        self.save(
+            update_fields=[
+                "views",
+                "earning",
+                "pending_earning",
+                "payout_review_status",
+                "updated_at",
+            ],
+            skip_earning_update=True,
+        )
 
 
 

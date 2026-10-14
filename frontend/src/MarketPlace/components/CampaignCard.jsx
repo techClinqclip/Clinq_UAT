@@ -6,87 +6,9 @@ import {
   FileVideo,
   Play,
   Maximize2,
-  Shirt,
-  Trophy,
-  Mic2,
-  Smartphone,
-  Palette,
-  Film,
-  Sparkles,
 } from "lucide-react";
-import { ACCENTS, formatCompact, formatMoney } from "./campaignUtils";
+import { ACCENTS, formatCompact, formatMoney, normalizeCampaign } from "./campaignUtils";
 import CampaignDetailModal from "./CampaignDetailModal";
-
-const CATEGORY_ICONS = {
-  fashion: Shirt,
-  gaming: Trophy,
-  music: Mic2,
-  tech: Smartphone,
-  art: Palette,
-  entertainment: Film,
-  default: Sparkles,
-};
-
-function plainText(value) {
-  if (!value) return "";
-
-  return String(value)
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/?(p|div|li|ul|ol|h[1-6]|section|article|span|strong|b|em|i|code|pre)[^>]*>/gi, "\n")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;/gi, "'")
-    .replace(/\n{3,}/g, "\n\n")
-    .replace(/[ \t]+\n/g, "\n")
-    .trim();
-}
-
-function normalizeCampaign(campaign = {}) {
-  const category = String(campaign.category || "general").toLowerCase();
-  const status = String(campaign.status || "active");
-
-  const rawRequirements = Array.isArray(campaign.requirements)
-    ? campaign.requirements
-    : typeof campaign.clipperRequirements === "string"
-      ? campaign.clipperRequirements
-      : [];
-
-  const normalizedRequirements = (Array.isArray(rawRequirements) ? rawRequirements : [rawRequirements])
-    .map((item) => plainText(item))
-    .flatMap((item) => item.split(/\n|•/))
-    .map((item) => item.trim())
-    .filter(Boolean);
-
-  return {
-    ...campaign,
-    title: campaign.name || campaign.title || "Campaign",
-    brand: campaign.brandName || campaign.brand || "Brand",
-    category: campaign.category ? String(campaign.category).replace(/_/g, " ") : "General",
-    icon: CATEGORY_ICONS[category] || CATEGORY_ICONS.default,
-    accent: campaign.accent || "violet",
-    status: status.charAt(0).toUpperCase() + status.slice(1),
-    thumbnail: campaign.thumbnailUrl || campaign.thumbnail || campaign.image || "",
-    views: Number(campaign.views || 0),
-    submissions: Number(campaign.submissions || 0),
-    budget: Number(campaign.budget || 0),
-    paidOut: Number(campaign.paidOut || 0),
-    description: plainText(campaign.description || ""),
-    requirements: normalizedRequirements,
-    deadline: campaign.deadline || campaign.endDate || "",
-    payoutPerSubmission: campaign.payoutPerSubmission || (
-      campaign.rewardPer1k ? `₹${Number(campaign.rewardPer1k).toLocaleString()} / 1k` : ""
-    ),
-    platforms: Array.isArray(campaign.platforms) ? campaign.platforms : [],
-    resources: Array.isArray(campaign.resources) ? campaign.resources.map((resource) => ({
-      label: resource.name || resource.label || "Resource",
-      url: resource.url || resource.link || "#",
-    })) : [],
-  };
-}
 
 export default function CampaignCard({ campaign }) {
   const [modalOpen, setModalOpen] = useState(false);

@@ -1,11 +1,43 @@
 from rest_framework import serializers
 from decimal import Decimal
 from .models import Transaction
+from .payments import MAX_TOPUP_AMOUNT, MIN_TOPUP_AMOUNT
+
+
+class WalletTopUpCreateSerializer(serializers.Serializer):
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=MIN_TOPUP_AMOUNT)
+
+    def validate_amount(self, value):
+        if value < MIN_TOPUP_AMOUNT:
+            raise serializers.ValidationError(f'Minimum top-up is ₹{MIN_TOPUP_AMOUNT}.')
+        if value > MAX_TOPUP_AMOUNT:
+            raise serializers.ValidationError(f'Maximum top-up is ₹{MAX_TOPUP_AMOUNT}.')
+        return value
+
+
+class WalletTopUpConfirmSerializer(serializers.Serializer):
+    razorpayOrderId = serializers.CharField(max_length=100, source='order_id')
+    razorpayPaymentId = serializers.CharField(max_length=100, source='payment_id')
+    razorpaySignature = serializers.CharField(max_length=255, source='signature')
+
+
+class WalletTopUpFailSerializer(serializers.Serializer):
+    razorpayOrderId = serializers.CharField(max_length=100, source='order_id')
+    reason = serializers.CharField(max_length=255, required=False, allow_blank=True)
+
+
+class EarningsTransferSerializer(serializers.Serializer):
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal('1.00'))
+
 
 # Serializer for handling the withdrawal request body
 class PayoutSerializer(serializers.Serializer):
     amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal('2500.00'))
-    payoutMethod = serializers.ChoiceField(choices=['upi', 'bank_transfer', 'paypal'], source='payout_method')
+    # Profile UIs historically save "bank"; API canonical value is bank_transfer.
+    payoutMethod = serializers.ChoiceField(
+        choices=['upi', 'bank_transfer', 'bank', 'paypal'],
+        source='payout_method',
+    )
     upiId = serializers.CharField(max_length=100, required=False, allow_blank=True, source='upi_id')
     bankAccountHolder = serializers.CharField(max_length=150, required=False, allow_blank=True, source='bank_account_holder')
     bankAccountNumber = serializers.CharField(max_length=50, required=False, allow_blank=True, source='bank_account_number')
@@ -19,6 +51,10 @@ class PayoutSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         payout_method = attrs.get('payout_method')
+        if payout_method == 'bank':
+            payout_method = 'bank_transfer'
+            attrs['payout_method'] = 'bank_transfer'
+
         if payout_method == 'upi' and not attrs.get('upi_id'):
             raise serializers.ValidationError({'upiId': 'UPI ID is required for UPI payouts.'})
 

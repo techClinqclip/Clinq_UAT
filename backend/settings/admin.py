@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ResourceSampleTemplate, UserSettings
+from .models import LegalDocument, PlatformPayoutSettings, ResourceSampleTemplate, UserSettings
 
 
 @admin.register(UserSettings)
@@ -31,5 +31,18 @@ class UserSettingsAdmin(admin.ModelAdmin):
 
 @admin.register(ResourceSampleTemplate)
 class ResourceSampleTemplateAdmin(admin.ModelAdmin):
-    list_display = ['id', 'document', 'updated_by', 'updated_at']
+    list_display = ['id', 'filename', 'document_url', 'updated_by', 'updated_at']
+    readonly_fields = ['updated_at']
+
+
+@admin.register(LegalDocument)
+class LegalDocumentAdmin(admin.ModelAdmin):
+    list_display = ['key', 'filename', 'document_url', 'updated_by', 'updated_at']
+    list_filter = ['key']
+    readonly_fields = ['updated_at']
+
+
+@admin.register(PlatformPayoutSettings)
+class PlatformPayoutSettingsAdmin(admin.ModelAdmin):
+    list_display = ['id', 'manual_pay', 'require_payout_approval', 'updated_by', 'updated_at']
     readonly_fields = ['updated_at']

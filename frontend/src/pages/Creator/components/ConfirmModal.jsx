@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Loader2, X } from "lucide-react";
 
 const COLORS = {
@@ -40,12 +41,23 @@ export default function ConfirmModal({
   onCancel,
   onConfirm,
 }) {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      setReady(false);
+      return undefined;
+    }
+    const timer = window.setTimeout(() => setReady(true), 200);
+    return () => window.clearTimeout(timer);
+  }, [open]);
+
   if (!open) return null;
 
   const theme = COLORS[color] || COLORS.violet;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#11111A] p-6 shadow-2xl">
         {/* Header */}
         <div className="flex items-start justify-between">
@@ -81,7 +93,7 @@ export default function ConfirmModal({
 
           <button
             onClick={onConfirm}
-            disabled={loading}
+            disabled={loading || !ready}
             className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${theme.button}`}
           >
             {loading && (

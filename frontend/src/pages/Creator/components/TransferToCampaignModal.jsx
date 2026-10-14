@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { X, ArrowRightLeft, CircleDollarSign, Wallet, AlertCircle } from "lucide-react";
 import useToast from "../../../hooks/useToast"; // ADJUST to match this file's actual path
+import { api } from "../../../lib/api";
 
 /*
   TransferToCampaignModal — moves money from the creator's earned,
@@ -44,7 +45,7 @@ export default function TransferToCampaignModal({ isOpen, onClose, availableEarn
     setAmount(next > 0 ? String(next) : "");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!amount || Number.isNaN(value) || value <= 0) {
       showToast({ type: "error", message: "Enter an amount to transfer." });
@@ -56,17 +57,23 @@ export default function TransferToCampaignModal({ isOpen, onClose, availableEarn
     }
 
     setSubmitting(true);
-    // TODO(backend): replace with the real internal-transfer call. Since
-    // this never touches a payment gateway it's safe to resolve
-    // optimistically rather than routing through ProcessingModal like
-    // Add Funds does.
-    window.setTimeout(() => {
-      setSubmitting(false);
+    try {
+      const result = await api("/api/earnings/wallet/transfer-to-spend/", {
+        method: "POST",
+        body: { amount: value },
+      });
       reset();
       onClose();
-      onSuccess?.(value);
-      showToast({ type: "success", message: `₹${value.toLocaleString()} moved to your campaign wallet.` });
-    }, 600);
+      onSuccess?.(result);
+      showToast({
+        type: "success",
+        message: `₹${Number(result.amount || value).toLocaleString()} moved to your gig wallet.`,
+      });
+    } catch (error) {
+      showToast({ type: "error", message: error?.message || "Unable to transfer earnings." });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

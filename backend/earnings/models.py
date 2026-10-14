@@ -6,23 +6,21 @@ from django.db.models import Sum
 
 # Import notifications helpers for integration
 try:
-    from notifications.helpers import (
-        notify_earnings_payment_processed,
-        notify_earnings_payout_status,
-        notify_earnings_milestone
-    )
+    from notifications.helpers import notify_earnings_payment_processed
     NOTIFICATIONS_AVAILABLE = True
 except ImportError:
     NOTIFICATIONS_AVAILABLE = False
     notify_earnings_payment_processed = None
-    notify_earnings_payout_status = None
-    notify_earnings_milestone = None
 
 
 class Transaction(models.Model):
     TRANSACTION_TYPES = [
         ('earning', 'Viral Earning'),       # Clipper earned from reach
         ('withdrawal', 'Withdrawal'),       # Clipper taking money out
+        ('deposit', 'Wallet Deposit'),      # Brand/creator wallet top-up
+        ('lock', 'Budget Lock'),            # Funds locked into campaign/gig budget
+        ('settlement', 'Campaign Settlement'),  # Remaining budget returned to wallet
+        ('transfer', 'Earnings Transfer'),  # Creator: earnings → gig wallet
         ('commission', 'Platform Fee'),     # Your platform cut
         ('listing_fee', 'Premium Listing'), # Creator "Gig of the Day" payment
         ('bid_fee', 'Premium Bid Fee'),     # Clipper bidding fee
@@ -32,6 +30,7 @@ class Transaction(models.Model):
         ('upi', 'UPI'),
         ('bank_transfer', 'Bank Transfer'),
         ('paypal', 'PayPal'),
+        ('razorpay', 'Razorpay'),
     ]
 
     STATUS_CHOICES = [
@@ -105,32 +104,20 @@ def transaction_notification_handler(sender, instance, created, **kwargs):
                 # For now, just notify the most recent one crossed
                 pass
     
-    # Notify when withdrawal status changes
-    if instance.transaction_type == 'withdrawal' and notify_earnings_payout_status:
-        # Only notify on status changes, not creation
-        if not created and kwargs.get('update_fields'):
-            old_status = None
-            # We can't easily get the old status without tracking it
-            # In production, you'd use a library like django-model-utils or track manually
-            
-            notify_earnings_payout_status(
-                user_id=user_id,
-                payout_id=str(instance.id),
-                status=instance.status,
-                amount=float(instance.amount)
-            )
+    # Withdrawal create/status notifications are sent explicitly from
+    # payout views/helpers with user-facing copy (no internal gateway details).
 
-    if created and instance.transaction_type == 'withdrawal':
+    if instance.transaction_type == 'deposit' and instance.status == 'completed':
         notify_user_event(
             user_id=instance.user_id,
-            event_type='earnings.withdrawal_status',
-            title='Withdrawal submitted',
-            message=f'Your withdrawal of ₹{instance.amount} is pending.',
+            event_type='earnings.wallet_topup',
+            title='Wallet topped up',
+            message=f'₹{instance.amount} has been added to your campaign wallet.',
             category='earnings',
             entity_type='transaction',
-            payload={'transaction_id': str(instance.id), 'amount': str(instance.amount), 'status': instance.status},
-            email=True,
-            idempotency_key=f'earnings.withdrawal_status:{instance.id}',
+            payload={'transaction_id': str(instance.id), 'amount': str(instance.amount)},
+            email=False,
+            idempotency_key=f'earnings.wallet_topup:{instance.id}',
         )
 
     if created and instance.status == 'completed' and instance.transaction_type == 'earning':

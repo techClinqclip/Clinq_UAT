@@ -2,18 +2,41 @@ from decimal import Decimal
 from datetime import datetime, timedelta
 from django.utils import timezone
 from django.db.models import Sum, Q, F, Count
-from django.db.models.functions import TruncMonth
+from django.db.models.functions import Greatest, TruncMonth
 from rest_framework import viewsets, status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db import transaction as db_transaction
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
-from .serializers import PayoutSerializer, TransactionSerializer
+from .serializers import (
+    EarningsTransferSerializer,
+    PayoutSerializer,
+    TransactionSerializer,
+    WalletTopUpConfirmSerializer,
+    WalletTopUpCreateSerializer,
+    WalletTopUpFailSerializer,
+)
 from .models import Transaction
+from .payments import (
+    PaymentConfigError,
+    PaymentGatewayError,
+    PaymentValidationError,
+    confirm_wallet_topup,
+    create_razorpay_withdrawal_payout,
+    create_wallet_topup_order,
+    mark_wallet_topup_failed,
+    build_withdrawal_destination_display,
+    mark_withdrawal_paid_manually,
+    mark_withdrawal_rejected,
+    reconcile_pending_wallet_topups,
+    store_withdrawal_destination,
+)
 from accounts.models import Profile
 from content.models import CampaignSubmission
+from .utils import get_available_withdrawable_earnings, get_total_withdrawn
+from settings.models import PlatformPayoutSettings
 
 class PayoutViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
@@ -52,10 +75,11 @@ class PayoutViewSet(viewsets.ViewSet):
         try:
             with db_transaction.atomic():
                 profile = Profile.objects.select_for_update().get(user=request.user)
+                available = get_available_withdrawable_earnings(request.user)
 
-                if profile.total_earnings < amount:
+                if amount > available:
                     return Response(
-                        {"error": f"Insufficient balance. Your earnings: ₹{profile.total_earnings}"},
+                        {"error": f"Insufficient balance. Available: ₹{available}"},
                         status=status.HTTP_400_BAD_REQUEST
                     )
 
@@ -71,7 +95,15 @@ class PayoutViewSet(viewsets.ViewSet):
                     payment_details = 'PayPal'
                     external_ref = 'PayPal'
 
-                Transaction.objects.create(
+                destination = {
+                    'payout_method': payout_method,
+                    'upi_id': upi_id or '',
+                    'bank_account_holder': bank_account_holder or '',
+                    'bank_account_number': bank_account_number or '',
+                    'bank_ifsc': bank_ifsc or '',
+                    'bank_name': bank_name or '',
+                }
+                txn = Transaction.objects.create(
                     user=request.user,
                     amount=amount,
                     transaction_type='withdrawal',
@@ -80,23 +112,57 @@ class PayoutViewSet(viewsets.ViewSet):
                     status='pending',
                     external_ref=external_ref,
                 )
+                store_withdrawal_destination(txn, destination=destination)
 
+                from django.db.models import Value
                 Profile.objects.filter(user=request.user).update(
-                    total_earnings=F('total_earnings') - amount
+                    total_earnings=Greatest(F('total_earnings') - amount, Value(Decimal('0.00'))),
+                    total_withdrawn=F('total_withdrawn') + amount,
                 )
                 profile.refresh_from_db()
-                from notifications.helpers import notify_user_event
+                remaining = get_available_withdrawable_earnings(request.user)
+                from notifications.helpers import notify_admins_event, notify_user_event
+
                 notify_user_event(
                     user_id=request.user.id,
                     event_type='earnings.withdrawal_requested',
                     title='Withdrawal requested',
-                    message=f'Your withdrawal request for ₹{amount} is pending review.',
+                    message=(
+                        f'Your withdrawal request for ₹{amount} has been received '
+                        f'and is under review. We will notify you once it is processed.'
+                    ),
                     category='earnings',
                     entity_type='transaction',
-                    entity_id=None,
-                    payload={'amount': str(amount), 'payment_method': payout_method},
+                    entity_id=txn.id,
+                    payload={'amount': str(amount), 'status': 'pending'},
                     email=True,
-                    idempotency_key=f'earnings.withdrawal_requested:{request.user.id}:{external_ref}:{amount}',
+                    idempotency_key=f'earnings.withdrawal_requested:{request.user.id}:{txn.id}:{amount}',
+                )
+
+                requester = (
+                    getattr(request.user, 'email', '')
+                    or getattr(request.user, 'username', '')
+                    or f'User #{request.user.id}'
+                )
+                notify_admins_event(
+                    event_type='earnings.withdrawal_admin_request',
+                    title='New withdrawal request',
+                    message=(
+                        f'{requester} requested a withdrawal of ₹{amount}. '
+                        f'Review it in Payout Approval.'
+                    ),
+                    category='earnings',
+                    entity_type='transaction',
+                    payload={
+                        'amount': str(amount),
+                        'transactionId': txn.id,
+                        'userId': request.user.id,
+                        'userEmail': getattr(request.user, 'email', ''),
+                        'paymentMethod': payout_method,
+                        'status': 'pending',
+                    },
+                    priority='high',
+                    idempotency_key=f'earnings.withdrawal_admin_request:{txn.id}',
                 )
         except Profile.DoesNotExist:
             return Response(
@@ -112,11 +178,55 @@ class PayoutViewSet(viewsets.ViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+        payout_settings = PlatformPayoutSettings.get_solo()
+        autopay_triggered = False
+        autopay_error = None
+        payout_result = None
+
+        # User-facing copy only — no gateway / admin workflow details.
+        message = (
+            f'Your withdrawal request for ₹{amount} has been received and is under review. '
+            f'You will be notified once it is processed.'
+        )
+
+        if payout_settings.should_trigger_razorpay_on_request():
+            try:
+                payout_result = create_razorpay_withdrawal_payout(txn)
+                autopay_triggered = True
+                txn.refresh_from_db()
+                if txn.status == 'completed':
+                    message = (
+                        f'Your withdrawal of ₹{amount} has been completed. '
+                        f'The amount is on its way to your account.'
+                    )
+                else:
+                    message = (
+                        f'Your withdrawal request for ₹{amount} is being processed. '
+                        f'You will be notified once it is completed.'
+                    )
+            except (PaymentConfigError, PaymentValidationError, PaymentGatewayError) as error:
+                autopay_error = str(error)
+                message = (
+                    f'Your withdrawal request for ₹{amount} has been received and is under review. '
+                    f'You will be notified once it is processed.'
+                )
+
         return Response({
             "status": "Success",
-            "message": "Withdrawal requested. Processing takes 3 business days.",
+            "message": message,
             "amount": float(amount),
-            "remaining_balance": float(profile.total_earnings)
+            "remaining_balance": float(remaining),
+            "total_withdrawn": float(get_total_withdrawn(request.user)),
+            "transactionId": txn.id,
+            "manualPay": bool(payout_settings.manual_pay),
+            "requiresApproval": bool(
+                payout_settings.manual_pay or payout_settings.require_payout_approval
+            ),
+            "mode": payout_settings.mode,
+            "autopayTriggered": autopay_triggered,
+            "autopayError": autopay_error,
+            "payout": payout_result,
+            "transactionStatus": txn.status,
         }, status=status.HTTP_201_CREATED)
 
     @extend_schema(
@@ -151,6 +261,255 @@ class PayoutViewSet(viewsets.ViewSet):
         
         serializer = TransactionSerializer(withdrawals, many=True)
         return Response(serializer.data)
+
+    @extend_schema(
+        summary='Admin withdrawal queue',
+        description='List withdrawal requests for payout approval / Razorpay autopay.',
+        tags=['Earnings'],
+    )
+    @action(detail=False, methods=['get'], url_path='admin-queue', permission_classes=[IsAdminUser])
+    def admin_queue(self, request):
+        status_filter = (request.query_params.get('status') or 'pending').strip().lower()
+        allowed = {'pending', 'completed', 'rejected', 'failed', 'all'}
+        if status_filter not in allowed:
+            status_filter = 'pending'
+
+        base_qs = Transaction.objects.filter(transaction_type='withdrawal')
+        counts = {
+            'pending': base_qs.filter(status='pending').count(),
+            'completed': base_qs.filter(status='completed').count(),
+            'rejected': base_qs.filter(status='rejected').count(),
+            'failed': base_qs.filter(status='failed').count(),
+        }
+        counts['all'] = sum(counts.values())
+
+        withdrawals = base_qs.select_related('user')
+        if status_filter != 'all':
+            withdrawals = withdrawals.filter(status=status_filter)
+        withdrawals = withdrawals.order_by('-created_at')[:300]
+
+        results = []
+        for txn in withdrawals:
+            destination = build_withdrawal_destination_display(txn)
+            results.append({
+                'id': txn.id,
+                'amount': float(txn.amount),
+                'status': txn.status,
+                'paymentMethod': destination.get('paymentMethod') or txn.payment_method,
+                'paymentDetails': txn.payment_details,
+                'externalRef': txn.external_ref,
+                'upiId': destination.get('upiId') or '',
+                'bankAccountHolder': destination.get('bankAccountHolder') or '',
+                'bankName': destination.get('bankName') or '',
+                'bankAccountNumber': destination.get('bankAccountNumber') or '',
+                'bankIfsc': destination.get('bankIfsc') or '',
+                'destinationLabel': destination.get('destinationLabel') or '',
+                'destinationHint': destination.get('destinationHint') or '',
+                'createdAt': txn.created_at,
+                'updatedAt': txn.updated_at,
+                'userEmail': getattr(txn.user, 'email', ''),
+                'userId': txn.user_id,
+                'userType': getattr(txn.user, 'type', ''),
+            })
+        settings_row = PlatformPayoutSettings.get_solo()
+        return Response({
+            'manualPay': bool(settings_row.manual_pay),
+            'requirePayoutApproval': bool(settings_row.require_payout_approval),
+            'mode': settings_row.mode,
+            'statusFilter': status_filter,
+            'results': results,
+            'counts': counts,
+            'pendingCount': counts['pending'],
+            'completedCount': counts['completed'],
+            'rejectedCount': counts['rejected'],
+            'failedCount': counts['failed'],
+        })
+
+    @extend_schema(
+        summary='Admin approve withdrawal payout',
+        description=(
+            'Approve a pending withdrawal. In manual mode, mark paid with optional reference. '
+            'In RazorpayX mode, trigger autopay.'
+        ),
+        tags=['Earnings'],
+    )
+    @action(detail=False, methods=['post'], url_path='admin-approve', permission_classes=[IsAdminUser])
+    def admin_approve(self, request):
+        txn_id = request.data.get('transactionId') or request.data.get('transaction_id')
+        payment_reference = str(
+            request.data.get('paymentReference') or request.data.get('payment_reference') or ''
+        ).strip()
+        notes = str(request.data.get('notes') or '').strip()
+        if not txn_id:
+            return Response({'error': 'transactionId is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            txn = Transaction.objects.select_related('user').get(
+                pk=txn_id,
+                transaction_type='withdrawal',
+            )
+        except Transaction.DoesNotExist:
+            return Response({'error': 'Withdrawal not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if txn.status != 'pending':
+            return Response(
+                {'error': f'Only pending withdrawals can be approved (current: {txn.status}).'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        payout_settings = PlatformPayoutSettings.get_solo()
+        from notifications.helpers import notify_user_event
+
+        if payout_settings.manual_pay:
+            if not payment_reference:
+                return Response(
+                    {'error': 'UTR / payment reference is required for manual payout.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            try:
+                payout_result = mark_withdrawal_paid_manually(
+                    txn,
+                    payment_reference=payment_reference,
+                    notes=notes,
+                    admin_email=getattr(request.user, 'email', '') or '',
+                )
+            except PaymentValidationError as error:
+                return Response({'error': str(error)}, status=status.HTTP_400_BAD_REQUEST)
+
+            txn.refresh_from_db()
+            notify_user_event(
+                user_id=txn.user_id,
+                event_type='earnings.withdrawal_status',
+                title='Withdrawal completed',
+                message=(
+                    f'Your withdrawal of ₹{txn.amount} has been completed. '
+                    f'The amount has been sent to your registered payout account.'
+                ),
+                category='earnings',
+                entity_type='transaction',
+                entity_id=txn.id,
+                payload={'amount': str(txn.amount), 'status': txn.status},
+                email=True,
+                idempotency_key=f'earnings.withdrawal_manual_paid:{txn.id}:{txn.external_ref}',
+            )
+            return Response({
+                'status': 'Success',
+                'message': 'Withdrawal marked paid manually and saved in database.',
+                'mode': 'manual',
+                'transactionId': txn.id,
+                'transactionStatus': txn.status,
+                'payout': payout_result,
+            })
+
+        try:
+            payout_result = create_razorpay_withdrawal_payout(txn)
+        except PaymentConfigError as error:
+            return Response({'error': str(error)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        except (PaymentValidationError, PaymentGatewayError) as error:
+            return Response({'error': str(error)}, status=status.HTTP_400_BAD_REQUEST)
+
+        txn.refresh_from_db()
+        # Terminal reject/fail already notified from payment helpers.
+        if txn.status == 'pending':
+            notify_user_event(
+                user_id=txn.user_id,
+                event_type='earnings.withdrawal_status',
+                title='Withdrawal approved',
+                message=(
+                    f'Your withdrawal of ₹{txn.amount} has been approved and is being processed. '
+                    f'You will be notified once the transfer is completed.'
+                ),
+                category='earnings',
+                entity_type='transaction',
+                entity_id=txn.id,
+                payload={'amount': str(txn.amount), 'status': txn.status},
+                email=True,
+                idempotency_key=f'earnings.withdrawal_approved:{txn.id}:{payout_result.get("payoutId")}',
+            )
+        elif txn.status == 'completed':
+            # Immediate completion may not have notified if status was set inline.
+            notify_user_event(
+                user_id=txn.user_id,
+                event_type='earnings.withdrawal_status',
+                title='Withdrawal completed',
+                message=(
+                    f'Your withdrawal of ₹{txn.amount} has been completed. '
+                    f'The amount has been sent to your registered payout account.'
+                ),
+                category='earnings',
+                entity_type='transaction',
+                entity_id=txn.id,
+                payload={'amount': str(txn.amount), 'status': txn.status},
+                email=True,
+                idempotency_key=f'earnings.withdrawal_status:{txn.id}:completed',
+            )
+        return Response({
+            'status': 'Success',
+            'message': 'Withdrawal approved and RazorpayX payout triggered.',
+            'mode': payout_settings.mode,
+            'transactionId': txn.id,
+            'transactionStatus': txn.status,
+            'payout': payout_result,
+        })
+
+    @extend_schema(
+        summary='Admin reject withdrawal payout',
+        description='Reject a pending withdrawal and restore available earnings.',
+        tags=['Earnings'],
+    )
+    @action(detail=False, methods=['post'], url_path='admin-reject', permission_classes=[IsAdminUser])
+    def admin_reject(self, request):
+        txn_id = request.data.get('transactionId') or request.data.get('transaction_id')
+        reason = str(request.data.get('reason') or '').strip()
+        if not txn_id:
+            return Response({'error': 'transactionId is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not reason:
+            return Response({'error': 'Rejection reason is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            txn = Transaction.objects.select_related('user').get(
+                pk=txn_id,
+                transaction_type='withdrawal',
+            )
+        except Transaction.DoesNotExist:
+            return Response({'error': 'Withdrawal not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if txn.status != 'pending':
+            return Response(
+                {'error': f'Only pending withdrawals can be rejected (current: {txn.status}).'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        txn = mark_withdrawal_rejected(
+            txn,
+            reason=reason,
+            rejected_by_admin=True,
+            razorpay_status='rejected',
+        )
+        if txn.status != 'rejected':
+            return Response({'error': 'Withdrawal is no longer pending.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        from notifications.helpers import notify_user_event
+        reason_text = f' Reason: {reason}' if reason else ''
+        notify_user_event(
+            user_id=txn.user_id,
+            event_type='earnings.withdrawal_status',
+            title='Withdrawal not approved',
+            message=(
+                f'Your withdrawal of ₹{txn.amount} was not approved and the amount '
+                f'has been returned to your available balance.{reason_text}'
+            ),
+            category='earnings',
+            entity_type='transaction',
+            entity_id=txn.id,
+            payload={'amount': str(txn.amount), 'status': 'rejected'},
+            email=True,
+            idempotency_key=f'earnings.withdrawal_rejected:{txn.id}',
+        )
+        return Response({
+            'status': 'Success',
+            'message': 'Withdrawal rejected and balance restored.',
+            'transactionId': txn.id,
+            'transactionStatus': txn.status,
+        })
 
 
 class EarningsViewSet(viewsets.ViewSet):
@@ -236,12 +595,11 @@ class EarningsViewSet(viewsets.ViewSet):
         if float(pending_earnings) == 0 and float(campaign_submission_pending) > 0:
             pending_earnings = campaign_submission_pending
 
-        available_balance = max(Decimal('0.00'), settled_earnings)
-        if float(available_balance) == 0 and float(campaign_submission_earnings) > 0:
-            available_balance = campaign_submission_earnings
+        # Withdrawable = approved clip earnings minus withdrawals/transfers.
+        available_balance = get_available_withdrawable_earnings(user)
 
         # Calculate withdrawals
-        total_withdrawals = transaction_totals['total_withdrawals'] or Decimal('0.00')
+        total_withdrawals = get_total_withdrawn(user)
         pending_withdrawals = transaction_totals['pending_withdrawals'] or Decimal('0.00')
 
         # Recent transactions
@@ -351,6 +709,160 @@ class EarningsViewSet(viewsets.ViewSet):
             'minimum_payout': 2500.00,
             'can_request_payout': can_request_payout,
         })
+
+    @extend_schema(
+        summary='Create wallet top-up order',
+        description='Create a Razorpay order to add funds to the brand/creator campaign wallet.',
+        request=WalletTopUpCreateSerializer,
+        tags=['Earnings'],
+    )
+    @action(detail=False, methods=['post'], url_path='wallet/create-topup')
+    def create_wallet_topup(self, request):
+        serializer = WalletTopUpCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            payload = create_wallet_topup_order(
+                user=request.user,
+                amount=serializer.validated_data['amount'],
+            )
+        except PaymentValidationError as error:
+            return Response({'error': str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        except PaymentConfigError as error:
+            return Response({'error': str(error)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        except PaymentGatewayError as error:
+            return Response({'error': str(error)}, status=status.HTTP_502_BAD_GATEWAY)
+
+        return Response(payload, status=status.HTTP_201_CREATED)
+
+    @extend_schema(
+        summary='Confirm wallet top-up',
+        description='Verify Razorpay payment signature and credit the campaign wallet.',
+        request=WalletTopUpConfirmSerializer,
+        tags=['Earnings'],
+    )
+    @action(detail=False, methods=['post'], url_path='wallet/confirm-topup')
+    def confirm_wallet_topup_payment(self, request):
+        serializer = WalletTopUpConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            payload = confirm_wallet_topup(
+                user=request.user,
+                order_id=serializer.validated_data['order_id'],
+                payment_id=serializer.validated_data['payment_id'],
+                signature=serializer.validated_data['signature'],
+            )
+        except PaymentValidationError as error:
+            return Response({'error': str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        except PaymentConfigError as error:
+            return Response({'error': str(error)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        return Response(payload, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        summary='Mark wallet top-up failed',
+        description='Mark a pending Razorpay deposit as failed when checkout is cancelled or payment fails.',
+        request=WalletTopUpFailSerializer,
+        tags=['Earnings'],
+    )
+    @action(detail=False, methods=['post'], url_path='wallet/fail-topup')
+    def fail_wallet_topup(self, request):
+        serializer = WalletTopUpFailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            payload = mark_wallet_topup_failed(
+                user=request.user,
+                order_id=serializer.validated_data['order_id'],
+                reason=serializer.validated_data.get('reason') or 'Payment cancelled or failed.',
+            )
+        except PaymentValidationError as error:
+            return Response({'error': str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        except PaymentConfigError as error:
+            return Response({'error': str(error)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        return Response(payload, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        summary='Transfer earnings to gig wallet',
+        description='Move available earnings into the creator campaign/gig spend wallet.',
+        request=EarningsTransferSerializer,
+        tags=['Earnings'],
+    )
+    @action(detail=False, methods=['post'], url_path='wallet/transfer-to-spend')
+    def transfer_earnings_to_spend(self, request):
+        if getattr(request.user, 'type', None) != 'creator':
+            return Response(
+                {'error': 'Only creators can transfer earnings to the gig wallet.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        serializer = EarningsTransferSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        amount = serializer.validated_data['amount']
+
+        try:
+            with db_transaction.atomic():
+                profile = Profile.objects.select_for_update().get(user=request.user)
+
+                available = get_available_withdrawable_earnings(request.user)
+
+                if amount > available:
+                    return Response(
+                        {'error': f'Insufficient earnings. Available: ₹{available}'},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                from django.db.models import Value
+                Profile.objects.filter(pk=profile.pk).update(
+                    total_earnings=Greatest(F('total_earnings') - amount, Value(Decimal('0.00'))),
+                    wallet_balance=F('wallet_balance') + amount,
+                )
+                txn = Transaction.objects.create(
+                    user=request.user,
+                    amount=amount,
+                    transaction_type='transfer',
+                    status='completed',
+                    payment_method='',
+                    payment_details='Earned money transferred to gig wallet',
+                    external_ref=f'earnings-transfer-{request.user.id}-{timezone.now().timestamp()}',
+                )
+                profile.refresh_from_db()
+                remaining = get_available_withdrawable_earnings(request.user)
+        except Profile.DoesNotExist:
+            return Response({'error': 'Profile not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response(
+            {
+                'transactionId': txn.id,
+                'amount': float(amount),
+                'status': 'completed',
+                'walletBalance': float(profile.wallet_balance or 0),
+                'availableEarnings': float(remaining),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        summary='Sync pending wallet top-ups',
+        description=(
+            'Ask Razorpay whether any pending deposit orders were already paid. '
+            'Credits the wallet when payment succeeded but the browser never confirmed. '
+            'Also marks abandoned/failed Razorpay top-ups as failed.'
+        ),
+        tags=['Earnings'],
+    )
+    @action(detail=False, methods=['post'], url_path='wallet/sync-topups')
+    def sync_wallet_topups(self, request):
+        try:
+            payload = reconcile_pending_wallet_topups(user=request.user)
+        except PaymentValidationError as error:
+            return Response({'error': str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        except PaymentConfigError as error:
+            return Response({'error': str(error)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        except Exception as error:
+            return Response(
+                {'error': f'Unable to sync wallet top-ups: {error}'},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+        return Response(payload, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary='Get wallet overview',
@@ -466,63 +978,169 @@ class EarningsViewSet(viewsets.ViewSet):
                 'createdAt': submission['created_at'].isoformat() if submission.get('created_at') else None,
             })
 
-        gig_activity = []
-        creator_gigs = Campaign.objects.filter(
-            creator=user,
-            type='gig',
-            budget__gt=0,
-        ).values('id', 'name', 'budget', 'created_at')[:50]
-        for gig in creator_gigs:
-            gig_activity.append({
-                'id': f"gig-budget-{gig['id']}",
-                'amount': float(gig['budget'] or 0),
-                'transactionType': 'Locked',
-                'paymentMethod': 'Budget Lock',
-                'paymentDetails': f"Funds locked for {gig['name']}",
-                'status': 'completed',
-                'external_ref': '',
-                'contentTitle': gig['name'],
-                'submissionId': None,
-                'createdAt': gig['created_at'].isoformat() if gig.get('created_at') else None,
-            })
+        # Synthesize lock/settlement rows for campaigns created before
+        # Transaction(lock/settlement) records existed.
+        existing_refs = {
+            (row.get('external_ref') or '')
+            for row in transactions_data
+            if row.get('external_ref')
+        }
+        campaign_activity = []
+        owned_campaigns = Campaign.objects.filter(creator=user).values(
+            'id',
+            'name',
+            'budget',
+            'type',
+            'created_at',
+            'remaining_funds_settled',
+            'remaining_funds_settled_amount',
+            'remaining_funds_settled_at',
+        )[:100]
+        for campaign in owned_campaigns:
+            lock_ref = f"campaign-lock-{campaign['id']}"
+            if float(campaign['budget'] or 0) > 0 and lock_ref not in existing_refs:
+                campaign_activity.append({
+                    'id': f"campaign-lock-{campaign['id']}",
+                    'amount': float(campaign['budget'] or 0),
+                    'transactionType': 'Budget Lock',
+                    'paymentMethod': 'Budget Lock',
+                    'paymentDetails': f"Funds locked for {campaign['name']}",
+                    'status': 'completed',
+                    'external_ref': lock_ref,
+                    'contentTitle': campaign['name'],
+                    'submissionId': None,
+                    'createdAt': campaign['created_at'].isoformat() if campaign.get('created_at') else None,
+                })
+            settle_ref = f"campaign-settle-{campaign['id']}"
+            settled_amount = float(campaign.get('remaining_funds_settled_amount') or 0)
+            if (
+                campaign.get('remaining_funds_settled')
+                and settled_amount > 0
+                and settle_ref not in existing_refs
+            ):
+                settled_at = campaign.get('remaining_funds_settled_at') or campaign.get('created_at')
+                campaign_activity.append({
+                    'id': f"campaign-settle-{campaign['id']}",
+                    'amount': settled_amount,
+                    'transactionType': 'Campaign Settlement',
+                    'paymentMethod': 'Wallet',
+                    'paymentDetails': f"Remaining budget returned from {campaign['name']}",
+                    'status': 'completed',
+                    'external_ref': settle_ref,
+                    'contentTitle': campaign['name'],
+                    'submissionId': None,
+                    'createdAt': settled_at.isoformat() if settled_at else None,
+                })
 
         recent_activity = sorted(
-            transactions_data + submission_activity + gig_activity,
+            transactions_data + submission_activity + campaign_activity,
             key=lambda entry: entry.get('createdAt') or '',
             reverse=True,
         )[:50]
         
-        # Monthly earnings breakdown (last 6 months, including soft-deleted)
-        monthly_totals = {
-            row['month'].strftime('%Y-%m'): float(row['amount'] or 0)
-            for row in approved_submissions.annotate(month=TruncMonth('created_at'))
-            .values('month')
-            .annotate(amount=Sum('earning'))
-            if row['month']
-        }
-        
-        monthly_earnings = []
-        current_month = timezone.now().date().replace(day=1)
-        for offset in range(5, -1, -1):
-            year = current_month.year
-            month = current_month.month - offset
-            while month <= 0:
-                month += 12
-                year -= 1
-            month_date = datetime(year, month, 1)
-            month_label = month_date.strftime('%b')
-            month_key = f"{year}-{month:02d}"
-            monthly_earnings.append({
-                'month': month_label,
-                'amount': monthly_totals.get(month_key, 0.0),
-            })
-        
-        # Get available balance for withdrawal
-        available_earnings = total_earnings
+        available_earnings = float(get_available_withdrawable_earnings(user))
         pending_earnings = float(earnings_totals['pending_earnings'] or 0)
-        
-        total_withdrawn = float(profile.total_withdrawn or 0) if profile else 0
-        
+        total_withdrawn = float(get_total_withdrawn(user))
+
+        # Chart source rows: earnings (as clipper) + spend (as campaign/gig owner).
+        earning_events = list(
+            approved_submissions
+            .exclude(earning__isnull=True)
+            .exclude(earning=0)
+            .values('created_at', 'earning')[:2000]
+        )
+        spend_events = list(
+            CampaignSubmission.objects.filter(
+                participant__campaign__creator=user,
+                status='approved',
+            )
+            .exclude(earning__isnull=True)
+            .exclude(earning=0)
+            .values('created_at', 'earning')[:2000]
+        )
+
+        def _month_labels(count, with_year=False):
+            today = timezone.now().date()
+            labels = []
+            for i in range(count - 1, -1, -1):
+                year = today.year
+                month = today.month - i
+                while month <= 0:
+                    month += 12
+                    year -= 1
+                month_date = datetime(year, month, 1).date()
+                labels.append({
+                    'key': month_date.strftime('%Y-%m'),
+                    'label': month_date.strftime('%b %y' if with_year else '%b'),
+                })
+            return labels
+
+        def build_amount_period_series(events, filter_key):
+            today = timezone.now().date()
+            if filter_key == '7D':
+                labels = [
+                    {
+                        'key': (today - timedelta(days=i)).isoformat(),
+                        'label': (today - timedelta(days=i)).strftime('%d %b'),
+                    }
+                    for i in range(6, -1, -1)
+                ]
+                daily = True
+            elif filter_key == '30D':
+                labels = [
+                    {
+                        'key': (today - timedelta(days=i)).isoformat(),
+                        'label': (today - timedelta(days=i)).strftime('%d %b'),
+                    }
+                    for i in range(29, -1, -1)
+                ]
+                daily = True
+            elif filter_key == '3M':
+                labels = _month_labels(3)
+                daily = False
+            elif filter_key == '6M':
+                labels = _month_labels(6)
+                daily = False
+            else:
+                labels = _month_labels(12, with_year=True)
+                daily = False
+
+            series = []
+            for label in labels:
+                bucket_amount = 0.0
+                for row in events:
+                    created_at = row.get('created_at')
+                    if not created_at:
+                        continue
+                    created_date = created_at.date() if hasattr(created_at, 'date') else created_at
+                    if daily:
+                        bucket_match = created_date.isoformat() == label['key']
+                    else:
+                        bucket_match = created_date.strftime('%Y-%m') == label['key']
+                    if bucket_match:
+                        bucket_amount += float(row.get('earning') or 0)
+                # month key kept for EarningsAreaChart; period for Brand spend chart.
+                series.append({
+                    'month': label['label'],
+                    'period': label['label'],
+                    'amount': round(bucket_amount, 2),
+                })
+            return series
+
+        period_keys = ('7D', '30D', '3M', '6M', 'ALL')
+        earnings_by_period = {
+            key: build_amount_period_series(earning_events, key)
+            for key in period_keys
+        }
+        spend_by_period = {
+            key: build_amount_period_series(spend_events, key)
+            for key in period_keys
+        }
+
+        # Convenience monthly series (last 12 months) for simple chart consumers.
+        earnings_monthly = build_amount_period_series(earning_events, 'ALL')
+        spend_monthly = build_amount_period_series(spend_events, 'ALL')
+
         return Response({
             # Earnings side
             'total_earnings': total_earnings,
@@ -536,8 +1154,11 @@ class EarningsViewSet(viewsets.ViewSet):
             'total_spent': total_spent,
             'total_deposited': total_deposited,
             'campaigns_published': campaigns_published,
-            # Monthly earnings
-            'earnings_monthly': monthly_earnings,
+            'earnings_by_period': earnings_by_period,
+            'spend_by_period': spend_by_period,
+            # Monthly series
+            'earnings_monthly': earnings_monthly,
+            'spend_monthly': spend_monthly,
             # Recent transactions
             'recent_transactions': recent_activity,
         })

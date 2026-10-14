@@ -1,9 +1,13 @@
 import { Link } from "react-router-dom";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Breadcrumbs from "../../components/Breadcrumbs";
+import { api } from "../../lib/api";
+import { syncPendingWalletTopups } from "../../shared/wallet/syncPendingTopups";
+import { notifyWalletBalanceChanged } from "../../shared/wallet/walletBalanceEvents";
 
 import {
     ArrowLeft,
+    ArrowRight,
     Wallet,
     CircleDollarSign,
     Clock3,
@@ -11,36 +15,205 @@ import {
     Search,
     ArrowUpCircle,
     ArrowDownCircle,
+    RotateCcw,
 } from "lucide-react";
 
 /*
-  Brand-side counterpart to Clipper's TransactionHistory — same shell
-  (hero / KPI row / filters / table), but each row can be a deposit
-  (money added to the wallet) OR a spend (money paid out to a running
-  campaign), so there's an extra "Type" filter and column, and amounts
-  render with a +/− sign and direction color instead of always being a
-  flat payout figure.
+  Brand Transaction History — only wallet money movements:
+    deposit     — Add money (Razorpay)
+    lock        — Budget locked when a campaign is created
+    settlement  — Remaining budget returned from an expired/closed campaign
 */
 
-const transactions = [
-    { id: 2048, date: "24 Jul 2026", type: "deposit", label: "Added via UPI", campaign: null, amount: 20000, method: "UPI", status: "Completed" },
-    { id: 2047, date: "22 Jul 2026", type: "spend", label: "Campaign payout", campaign: "Podcast Shorts Challenge", amount: 5100, method: "Wallet", status: "Completed" },
-    { id: 2046, date: "18 Jul 2026", type: "spend", label: "Campaign payout", campaign: "Finance Creator Challenge", amount: 8900, method: "Wallet", status: "Completed" },
-    { id: 2045, date: "15 Jul 2026", type: "deposit", label: "Added via Bank Transfer", campaign: null, amount: 40000, method: "Bank Transfer", status: "Processing" },
-    { id: 2044, date: "09 Jul 2026", type: "spend", label: "Campaign payout", campaign: "AI Productivity Sprint", amount: 3200, method: "Wallet", status: "Completed" },
-    { id: 2043, date: "03 Jul 2026", type: "deposit", label: "Added via UPI", campaign: null, amount: 15000, method: "UPI", status: "Failed" },
-    { id: 2042, date: "28 Jun 2026", type: "spend", label: "Campaign payout", campaign: "Travel Reels", amount: 2800, method: "Wallet", status: "Completed" },
-    { id: 2041, date: "19 Jun 2026", type: "spend", label: "Campaign payout", campaign: "Startup Stories", amount: 1500, method: "Wallet", status: "Completed" },
-    { id: 2040, date: "12 Jun 2026", type: "spend", label: "Campaign payout", campaign: "Morning Routine Challenge", amount: 4300, method: "Wallet", status: "Completed" },
-    { id: 2039, date: "02 Jun 2026", type: "deposit", label: "Added via Bank Transfer", campaign: null, amount: 30000, method: "Bank Transfer", status: "Completed" },
-];
+const PAGE_SIZE = 10;
 
-export default function () {
+const TXN_META = {
+    deposit: {
+        label: "Add Money",
+        icon: ArrowUpCircle,
+        color: "text-emerald-400",
+        bg: "bg-emerald-500/10",
+        sign: "+",
+    },
+    lock: {
+        label: "Lock Money",
+        icon: ArrowDownCircle,
+        color: "text-rose-400",
+        bg: "bg-rose-500/10",
+        sign: "−",
+    },
+    settlement: {
+        label: "Settlement",
+        icon: RotateCcw,
+        color: "text-sky-400",
+        bg: "bg-sky-500/10",
+        sign: "+",
+    },
+};
+
+function normalizeStatus(rawStatus) {
+    const status = String(rawStatus || "pending").toLowerCase();
+    if (status === "completed" || status === "successful") return "Completed";
+    if (status === "rejected") return "Rejected";
+    if (status === "failed") return "Failed";
+    if (status === "pending") return "Processing";
+    return status.replace(/^./, (c) => c.toUpperCase());
+}
+
+function normalizeBrandTransaction(transaction) {
+    const rawType = (
+        transaction.transactionType
+        || transaction.transaction_type
+        || transaction.type
+        || ""
+    ).toString().toLowerCase();
+
+    let type = null;
+    if (rawType.includes("deposit") || rawType.includes("add") || rawType.includes("fund")) {
+        type = "deposit";
+    } else if (rawType.includes("settle") || rawType.includes("settlement")) {
+        type = "settlement";
+    } else if (rawType.includes("lock") || rawType.includes("budget")) {
+        type = "lock";
+    } else {
+        return null;
+    }
+
+    return {
+        id: transaction.id,
+        date: transaction.createdAt
+            ? new Date(transaction.createdAt).toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+            })
+            : "—",
+        type,
+        label: (() => {
+            const raw =
+                transaction.paymentDetails
+                || transaction.payment_details
+                || transaction.contentTitle
+                || "";
+            if (type === "deposit" || /wallet top-up via razorpay/i.test(raw)) {
+                return "Money added to wallet";
+            }
+            return raw || TXN_META[type].label;
+        })(),
+        campaign: transaction.contentTitle || null,
+        amount: Number(transaction.amount || 0),
+        method: transaction.paymentMethod || transaction.payment_method || (type === "deposit" ? "Razorpay" : "Wallet"),
+        status: normalizeStatus(transaction.status),
+        createdAt: transaction.createdAt,
+    };
+}
+
+function TransactionHistorySkeleton() {
+    return (
+        <div className="min-h-screen bg-black text-white">
+            <div className="h-5 w-40 animate-pulse rounded bg-white/10" />
+
+            <section className="mt-6 rounded-3xl border border-white/10 bg-white/[0.03] p-8">
+                <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="max-w-2xl flex-1">
+                        <div className="h-6 w-32 animate-pulse rounded-full bg-white/10" />
+                        <div className="mt-5 h-10 w-64 animate-pulse rounded bg-white/10" />
+                        <div className="mt-4 h-4 w-full max-w-xl animate-pulse rounded bg-white/10" />
+                    </div>
+                    <div className="h-12 w-40 animate-pulse rounded-xl bg-white/10" />
+                </div>
+            </section>
+
+            <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+                        <div className="mb-4 h-7 w-7 animate-pulse rounded bg-white/10" />
+                        <div className="h-3 w-24 animate-pulse rounded bg-white/10" />
+                        <div className="mt-3 h-7 w-20 animate-pulse rounded bg-white/10" />
+                    </div>
+                ))}
+            </div>
+
+            <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.03] p-6">
+                <div className="flex flex-col gap-4 lg:flex-row">
+                    <div className="h-12 flex-1 animate-pulse rounded-xl bg-white/10" />
+                    <div className="h-12 w-36 animate-pulse rounded-xl bg-white/10" />
+                    <div className="h-12 w-36 animate-pulse rounded-xl bg-white/10" />
+                    <div className="h-12 w-36 animate-pulse rounded-xl bg-white/10" />
+                </div>
+            </div>
+
+            <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.03]">
+                <div className="border-b border-white/10 px-6 py-5">
+                    <div className="h-6 w-40 animate-pulse rounded bg-white/10" />
+                    <div className="mt-2 h-4 w-72 animate-pulse rounded bg-white/10" />
+                </div>
+                <div className="space-y-0 px-6 py-2">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                        <div
+                            key={i}
+                            className="flex items-center gap-4 border-b border-white/5 py-5 last:border-b-0"
+                        >
+                            <div className="h-4 w-8 animate-pulse rounded bg-white/10" />
+                            <div className="h-4 w-24 animate-pulse rounded bg-white/10" />
+                            <div className="h-6 w-24 animate-pulse rounded-full bg-white/10" />
+                            <div className="h-4 flex-1 animate-pulse rounded bg-white/10" />
+                            <div className="h-4 w-20 animate-pulse rounded bg-white/10" />
+                            <div className="h-4 w-20 animate-pulse rounded bg-white/10" />
+                            <div className="h-6 w-20 animate-pulse rounded-full bg-white/10" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export default function BrandTransactionHistory() {
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("All");
     const [typeFilter, setTypeFilter] = useState("All");
-    const [methodFilter, setMethodFilter] = useState("All");
     const [sortBy, setSortBy] = useState("Newest");
+    const [page, setPage] = useState(1);
+    const [transactions, setTransactions] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+        let mounted = true;
+        const load = async () => {
+            try {
+                setLoading(true);
+                setError("");
+                const synced = await syncPendingWalletTopups();
+                if (synced && typeof synced.walletBalance === "number") {
+                    notifyWalletBalanceChanged(synced.walletBalance);
+                }
+                const data = await api("/api/earnings/wallet/");
+                if (!mounted) return;
+                const rows = (data.recent_transactions || [])
+                    .map(normalizeBrandTransaction)
+                    .filter(Boolean);
+                setTransactions(rows);
+                if (typeof data.wallet_balance === "number") {
+                    notifyWalletBalanceChanged(data.wallet_balance);
+                }
+            } catch (err) {
+                if (!mounted) return;
+                setError(err?.message || "Unable to load transactions.");
+            } finally {
+                if (mounted) setLoading(false);
+            }
+        };
+        load();
+        return () => {
+            mounted = false;
+        };
+    }, []);
+
+    useEffect(() => {
+        setPage(1);
+    }, [search, statusFilter, typeFilter, sortBy]);
 
     const filteredTransactions = useMemo(() => {
         let data = [...transactions];
@@ -49,19 +222,17 @@ export default function () {
             const q = search.toLowerCase();
             data = data.filter(
                 (t) =>
-                    t.label.toLowerCase().includes(q) ||
-                    (t.campaign && t.campaign.toLowerCase().includes(q)) ||
-                    t.id.toString().includes(search)
+                    t.label.toLowerCase().includes(q)
+                    || (t.campaign && t.campaign.toLowerCase().includes(q))
             );
         }
 
         if (statusFilter !== "All") data = data.filter((t) => t.status === statusFilter);
         if (typeFilter !== "All") data = data.filter((t) => t.type === typeFilter);
-        if (methodFilter !== "All") data = data.filter((t) => t.method === methodFilter);
 
         switch (sortBy) {
             case "Oldest":
-                data.reverse();
+                data.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
                 break;
             case "Highest Amount":
                 data.sort((a, b) => b.amount - a.amount);
@@ -70,39 +241,43 @@ export default function () {
                 data.sort((a, b) => a.amount - b.amount);
                 break;
             default:
+                data.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
                 break;
         }
 
         return data;
-    }, [search, statusFilter, typeFilter, methodFilter, sortBy]);
+    }, [transactions, search, statusFilter, typeFilter, sortBy]);
+
+    const totalPages = Math.max(1, Math.ceil(filteredTransactions.length / PAGE_SIZE));
+    const currentPage = Math.min(page, totalPages);
+    const pageStart = (currentPage - 1) * PAGE_SIZE;
+    const paginatedTransactions = filteredTransactions.slice(pageStart, pageStart + PAGE_SIZE);
 
     const completedCount = transactions.filter((t) => t.status === "Completed").length;
-
-    const processingCount = transactions.filter((t) => t.status === "Processing").length;
-    const pendingAmount = transactions
-        .filter((t) => t.status === "Processing")
+    const failedCount = transactions.filter((t) => t.status === "Failed").length;
+    const failedAmount = transactions
+        .filter((t) => t.status === "Failed")
         .reduce((sum, t) => sum + t.amount, 0);
-
     const totalDeposited = transactions
         .filter((t) => t.type === "deposit" && t.status === "Completed")
         .reduce((sum, t) => sum + t.amount, 0);
+
+    if (loading) {
+        return <TransactionHistorySkeleton />;
+    }
 
     return (
         <div className="min-h-screen bg-black text-white">
             <Breadcrumbs />
 
-            {/* Hero */}
             <section className="mt-6 flex flex-col gap-6 rounded-3xl border border-white/10 bg-white/[0.03] p-8 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                     <span className="inline-flex rounded-full bg-violet-500/10 px-4 py-1 text-xs font-medium text-violet-300">
                         Brand Wallet
                     </span>
-
                     <h1 className="mt-5 text-4xl font-bold">Transaction History</h1>
-
                     <p className="mt-4 max-w-2xl leading-7 text-zinc-400">
-                        View every deposit and campaign payout, and track the status
-                        of each one.
+                        Add money, campaign budget locks, and expired-campaign settlements only.
                     </p>
                 </div>
 
@@ -115,7 +290,6 @@ export default function () {
                 </Link>
             </section>
 
-            {/* KPI Cards */}
             <section className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
                     <Wallet className="mb-4 text-violet-400" size={28} />
@@ -131,28 +305,27 @@ export default function () {
 
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
                     <Clock3 className="mb-4 text-amber-400" size={28} />
-                    <p className="text-sm text-zinc-500">Pending Amount</p>
-                    <h3 className="mt-2 text-3xl font-bold">₹{pendingAmount.toLocaleString()}</h3>
+                    <p className="text-sm text-zinc-500">Failed Amount</p>
+                    <h3 className="mt-2 text-3xl font-bold">₹{failedAmount.toLocaleString("en-IN")}</h3>
                     <p className="mt-2 text-xs text-zinc-500">
-                        {processingCount} transaction{processingCount !== 1 ? "s" : ""} processing
+                        {failedCount} failed transaction{failedCount !== 1 ? "s" : ""}
                     </p>
                 </div>
 
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
                     <CircleDollarSign className="mb-4 text-sky-400" size={28} />
                     <p className="text-sm text-zinc-500">Total Deposited</p>
-                    <h3 className="mt-2 text-3xl font-bold">₹{totalDeposited.toLocaleString()}</h3>
+                    <h3 className="mt-2 text-3xl font-bold">₹{totalDeposited.toLocaleString("en-IN")}</h3>
                 </div>
             </section>
 
-            {/* Filters */}
             <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.03] p-6">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
                     <div className="relative flex-1">
                         <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" />
                         <input
                             type="text"
-                            placeholder="Search by campaign or transaction ID..."
+                            placeholder="Search by description..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             className="w-full rounded-xl border border-white/10 bg-black/40 py-3 pl-11 pr-4 outline-none transition focus:border-violet-500"
@@ -165,8 +338,9 @@ export default function () {
                         className="rounded-xl border border-white/10 bg-black px-4 py-3 outline-none"
                     >
                         <option value="All">All Types</option>
-                        <option value="deposit">Deposits</option>
-                        <option value="spend">Spend</option>
+                        <option value="deposit">Add Money</option>
+                        <option value="lock">Lock Money</option>
+                        <option value="settlement">Settlement</option>
                     </select>
 
                     <select
@@ -174,21 +348,11 @@ export default function () {
                         onChange={(e) => setStatusFilter(e.target.value)}
                         className="rounded-xl border border-white/10 bg-black px-4 py-3 outline-none"
                     >
-                        <option>All</option>
-                        <option>Completed</option>
-                        <option>Processing</option>
-                        <option>Failed</option>
-                    </select>
-
-                    <select
-                        value={methodFilter}
-                        onChange={(e) => setMethodFilter(e.target.value)}
-                        className="rounded-xl border border-white/10 bg-black px-4 py-3 outline-none"
-                    >
-                        <option>All</option>
-                        <option>UPI</option>
-                        <option>Bank Transfer</option>
-                        <option>Wallet</option>
+                        <option value="All">All Status</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Processing">Processing</option>
+                        <option value="Rejected">Rejected</option>
+                        <option value="Failed">Failed</option>
                     </select>
 
                     <select
@@ -204,91 +368,124 @@ export default function () {
                 </div>
             </section>
 
-            {/* Transactions Table */}
             <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.03]">
                 <div className="border-b border-white/10 px-6 py-5">
                     <div className="flex items-center justify-between">
                         <div>
                             <h2 className="text-xl font-semibold">Transactions</h2>
-                            <p className="mt-1 text-sm text-zinc-400">Complete deposit and spend history for your wallet.</p>
+                            <p className="mt-1 text-sm text-zinc-400">
+                                Add money, lock money, and expired campaign settlements.
+                            </p>
                         </div>
-
                         <span className="rounded-full bg-white/5 px-3 py-1 text-sm text-zinc-400">
                             {filteredTransactions.length} Results
                         </span>
                     </div>
                 </div>
 
-                {filteredTransactions.length === 0 ? (
+                {error ? (
+                    <div className="px-6 py-16 text-center text-red-400">{error}</div>
+                ) : filteredTransactions.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-24">
                         <Wallet size={60} className="mb-6 text-zinc-600" />
                         <h3 className="text-2xl font-semibold">No Transactions Found</h3>
                         <p className="mt-3 max-w-md text-center text-zinc-500">
-                            Try changing your search or filters to find the transactions you're looking for.
+                            Add money or create a campaign to see wallet activity here.
                         </p>
                         <Link
-                            to="/brand/campaigns/create"
+                            to="/brand/earnings"
                             className="mt-8 rounded-xl bg-violet-600 px-6 py-3 font-medium transition hover:bg-violet-500"
                         >
-                            Create Campaign
+                            Go to Wallet
                         </Link>
                     </div>
                 ) : (
-                    <div className="custom-scrollbar max-h-[500px] overflow-y-auto">
-                        <table className="w-full">
-                            <thead className="sticky top-0 bg-[#0B0B0B]">
-                                <tr className="border-b border-white/10 text-left text-sm text-zinc-400">
-                                    <th className="px-6 py-4">ID</th>
-                                    <th className="px-6 py-4">Date</th>
-                                    <th className="px-6 py-4">Type</th>
-                                    <th className="px-6 py-4">Description</th>
-                                    <th className="px-6 py-4">Amount</th>
-                                    <th className="px-6 py-4">Method</th>
-                                    <th className="px-6 py-4">Status</th>
-                                </tr>
-                            </thead>
+                    <>
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="bg-[#0B0B0B]">
+                                    <tr className="border-b border-white/10 text-left text-sm text-zinc-400">
+                                        <th className="px-6 py-4">ID</th>
+                                        <th className="px-6 py-4">Date</th>
+                                        <th className="px-6 py-4">Type</th>
+                                        <th className="px-6 py-4">Description</th>
+                                        <th className="px-6 py-4">Amount</th>
+                                        <th className="px-6 py-4">Method</th>
+                                        <th className="px-6 py-4">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {paginatedTransactions.map((t, index) => {
+                                        const meta = TXN_META[t.type] || TXN_META.deposit;
+                                        const Icon = meta.icon;
+                                        const displayId = pageStart + index + 1;
+                                        return (
+                                            <tr key={t.id} className="border-b border-white/5 transition hover:bg-white/[0.03]">
+                                                <td className="px-6 py-5 font-medium">{displayId}</td>
+                                                <td className="px-6 py-5 text-zinc-400">{t.date}</td>
+                                                <td className="px-6 py-5">
+                                                    <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${meta.bg} ${meta.color}`}>
+                                                        <Icon size={12} />
+                                                        {meta.label}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-5">{t.label}</td>
+                                                <td className={`px-6 py-5 font-semibold ${meta.color}`}>
+                                                    {meta.sign}₹{t.amount.toLocaleString("en-IN")}
+                                                </td>
+                                                <td className="px-6 py-5 text-zinc-300">{t.method}</td>
+                                                <td className="px-6 py-5">
+                                                    <span
+                                                        className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
+                                                            t.status === "Completed"
+                                                                ? "bg-emerald-500/10 text-emerald-400"
+                                                                : t.status === "Processing"
+                                                                ? "bg-amber-500/10 text-amber-400"
+                                                                : t.status === "Rejected"
+                                                                ? "bg-rose-500/10 text-rose-400"
+                                                                : "bg-red-500/10 text-red-400"
+                                                        }`}
+                                                    >
+                                                        {t.status}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
 
-                            <tbody>
-                                {filteredTransactions.map((t) => {
-                                    const isDeposit = t.type === "deposit";
-                                    return (
-                                        <tr key={t.id} className="border-b border-white/5 transition hover:bg-white/[0.03]">
-                                            <td className="px-6 py-5 font-medium">#{t.id}</td>
-                                            <td className="px-6 py-5 text-zinc-400">{t.date}</td>
-                                            <td className="px-6 py-5">
-                                                <span
-                                                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${
-                                                        isDeposit ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"
-                                                    }`}
-                                                >
-                                                    {isDeposit ? <ArrowUpCircle size={12} /> : <ArrowDownCircle size={12} />}
-                                                    {isDeposit ? "Deposit" : "Spend"}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-5">{t.campaign || t.label}</td>
-                                            <td className={`px-6 py-5 font-semibold ${isDeposit ? "text-emerald-400" : "text-white"}`}>
-                                                {isDeposit ? "+" : "−"}₹{t.amount.toLocaleString()}
-                                            </td>
-                                            <td className="px-6 py-5 text-zinc-300">{t.method}</td>
-                                            <td className="px-6 py-5">
-                                                <span
-                                                    className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
-                                                        t.status === "Completed"
-                                                            ? "bg-emerald-500/10 text-emerald-400"
-                                                            : t.status === "Processing"
-                                                            ? "bg-amber-500/10 text-amber-400"
-                                                            : "bg-red-500/10 text-red-400"
-                                                    }`}
-                                                >
-                                                    {t.status}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
+                        <div className="flex flex-col gap-4 border-t border-white/10 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+                            <p className="text-sm text-zinc-500">
+                                Showing {pageStart + 1}–{Math.min(pageStart + PAGE_SIZE, filteredTransactions.length)} of{" "}
+                                {filteredTransactions.length}
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                    disabled={currentPage <= 1}
+                                    className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-sm font-medium transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    <ArrowLeft size={14} />
+                                    Prev
+                                </button>
+                                <span className="rounded-xl bg-white/5 px-3 py-2 text-sm text-zinc-300">
+                                    Page {currentPage} of {totalPages}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                                    disabled={currentPage >= totalPages}
+                                    className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-sm font-medium transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    Next
+                                    <ArrowRight size={14} />
+                                </button>
+                            </div>
+                        </div>
+                    </>
                 )}
             </section>
         </div>

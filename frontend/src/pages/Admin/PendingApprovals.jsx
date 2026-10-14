@@ -15,6 +15,7 @@ import { FaYoutube, FaInstagram, FaTiktok, FaXTwitter } from "react-icons/fa6";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import useToast from "../../hooks/useToast";
 import PendingApprovalReviewModal from "./components/PendingApprovalReviewModal";
+import AdminLoadingSkeleton from "./components/AdminLoadingSkeleton";
 import { api } from "../../lib/api";
 
 /*
@@ -157,6 +158,7 @@ const STATUS_OPTIONS = ["Pending", "Approved", "Held", "All"];
 
 export default function PendingApprovals() {
   const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState(null);
   const [search, setSearch] = useState("");
   const [platformFilter, setPlatformFilter] = useState("All");
@@ -167,26 +169,49 @@ export default function PendingApprovals() {
   const { showToast } = useToast();
 
   useEffect(() => {
+    let active = true;
+    setLoading(true);
     api("/api/content/campaign-submissions/?queue=payouts")
-      .then((response) => setItems((response.results || response || []).map((item) => ({
-        ...item,
-        campaignId: item.campaignId,
-        campaignTitle: item.campaignTitle || "Campaign",
-        brandName: item.brandName || "Brand",
-        clipperName: item.clipperEmail || "Clipper",
-        clipperUsername: item.clipperUsername || item.clipperEmail || "clipper",
-        platform: item.platform === "Twitter/X" ? "X" : item.platform,
-        clipUrl: item.contentUrl,
-        submittedAt: new Date(item.createdAt).toLocaleString(),
-        reportedViews: Number(item.views || 0),
-        liveViews: Number(item.views || 0),
-        pendingAmount: item.payoutReviewStatus === "approved"
-          ? Number(item.earning || 0)
-          : Number(item.pendingEarning || 0),
-        cap: Number(item.campaignMaxEarnings || 0),
-        status: item.payoutReviewStatus === "held" ? "Held" : item.payoutReviewStatus === "approved" ? "Approved" : "Pending",
-      }))))
-      .catch((error) => showToast({ type: "error", message: error.message }));
+      .then((response) => {
+        if (!active) return;
+        setItems((response.results || response || []).map((item) => {
+        const pendingEarning = Number(item.pendingEarning || 0);
+        const hasPendingPayout = pendingEarning > 0;
+        // New pending after a prior settlement must show as Pending even if
+        // payoutReviewStatus was left as "approved" until reconcile runs.
+        let status = "Pending";
+        if (item.payoutReviewStatus === "held") {
+          status = "Held";
+        } else if (hasPendingPayout) {
+          status = "Pending";
+        } else if (item.payoutReviewStatus === "approved") {
+          status = "Approved";
+        }
+        return {
+          ...item,
+          campaignId: item.campaignId,
+          campaignTitle: item.campaignTitle || "Campaign",
+          brandName: item.brandName || "Brand",
+          clipperName: item.clipperEmail || "Clipper",
+          clipperUsername: item.clipperUsername || item.clipperEmail || "clipper",
+          platform: item.platform === "Twitter/X" ? "X" : item.platform,
+          clipUrl: item.contentUrl,
+          submittedAt: new Date(item.createdAt).toLocaleString(),
+          reportedViews: Number(item.views || 0),
+          liveViews: Number(item.views || 0),
+          pendingAmount: hasPendingPayout ? pendingEarning : Number(item.earning || 0),
+          cap: Number(item.campaignMaxEarnings || 0),
+          status,
+        };
+        }));
+      })
+      .catch((error) => {
+        if (active) showToast({ type: "error", message: error.message });
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
   }, [showToast]);
 
   const selected = items.find((i) => i.id === selectedId) || null;
@@ -294,6 +319,10 @@ export default function PendingApprovals() {
       showToast({ type: "error", message: error.message });
     }
   };
+
+  if (loading) {
+    return <AdminLoadingSkeleton variant="default" kpiCount={5} />;
+  }
 
   return (
     <div className="min-h-screen bg-black text-white">

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Loader2, X } from "lucide-react";
 import { createPortal } from "react-dom";
 
@@ -41,19 +42,47 @@ export default function ConfirmModal({
   onCancel,
   onConfirm,
 }) {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      setReady(false);
+      return undefined;
+    }
+    // Ignore the same click that opened the modal so it cannot auto-confirm.
+    const timer = window.setTimeout(() => setReady(true), 200);
+    return () => window.clearTimeout(timer);
+  }, [open]);
+
   if (!open) return null;
 
   const theme = COLORS[color] || COLORS.violet;
+  const stop = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#11111A] p-6 shadow-2xl">
+    <div
+      className="fixed inset-0 z-[200] flex items-center justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm"
+      onMouseDown={stop}
+      onClick={(event) => {
+        stop(event);
+        if (ready && !loading) onCancel?.();
+      }}
+    >
+      <div
+        className="w-full max-w-md rounded-2xl border border-white/10 bg-[#11111A] p-6 shadow-2xl"
+        onMouseDown={stop}
+        onClick={stop}
+      >
         <div className="flex items-start justify-between">
           <div className={`flex h-11 w-11 items-center justify-center rounded-full ${theme.bg}`}>
             {Icon && <Icon size={20} className={theme.text} />}
           </div>
 
           <button
+            type="button"
             onClick={onCancel}
             disabled={loading}
             className="text-zinc-500 transition hover:text-white disabled:cursor-not-allowed"
@@ -68,6 +97,7 @@ export default function ConfirmModal({
 
         <div className="mt-8 flex gap-3">
           <button
+            type="button"
             onClick={onCancel}
             disabled={loading}
             className="flex-1 rounded-xl border border-white/10 py-2.5 font-medium text-white transition hover:border-white/20 disabled:cursor-not-allowed disabled:opacity-60"
@@ -76,8 +106,9 @@ export default function ConfirmModal({
           </button>
 
           <button
+            type="button"
             onClick={onConfirm}
-            disabled={loading}
+            disabled={loading || !ready}
             className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${theme.button}`}
           >
             {loading && <Loader2 size={16} className="animate-spin" />}

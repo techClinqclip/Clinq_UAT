@@ -6,16 +6,15 @@ import {
     ArrowDownCircle,
     ArrowRight,
     Plus,
-    Smartphone,
-    Building2,
-    CreditCard,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import PayoutTrendChart from "./PayoutTrendChart"; // ADJUST to match this file's actual path
 import LoadingScreen from "../../shared/ui/LoadingScreen"; // ADJUST to match this file's actual path
-import AddFundsModal from "./Components/AddFundsModal";
+import AddFundsModal from "../../shared/wallet/AddFundsModal";
+import { syncPendingWalletTopups } from "../../shared/wallet/syncPendingTopups";
+import { notifyWalletBalanceChanged } from "../../shared/wallet/walletBalanceEvents";
 import { api } from "../../lib/api"; // ADJUST to match this file's actual path
 
 /*
@@ -45,50 +44,64 @@ const formatK = (n) => `${(n / 1000).toFixed(0)}K`;
 
 const FILTERS = ["7D", "30D", "6M", "ALL"];
 
+/** Budget-lock fallback when API has no spend_by_period yet. */
 const isSpendTxn = (txn) => {
     const rawType = (txn?.transactionType ?? txn?.transaction_type ?? txn?.type ?? "").toString().toLowerCase();
-    return rawType.includes("spend") || rawType.includes("withdraw") || rawType.includes("campaign");
+    // Real campaign spend = budget locks (money leaving wallet). Never deposits/settlements.
+    return (
+        rawType.includes("lock")
+        || rawType === "spend"
+        || (rawType.includes("spend") && !rawType.includes("deposit"))
+    );
 };
 
 const buildSpendTrendData = (transactions = [], filter) => {
     const now = new Date();
+    const startOfDay = (value) => {
+        const d = new Date(value);
+        d.setHours(0, 0, 0, 0);
+        return d;
+    };
+    const today = startOfDay(now);
 
     const spendTxns = transactions
         .filter(isSpendTxn)
         .map((txn) => ({
             amount: Number(txn?.amount ?? 0),
-            date: new Date(txn?.createdAt || txn?.created_at || txn?.date || 0),
+            date: startOfDay(txn?.createdAt || txn?.created_at || txn?.date || 0),
         }))
-        .filter((txn) => Number.isFinite(txn.date.getTime()) && txn.amount);
+        .filter((txn) => Number.isFinite(txn.date.getTime()) && txn.amount > 0);
 
     if (filter === "7D" || filter === "30D") {
         const days = filter === "7D" ? 7 : 30;
         const buckets = Array.from({ length: days }, (_, i) => {
-            const d = new Date(now);
-            d.setDate(d.getDate() - (days - 1 - i));
+            const d = new Date(today);
+            d.setDate(today.getDate() - (days - 1 - i));
             return {
                 key: d.toDateString(),
-                date: d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }),
+                period: d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }),
                 amount: 0,
             };
         });
 
         spendTxns.forEach((txn) => {
-            const diffDays = Math.floor((now - txn.date) / 86400000);
+            const diffDays = Math.round((today - txn.date) / 86400000);
             if (diffDays < 0 || diffDays >= days) return;
             const bucket = buckets[days - 1 - diffDays];
             if (bucket) bucket.amount += txn.amount;
         });
 
-        return buckets.map(({ date, amount }) => ({ date, amount }));
+        return buckets.map(({ period, amount }) => ({ period, amount }));
     }
 
-    // 6M / ALL -> monthly buckets (ALL capped at trailing 12 months, since
-    // we have no signal here for "account creation date" to bound it properly)
     const monthsBack = filter === "6M" ? 6 : 12;
     const buckets = Array.from({ length: monthsBack }, (_, i) => {
-        const d = new Date(now.getFullYear(), now.getMonth() - (monthsBack - 1 - i), 1);
-        return { key: `${d.getFullYear()}-${d.getMonth()}`, date: d.toLocaleString("en-US", { month: "short" }), amount: 0 };
+        const d = new Date(today.getFullYear(), today.getMonth() - (monthsBack - 1 - i), 1);
+        return {
+            key: `${d.getFullYear()}-${d.getMonth()}`,
+            period: d.toLocaleString("en-US", { month: "short", year: filter === "ALL" ? "2-digit" : undefined }),
+            amount: 0,
+        };
     });
 
     spendTxns.forEach((txn) => {
@@ -97,44 +110,14 @@ const buildSpendTrendData = (transactions = [], filter) => {
         if (bucket) bucket.amount += txn.amount;
     });
 
-    return buckets.map(({ date, amount }) => ({ date, amount }));
+    return buckets.map(({ period, amount }) => ({ period, amount }));
 };
 
-// Mirrors buildInitialForm()'s field mapping in BrandProfile.jsx — this is
-// intentionally reading the SAME raw API fields that page saves, so the
-// two stay in sync without needing a shared import (they're on different
-// slices of the app but describe the same underlying profile object).
-function getSavedPaymentMethodDisplay(profile) {
-    const method = profile?.payment_method || profile?.onboarding_data?.paymentMethod;
-    if (!method) return null;
-
-    if (method === "upi") {
-        const upiId = profile?.upi_id || profile?.onboarding_data?.upiId;
-        return upiId ? { method, label: "UPI", detail: upiId, icon: Smartphone } : null;
-    }
-
-    if (method === "bank") {
-        const bankName = profile?.bank_name || profile?.onboarding_data?.bankName;
-        const accountNumber = profile?.bank_account_number || profile?.onboarding_data?.bankAccountNumber;
-        if (!bankName) return null;
-        const last4 = accountNumber ? String(accountNumber).slice(-4) : "";
-        return { method, label: "Bank Transfer", detail: `${bankName}${last4 ? ` •••• ${last4}` : ""}`, icon: Building2 };
-    }
-
-    if (method === "debit" || method === "credit") {
-        const cardNumber = profile?.card_number || profile?.onboarding_data?.cardNumber;
-        const last4 = cardNumber ? String(cardNumber).replace(/\D/g, "").slice(-4) : "";
-        if (!last4) return null;
-        return {
-            method,
-            label: method === "debit" ? "Debit Card" : "Credit Card",
-            detail: `•••• ${last4}`,
-            icon: CreditCard,
-        };
-    }
-
-    return null;
-}
+const normalizeSpendSeries = (series = []) =>
+    (Array.isArray(series) ? series : []).map((point) => ({
+        period: point.period || point.date || "",
+        amount: Number(point.amount ?? point.payout ?? 0),
+    }));
 
 export default function BrandWallet() {
     const [filter, setFilter] = useState("30D");
@@ -143,18 +126,37 @@ export default function BrandWallet() {
     const [loading, setLoading] = useState(true);
     const [showLoader, setShowLoader] = useState(true);
     const [error, setError] = useState("");
-    const [profile, setProfile] = useState(null);
+
+    const loadWalletData = async () => {
+        try {
+            setLoading(true);
+            setError("");
+            const data = await api("/api/earnings/wallet/");
+            setWalletData(data);
+        } catch (err) {
+            setError(err?.message || "Failed to load wallet data");
+            console.error("Wallet error:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         let mounted = true;
 
-        const loadWalletData = async () => {
+        const run = async () => {
             try {
                 setLoading(true);
                 setError("");
+                // Recover payments captured while browser was offline/closed.
+                const synced = await syncPendingWalletTopups();
+                if (synced && typeof synced.walletBalance === "number") {
+                    notifyWalletBalanceChanged(synced.walletBalance);
+                }
                 const data = await api("/api/earnings/wallet/");
                 if (!mounted) return;
                 setWalletData(data);
+                notifyWalletBalanceChanged(data.wallet_balance);
             } catch (err) {
                 if (!mounted) return;
                 setError(err?.message || "Failed to load wallet data");
@@ -164,22 +166,12 @@ export default function BrandWallet() {
             }
         };
 
-        loadWalletData();
-
-        api("/api/auth/profile/me/", { cache: "no-store" })
-            .then((data) => {
-                if (mounted) setProfile(data);
-            })
-            .catch(() => {
-                if (mounted) setProfile(null);
-            });
-
+        run();
         return () => {
             mounted = false;
         };
     }, []);
 
-    const savedMethod = getSavedPaymentMethodDisplay(profile);
     const displayData = walletData || {
         wallet_balance: 0,
         locked_in_campaigns: 0,
@@ -189,27 +181,49 @@ export default function BrandWallet() {
         recent_transactions: [],
     };
 
-    const activeSpendData = buildSpendTrendData(displayData.recent_transactions || [], filter);
+    const apiSpendSeries = displayData.spend_by_period?.[filter];
+    const hasSpendByPeriod = Array.isArray(apiSpendSeries);
+    const activeSpendData = hasSpendByPeriod
+        ? normalizeSpendSeries(apiSpendSeries)
+        : buildSpendTrendData(displayData.recent_transactions || [], filter);
     const totalSpendForPeriod = activeSpendData.reduce((sum, d) => sum + Number(d.amount || 0), 0);
-    const hasTransactions = (displayData.recent_transactions || []).length > 0;
+    const spendSourceLabel = hasSpendByPeriod ? "paid to clippers" : "budget locked";
+    const recentTransactions = (displayData.recent_transactions || []).slice(0, 5);
+    const hasTransactions = recentTransactions.length > 0;
 
-    const handleFundsAdded = (amount) => {
-        setWalletData((current) => ({
-            ...(current || {}),
-            wallet_balance: Number(current?.wallet_balance || 0) + Number(amount || 0),
-            total_deposited: Number(current?.total_deposited || 0) + Number(amount || 0),
-            recent_transactions: [
-                {
-                    id: Date.now(),
-                    transactionType: "deposit",
-                    label: `Added via ${savedMethod?.label || "payment method"}`,
-                    amount,
-                    status: "Completed",
-                    createdAt: new Date().toISOString(),
-                },
-                ...(current?.recent_transactions || []),
-            ],
-        }));
+    const formatTxnLabel = (txn, rawType) => {
+        const rawLabel = (txn?.paymentDetails || txn?.payment_details || txn?.label || "").toString();
+        if (/wallet top-up via razorpay/i.test(rawLabel) || rawType.includes("deposit")) {
+            return "Money added to wallet";
+        }
+        return rawLabel || "Transaction";
+    };
+
+    const formatTxnDate = (value) => {
+        if (!value) return "Just now";
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) return String(value);
+        return parsed.toLocaleString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+    };
+
+    const handleFundsAdded = (result) => {
+        if (typeof result?.walletBalance === "number") {
+            setWalletData((current) => ({
+                ...(current || {}),
+                wallet_balance: result.walletBalance,
+                total_deposited: result.totalDeposited ?? current?.total_deposited,
+            }));
+            notifyWalletBalanceChanged(result.walletBalance);
+        } else {
+            notifyWalletBalanceChanged();
+        }
+        loadWalletData();
     };
 
     if (error) {
@@ -304,13 +318,16 @@ export default function BrandWallet() {
                     <div>
                         <p className="text-sm uppercase tracking-[0.2em] text-violet-400">Spend Overview</p>
                         <h3 className="mt-2 text-4xl font-bold text-white">₹{totalSpendForPeriod.toLocaleString()}</h3>
-                        <p className="mt-2 text-zinc-500">Campaign spend trend · {filter}</p>
+                        <p className="mt-2 text-zinc-500">
+                            Campaign spend trend · {filter} · {spendSourceLabel}
+                        </p>
                     </div>
 
                     <div className="flex gap-2">
                         {FILTERS.map((period) => (
                             <button
                                 key={period}
+                                type="button"
                                 onClick={() => setFilter(period)}
                                 className={`rounded-xl px-4 py-2 text-sm transition ${
                                     filter === period
@@ -325,7 +342,13 @@ export default function BrandWallet() {
                 </div>
 
                 <div className="mt-8 rounded-2xl border border-violet-500/20 bg-[#0B0B12] p-4">
-                    <PayoutTrendChart data={activeSpendData} />
+                    {activeSpendData.some((point) => Number(point.amount || 0) > 0) ? (
+                        <PayoutTrendChart data={activeSpendData} xKey="period" dataKey="amount" />
+                    ) : (
+                        <div className="flex h-[240px] items-center justify-center text-sm text-zinc-500">
+                            No campaign spend in this period yet.
+                        </div>
+                    )}
                 </div>
             </section>
 
@@ -447,12 +470,16 @@ export default function BrandWallet() {
 
                 {hasTransactions ? (
                     <div className="mt-8 space-y-4">
-                        {(displayData.recent_transactions || []).map((txn) => {
+                        {recentTransactions.map((txn) => {
                             const rawType = (txn?.transactionType ?? txn?.transaction_type ?? txn?.type ?? "").toString().toLowerCase();
-                            const isDeposit = rawType.includes("deposit") || rawType.includes("add") || rawType.includes("fund");
-                            const label = txn?.paymentDetails || txn?.payment_details || txn?.label || "Transaction";
+                            const isCredit =
+                                rawType.includes("deposit")
+                                || rawType.includes("add")
+                                || rawType.includes("fund")
+                                || rawType.includes("settle");
+                            const label = formatTxnLabel(txn, rawType);
                             const amount = Number(txn?.amount ?? 0);
-                            const date = txn?.createdAt || txn?.created_at || txn?.date || "Just now";
+                            const date = formatTxnDate(txn?.createdAt || txn?.created_at || txn?.date);
                             const status = txn?.status || "Completed";
 
                             return (
@@ -463,10 +490,10 @@ export default function BrandWallet() {
                                     <div className="flex items-center gap-3">
                                         <div
                                             className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-                                                isDeposit ? "bg-emerald-500/10" : "bg-rose-500/10"
+                                                isCredit ? "bg-emerald-500/10" : "bg-rose-500/10"
                                             }`}
                                         >
-                                            {isDeposit ? (
+                                            {isCredit ? (
                                                 <ArrowUpCircle size={18} className="text-emerald-400" />
                                             ) : (
                                                 <ArrowDownCircle size={18} className="text-rose-400" />
@@ -479,14 +506,16 @@ export default function BrandWallet() {
                                     </div>
 
                                     <div className="flex items-center gap-6 md:gap-8">
-                                        <h4 className={`text-xl font-semibold ${isDeposit ? "text-emerald-400" : "text-white"}`}>
-                                            {isDeposit ? "+" : "−"}₹{amount.toLocaleString()}
+                                        <h4 className={`text-xl font-semibold ${isCredit ? "text-emerald-400" : "text-white"}`}>
+                                            {isCredit ? "+" : "−"}₹{amount.toLocaleString()}
                                         </h4>
 
                                         <span
                                             className={`rounded-full px-3 py-1 text-xs font-medium ${
                                                 String(status).toLowerCase() === "completed"
                                                     ? "bg-emerald-500/10 text-emerald-400"
+                                                    : String(status).toLowerCase() === "failed"
+                                                    ? "bg-red-500/10 text-red-400"
                                                     : "bg-amber-500/10 text-amber-400"
                                             }`}
                                         >
@@ -521,7 +550,6 @@ export default function BrandWallet() {
                 isOpen={addFundsOpen}
                 onClose={() => setAddFundsOpen(false)}
                 onSuccess={handleFundsAdded}
-                savedMethod={savedMethod}
             />
         </div>
     );

@@ -61,6 +61,7 @@ export default function DatePicker({
   minDate,
   clearable = false,
   placeholder = "Select date",
+  className = "",
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -135,7 +136,7 @@ export default function DatePicker({
       <button
         type="button"
         onClick={() => setIsOpen((o) => !o)}
-        className="flex w-full items-center justify-between gap-2 rounded-2xl border border-white/10 bg-[#0B0B12] px-4 py-3 text-left text-white outline-none transition focus:border-violet-500"
+        className={`flex h-[50px] w-full items-center justify-between gap-2 rounded-2xl border border-white/10 bg-[#0B0B12] px-4 text-left text-white outline-none transition focus:border-violet-500 ${className}`}
       >
         <span
           className={`flex items-center gap-2 ${

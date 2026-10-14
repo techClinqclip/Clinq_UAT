@@ -30,21 +30,28 @@ export default function Withdraw() {
     const lifetimeWithdrawn = overview?.total_withdrawals ?? 0;
     const minimumWithdrawal = overview?.minimum_payout ?? 2500;
 
-    const configuredPaymentMethod = profile?.payment_method;
+    const rawPaymentMethod = profile?.payment_method;
+    const configuredPaymentMethod =
+        rawPaymentMethod === "bank" || rawPaymentMethod === "bank_transfer"
+            ? "bank_transfer"
+            : rawPaymentMethod;
     const paymentMethodLabel = configuredPaymentMethod === "upi"
         ? "UPI"
         : configuredPaymentMethod === "bank_transfer"
             ? "Bank Transfer"
             : null;
-    const paymentMethodValue = profile?.payment_method === "upi"
+    const paymentMethodValue = configuredPaymentMethod === "upi"
         ? profile?.upi_id
-        : profile?.payment_method === "bank_transfer"
+        : configuredPaymentMethod === "bank_transfer"
             ? profile?.bank_name
                 ? `${profile.bank_name} • ${profile.bank_account_number?.slice(-4) || ""}`
                 : profile?.bank_account_number
             : null;
 
-    const hasPaymentMethod = Boolean(configuredPaymentMethod && paymentMethodValue);
+    const hasPaymentMethod = Boolean(
+        (configuredPaymentMethod === "upi" || configuredPaymentMethod === "bank_transfer")
+        && paymentMethodValue
+    );
     const isValid =
         hasPaymentMethod &&
         withdrawalAmount >= minimumWithdrawal &&
@@ -305,7 +312,7 @@ export default function Withdraw() {
                     {/* Quick Amount */}
 
                     <div className="mt-6 flex flex-wrap gap-3">
-                        {[500, 1000, 5000].map((value) => (
+                        {[2500, 5000, 10000].map((value) => (
                             <button
                                 key={value}
                                 onClick={() => quickSelect(value)}

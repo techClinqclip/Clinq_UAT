@@ -28,6 +28,8 @@ function isPublicPath(pathname) {
     '/blogs',
     '/messages',
     '/about',
+    '/privacy',
+    '/terms',
   ].some((allowed) => pathname === allowed || pathname.startsWith(`${allowed}/`));
 }
 

@@ -105,11 +105,15 @@ def notify_users_event(user_ids, **kwargs) -> Optional[uuid.UUID]:
 def notify_admins_event(**kwargs) -> Optional[uuid.UUID]:
     """Send an in-app notification to every active staff administrator."""
     from django.contrib.auth import get_user_model
+    from django.db.models import Q
 
-    admin_ids = get_user_model().objects.filter(
-        is_active=True,
-        is_staff=True,
-    ).values_list('id', flat=True)
+    admin_ids = (
+        get_user_model()
+        .objects.filter(is_active=True)
+        .filter(Q(is_staff=True) | Q(is_superuser=True))
+        .values_list('id', flat=True)
+        .distinct()
+    )
     return notify_users_event(list(admin_ids), **kwargs)
 
 
@@ -451,13 +455,32 @@ def notify_earnings_payout_status(
         return None
     
     status_messages = {
-        'pending': ('⏳ Payout Pending', f'Your payout of ${amount} is pending.'),
-        'processing': ('🔄 Payout Processing', f'Your payout of ${amount} is being processed.'),
-        'completed': ('✅ Payout Complete', f'Your payout of ${amount} has been completed.'),
-        'failed': ('❌ Payout Failed', f'Your payout of ${amount} failed. Please contact support.'),
+        'pending': (
+            'Withdrawal under review',
+            f'Your withdrawal of ₹{amount} is under review. We will notify you once it is processed.',
+        ),
+        'processing': (
+            'Withdrawal processing',
+            f'Your withdrawal of ₹{amount} is being processed. You will be notified once it is completed.',
+        ),
+        'completed': (
+            'Withdrawal completed',
+            f'Your withdrawal of ₹{amount} has been completed and sent to your registered payout account.',
+        ),
+        'failed': (
+            'Withdrawal unsuccessful',
+            f'Your withdrawal of ₹{amount} could not be completed. The amount has been returned to your available balance.',
+        ),
+        'rejected': (
+            'Withdrawal not approved',
+            f'Your withdrawal of ₹{amount} was not approved and the amount has been returned to your available balance.',
+        ),
     }
-    
-    title, message = status_messages.get(status, ('💰 Payout Update', f'Payout update: {status}'))
+
+    title, message = status_messages.get(
+        status,
+        ('Withdrawal update', f'There is an update on your withdrawal of ₹{amount}.'),
+    )
     event_type = f'earnings.payout_{status}'
     
     try:
@@ -1246,4 +1269,53 @@ def notify_user_mention(
     except Exception as e:
         logger.error(f"Failed to send mention notification: {e}")
         return None
+
+
+def notify_submission_views_updated(
+    user_id,
+    *,
+    updated_count: int,
+    total_views: int,
+    campaign_names: Optional[List[str]] = None,
+    run_id: Optional[str] = None,
+) -> Optional[uuid.UUID]:
+    """Notify a participant that scraper-refreshed submission views are ready."""
+    if not user_id or updated_count <= 0:
+        return None
+
+    names = [name for name in (campaign_names or []) if name]
+    unique_names = list(dict.fromkeys(names))
+    if len(unique_names) == 1:
+        campaign_phrase = f' for "{unique_names[0]}"'
+    elif len(unique_names) > 1:
+        campaign_phrase = f' across {len(unique_names)} campaigns'
+    else:
+        campaign_phrase = ''
+
+    submission_label = 'submission' if updated_count == 1 else 'submissions'
+    title = 'Submission views updated'
+    message = (
+        f'Views for {updated_count} of your {submission_label}{campaign_phrase} '
+        f'were refreshed. Combined views are now {int(total_views):,}.'
+    )
+
+    return notify_user_event(
+        user_id=user_id,
+        event_type='content.submission_views_updated',
+        title=title,
+        message=message,
+        category='content',
+        entity_type='campaign_submission',
+        entity_id=None,
+        payload={
+            'updated_count': updated_count,
+            'total_views': int(total_views),
+            'campaign_names': unique_names[:5],
+            'run_id': str(run_id or ''),
+        },
+        priority='normal',
+        idempotency_key=(
+            f'content.submission_views_updated:{user_id}:{run_id or uuid.uuid4()}'
+        ),
+    )
 

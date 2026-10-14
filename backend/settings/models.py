@@ -72,9 +72,14 @@ class UserSettings(models.Model):
 
 
 class ResourceSampleTemplate(models.Model):
-    """The single resource-document template available to campaign owners."""
+    """The single resource-document template available to campaign owners.
 
-    document = models.FileField(upload_to='settings/resource_templates/', blank=True, null=True)
+    The file itself lives in Supabase Storage; Postgres only keeps the public
+    URL and original filename so Render's ephemeral disk is not required.
+    """
+
+    document_url = models.CharField(max_length=500, blank=True)
+    filename = models.CharField(max_length=255, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -89,4 +94,97 @@ class ResourceSampleTemplate(models.Model):
         verbose_name_plural = 'Resource Sample Template'
 
     def __str__(self):
-        return self.document.name if self.document else 'Resource sample template (not uploaded)'
+        return self.filename or self.document_url or 'Resource sample template (not uploaded)'
+
+
+class PlatformPayoutSettings(models.Model):
+    """Singleton platform controls for wallet withdrawals.
+
+    Flow (matches admin Payout Approval workflow):
+      1) manual_pay=True  → admin pays outside the system and marks each
+         request paid manually (no RazorpayX).
+      2) manual_pay=False → RazorpayX autopay:
+           - require_payout_approval=True  → admin must approve, then RazorpayX runs
+           - require_payout_approval=False → RazorpayX runs immediately on request
+    """
+
+    manual_pay = models.BooleanField(
+        default=True,
+        help_text='If enabled, withdrawals are paid manually (no RazorpayX autopay).',
+    )
+    require_payout_approval = models.BooleanField(
+        default=True,
+        help_text='Used only when manual_pay is False. If enabled, admin must approve before RazorpayX.',
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='updated_platform_payout_settings',
+    )
+
+    class Meta:
+        verbose_name = 'Platform Payout Settings'
+        verbose_name_plural = 'Platform Payout Settings'
+
+    def __str__(self):
+        if self.manual_pay:
+            mode = 'manual pay'
+        elif self.require_payout_approval:
+            mode = 'razorpayx with approval'
+        else:
+            mode = 'razorpayx autopay'
+        return f'Platform payout settings ({mode})'
+
+    @classmethod
+    def get_solo(cls):
+        obj, _created = cls.objects.get_or_create(pk=1)
+        return obj
+
+    @property
+    def mode(self) -> str:
+        if self.manual_pay:
+            return 'manual'
+        if self.require_payout_approval:
+            return 'razorpay_with_approval'
+        return 'razorpay_autopay'
+
+    def should_trigger_razorpay_on_request(self) -> bool:
+        return (not self.manual_pay) and (not self.require_payout_approval)
+
+
+class LegalDocument(models.Model):
+    """Platform legal documents shown on signup and public pages.
+
+    Files are stored in Supabase Storage; Postgres keeps the public URL and
+    original filename. One row per document key.
+    """
+
+    PRIVACY_POLICY = 'privacy_policy'
+    TERMS_CONDITIONS = 'terms_conditions'
+    KEY_CHOICES = (
+        (PRIVACY_POLICY, 'Privacy Policy'),
+        (TERMS_CONDITIONS, 'Terms & Conditions'),
+    )
+
+    key = models.CharField(max_length=64, unique=True, choices=KEY_CHOICES)
+    document_url = models.CharField(max_length=500, blank=True)
+    filename = models.CharField(max_length=255, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='updated_legal_documents',
+    )
+
+    class Meta:
+        verbose_name = 'Legal Document'
+        verbose_name_plural = 'Legal Documents'
+
+    def __str__(self):
+        label = dict(self.KEY_CHOICES).get(self.key, self.key)
+        return self.filename or f'{label} (not uploaded)'

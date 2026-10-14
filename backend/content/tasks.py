@@ -1,4 +1,4 @@
-from celery import shared_task
+﻿from celery import shared_task
 from supabase import create_client
 
 # FIX: renamed import alias to db_transaction to avoid clashing with the
@@ -50,7 +50,7 @@ def process_payout(content_id):
     """
     Automated payout logic once a submission is approved.
     """
-    with transaction.atomic():
+    with db_transaction.atomic():
         content = Content.objects.select_for_update().get(id=content_id)
 
         if content.status == 'review':
@@ -61,7 +61,7 @@ def process_payout(content_id):
             profile.save()
 
             # 2. Update Transaction record
-            transaction = Transaction.objects.get(content=content, status='pending')
+            transaction = EarningsTransaction.objects.get(content=content, status='pending')
             transaction.status = 'completed'
             transaction.save()
 

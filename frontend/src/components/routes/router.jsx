@@ -14,11 +14,14 @@ import Leaderboard from "../../pages/Leaderboard";
 import Messages from "../../pages/Messages";
 import ComingSoon from "../../pages/ComingSoon";
 import About from "../../pages/About";
+import PrivacyPolicy from "../../pages/PrivacyPolicy";
+import TermsAndConditions from "../../pages/TermsAndConditions";
 
 /* Admin */
 import AdminDashboard from "../../pages/Admin/Dashboard";
 import AdminSubmissionQueue from "../../pages/Admin/SubmissionQueue";
 import AdminPendingApprovals from "../../pages/Admin/PendingApprovals";
+import AdminPayoutApproval from "../../pages/Admin/PayoutApproval";
 import AdminPayoutEligibility from "../../pages/Admin/PayoutEligibility";
 import SupportTickets from "../../pages/Admin/SupportTickets";
 import CampaignSubmissions from "../../pages/Admin/CampaignSubmissions";
@@ -97,6 +100,14 @@ export const router = createBrowserRouter([
       {
         path: "about",
         element: <About />,
+      },
+      {
+        path: "privacy",
+        element: <PrivacyPolicy />,
+      },
+      {
+        path: "terms",
+        element: <TermsAndConditions />,
       },
       
 
@@ -374,6 +385,10 @@ export const router = createBrowserRouter([
       {
         path: "pending-approvals",
         element: <AdminPendingApprovals />,
+      },
+      {
+        path: "payout-approval",
+        element: <AdminPayoutApproval />,
       },
       {
         path: "payouts",

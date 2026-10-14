@@ -6,7 +6,7 @@ import {
 import { FaInstagram, FaYoutube, FaXTwitter, FaFacebookF } from "react-icons/fa6";
 import { api } from "../../lib/api";
 import useCurrentUser from "../../hooks/useCurrentUser";
-import { ACCENTS, formatCompact, formatMoney } from "./campaignUtils";
+import { ACCENTS, formatCompact, formatMoney, normalizeCampaign, plainText } from "./campaignUtils";
 import SubmitClipDialog from "../../pages/Creator/SubmitClipDialog";
 import ProcessingModal from "../../shared/ui/ProcessingModal";
 import useToast from "../../hooks/useToast";
@@ -20,24 +20,6 @@ const PLATFORM_ICONS = {
   facebook: FaFacebookF,
 };
 
-function plainText(value) {
-  if (!value) return "";
-
-  return String(value)
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/?(p|div|li|ul|ol|h[1-6]|section|article|span|strong|b|em|i|code|pre)[^>]*>/gi, "\n")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;/gi, "'")
-    .replace(/\n{3,}/g, "\n\n")
-    .replace(/[ \t]+\n/g, "\n")
-    .trim();
-}
-
 export default function CampaignDetailModal({ isOpen, onClose, campaign }) {
   const [joined, setJoined] = useState(false);
   const [showSubmit, setShowSubmit] = useState(false);
@@ -46,8 +28,8 @@ export default function CampaignDetailModal({ isOpen, onClose, campaign }) {
   const user = useCurrentUser();
 
   const [joining, setJoining] = useState(false);
-const [joinStepIndex, setJoinStepIndex] = useState(-1);
-const { showToast } = useToast();
+  const [joinStepIndex, setJoinStepIndex] = useState(-1);
+  const { showToast } = useToast();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -62,13 +44,14 @@ const { showToast } = useToast();
 
   if (!isOpen || !campaign) return null;
 
+  const normalized = normalizeCampaign(campaign);
   const {
     id, title, brand = "Brand", category = "Campaign",
     icon: Icon = Sparkles, accent = "violet", status = "Active",
     thumbnail, image,
     views = 0, submissions = 0, budget = 0, paidOut = 0, description, requirements,
     deadline, payoutPerSubmission, platforms = [], resources = [],
-  } = campaign;
+  } = normalized;
 
   const safeDescription = plainText(description || "");
   const safeRequirements = Array.isArray(requirements)
@@ -288,20 +271,22 @@ const { showToast } = useToast();
                         <p className="whitespace-pre-line text-sm leading-6 text-zinc-400">{safeDescription}</p>
                       </div>
                     )}
-                    <div className="flex flex-wrap gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm">
-                      {deadline && (
-                        <div className="flex items-center gap-2 text-zinc-300">
-                          <Calendar size={15} className={a.text} />
-                          Deadline: <span className="text-white">{deadline}</span>
-                        </div>
-                      )}
-                      {payoutPerSubmission && (
-                        <div className="flex items-center gap-2 text-zinc-300">
-                          <Wallet size={15} className={a.text} />
-                          Payout: <span className="text-white">{payoutPerSubmission}</span>
-                        </div>
-                      )}
-                    </div>
+                    {(deadline || payoutPerSubmission) && (
+                      <div className="flex flex-wrap gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm">
+                        {deadline && (
+                          <div className="flex items-center gap-2 text-zinc-300">
+                            <Calendar size={15} className={a.text} />
+                            Deadline: <span className="text-white">{deadline}</span>
+                          </div>
+                        )}
+                        {payoutPerSubmission && (
+                          <div className="flex items-center gap-2 text-zinc-300">
+                            <Wallet size={15} className={a.text} />
+                            Payout: <span className="text-white">{payoutPerSubmission}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                     {platforms.length > 0 && (
                       <div className="flex items-center gap-3">
                         <span className="text-xs text-zinc-500">Accepted on</span>

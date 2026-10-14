@@ -95,6 +95,16 @@ class CampaignViewSet(viewsets.ModelViewSet):
                 Profile.objects.filter(pk=locked_profile.pk).update(
                     wallet_balance=F('wallet_balance') - budget
                 )
+                from earnings.models import Transaction
+                Transaction.objects.create(
+                    user=self.request.user,
+                    amount=budget,
+                    transaction_type='lock',
+                    status='completed',
+                    payment_method='',
+                    payment_details=f'Funds locked for {campaign.name}',
+                    external_ref=f'campaign-lock-{campaign.id}',
+                )
 
         if campaign.status in ('active', 'available'):
             from notifications.helpers import notify_users_event
@@ -285,6 +295,7 @@ class CampaignViewSet(viewsets.ModelViewSet):
             return Response({'error': 'No remaining budget to transfer.'}, status=status.HTTP_400_BAD_REQUEST)
         
         from accounts.models import Profile
+        from earnings.models import Transaction
         with db_transaction.atomic():
             Profile.objects.filter(user_id=campaign.creator_id).update(
                 wallet_balance=F('wallet_balance') + remaining,
@@ -293,8 +304,16 @@ class CampaignViewSet(viewsets.ModelViewSet):
             campaign.remaining_funds_settled_amount = remaining
             campaign.remaining_funds_settled_at = timezone.now()
             campaign.save(update_fields=['remaining_funds_settled', 'remaining_funds_settled_amount', 'remaining_funds_settled_at', 'updated_at'])
+            Transaction.objects.create(
+                user=campaign.creator,
+                amount=remaining,
+                transaction_type='settlement',
+                status='completed',
+                payment_method='',
+                payment_details=f'Remaining budget returned from {campaign.name}',
+                external_ref=f'campaign-settle-{campaign.id}',
+            )
         return Response({'status': 'success', 'amount': float(remaining), 'campaign': self.get_serializer(campaign).data})
-
     @action(detail=False, methods=['get'], url_path='marketplace')
     def marketplace(self, request):
         """List active campaigns and gigs in marketplace"""
@@ -371,10 +390,20 @@ class CampaignViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'], url_path='admin-scrape-insights', permission_classes=[IsAdminUser])
     def admin_scrape_insights(self, request):
-        """Scrape and persist insights for active campaign submissions in batches of 20."""
+        """Start the insights scraper in a background thread on the API process.
+
+        Progress can be polled via admin-scrape-insights-status. No Redis/Celery.
+        """
+        import logging
+        import threading
+        import uuid
+
+        logger = logging.getLogger(__name__)
+
         try:
-            from .scraper_service import scrape_active_campaign_submissions
-            result = scrape_active_campaign_submissions()
+            from . import scrape_jobs
+            from .scraper_service import _load_engine, scrape_active_campaign_submissions
+            _load_engine()
         except (ImportError, ModuleNotFoundError) as error:
             return Response(
                 {'error': f'Scraper dependencies are not installed: {error}'},
@@ -384,10 +413,81 @@ class CampaignViewSet(viewsets.ModelViewSet):
             return Response({'error': str(error)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         except Exception as error:
             return Response(
-                {'error': f'Insight extraction failed: {error}'},
+                {'error': f'Unable to start the scraper: {error}'},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
-        return Response(result, status=status.HTTP_200_OK)
+
+        requested_by_user_id = request.user.id
+        run_id = str(uuid.uuid4())
+        scrape_jobs.create_job(run_id, requested_by_user_id=requested_by_user_id)
+
+        def _run_inline_scraper():
+            try:
+                result = scrape_active_campaign_submissions(job_id=run_id)
+                from notifications.helpers import notify_user_event
+                notify_user_event(
+                    user_id=requested_by_user_id,
+                    event_type='content.scraper_completed',
+                    title='Content scraper finished',
+                    message=(
+                        f"Scraper finished: {result.get('updated', 0)} submissions updated, "
+                        f"{result.get('notified', 0)} participants notified, "
+                        f"{result.get('failed', 0)} failed."
+                    ),
+                    category='content',
+                    entity_type='scraper_run',
+                    entity_id=None,
+                    payload=result,
+                    priority='normal',
+                    idempotency_key=f'content.scraper_completed:{requested_by_user_id}:{run_id}',
+                )
+            except Exception as exc:
+                logger.exception('Inline scraper run failed for admin user %s', requested_by_user_id)
+                scrape_jobs.mark_failed(run_id, str(exc) or exc.__class__.__name__)
+                try:
+                    from notifications.helpers import notify_user_event
+                    notify_user_event(
+                        user_id=requested_by_user_id,
+                        event_type='content.scraper_failed',
+                        title='Content scraper failed',
+                        message='The content scraper failed while running. Check API logs for details.',
+                        category='content',
+                        entity_type='scraper_run',
+                        entity_id=None,
+                        payload={'run_id': run_id},
+                        priority='high',
+                        idempotency_key=f'content.scraper_failed:{requested_by_user_id}:{run_id}',
+                    )
+                except Exception:
+                    logger.exception('Failed to notify admin about scraper failure.')
+
+        threading.Thread(target=_run_inline_scraper, name=f'scraper-{run_id}', daemon=True).start()
+
+        return Response(
+            {
+                'detail': 'Scraper started. Progress will update on this page.',
+                'status': 'queued',
+                'mode': 'inline',
+                'taskId': run_id,
+                'progress': 0,
+            },
+            status=status.HTTP_202_ACCEPTED,
+        )
+
+    @action(detail=False, methods=['get'], url_path='admin-scrape-insights-status', permission_classes=[IsAdminUser])
+    def admin_scrape_insights_status(self, request):
+        """Poll progress/result for an in-process scraper job."""
+        from . import scrape_jobs
+
+        task_id = (request.query_params.get('taskId') or request.query_params.get('task_id') or '').strip()
+        if not task_id:
+            return Response({'error': 'taskId is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        job = scrape_jobs.get_job(task_id)
+        if not job:
+            return Response({'error': 'Scraper job not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response(job, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'], url_path='my-gigs')
     def my_gigs(self, request):
@@ -1807,14 +1907,14 @@ class CampaignSubmissionViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=['post'], url_path='settle-pending', permission_classes=[IsAdminUser])
     def settle_pending(self, request, pk=None):
         submission = self.get_object()
-        if submission.payout_review_status != 'pending':
-            return Response(
-                {'detail': 'Only pending payouts can be approved.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
         if submission.status != 'approved':
             return Response(
                 {'detail': 'Submission must be approved before pending earnings can be settled.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if submission.payout_review_status == 'held':
+            return Response(
+                {'detail': 'Held payouts must be released from hold before approval.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         if not submission.pending_earning or float(submission.pending_earning) <= 0:
@@ -1822,23 +1922,42 @@ class CampaignSubmissionViewSet(viewsets.ReadOnlyModelViewSet):
                 {'detail': 'No pending earnings are available to settle.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        # Allow re-settlement when new pending accrued after a prior approval
+        # (payout_review_status may still be stale 'approved' until reconcile).
+        if submission.payout_review_status not in ('pending', 'approved'):
+            return Response(
+                {'detail': 'Only pending payouts can be approved.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         from django.utils import timezone
         from accounts.models import Profile
         from django.db.models import F
         pending_amount = Decimal(str(submission.pending_earning))
+        first_settlement = Decimal(str(submission.earning or 0)) <= 0
         with db_transaction.atomic():
             submission.approve_pending_earning()
-            Profile.objects.filter(user_id=submission.participant.clipper_id).update(
-                total_earnings=F('total_earnings') + pending_amount,
-                clips_completed=F('clips_completed') + 1,
-                views_generated=F('views_generated') + submission.views,
-            )
+            profile_updates = {
+                'total_earnings': F('total_earnings') + pending_amount,
+                'views_generated': F('views_generated') + submission.views,
+            }
+            if first_settlement:
+                profile_updates['clips_completed'] = F('clips_completed') + 1
+            Profile.objects.filter(user_id=submission.participant.clipper_id).update(**profile_updates)
             submission.payout_review_status = 'approved'
             submission.payout_reviewed_by = request.user
             submission.payout_reviewed_at = timezone.now()
             submission.payout_review_notes = str(request.data.get('notes') or '')
-            submission.save(update_fields=['payout_review_status', 'payout_reviewed_by', 'payout_reviewed_at', 'payout_review_notes', 'updated_at'], skip_earning_update=True)
+            submission.save(
+                update_fields=[
+                    'payout_review_status',
+                    'payout_reviewed_by',
+                    'payout_reviewed_at',
+                    'payout_review_notes',
+                    'updated_at',
+                ],
+                skip_earning_update=True,
+            )
         from notifications.helpers import notify_user_event
         notify_user_event(
             user_id=submission.participant.clipper_id,
@@ -1848,13 +1967,11 @@ class CampaignSubmissionViewSet(viewsets.ReadOnlyModelViewSet):
             category='earnings',
             entity_type='campaign_submission',
             payload={'submission_id': submission.id, 'amount': str(pending_amount)},
-            idempotency_key=f'earnings.pending_payout_approved:{submission.id}',
+            idempotency_key=(
+                f'earnings.pending_payout_approved:{submission.id}:'
+                f'{pending_amount}:{submission.payout_reviewed_at.isoformat()}'
+            ),
         )
-        submission.payout_review_status = 'approved'
-        submission.payout_reviewed_by = request.user
-        submission.payout_reviewed_at = timezone.now()
-        submission.payout_review_notes = str(request.data.get('notes') or '')
-        submission.save(update_fields=['payout_review_status', 'payout_reviewed_by', 'payout_reviewed_at', 'payout_review_notes', 'updated_at'], skip_earning_update=True)
         serializer = self.get_serializer(submission)
         return Response(serializer.data)
 

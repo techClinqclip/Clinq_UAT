@@ -54,7 +54,7 @@ export default function EditGig() {
         category: formData.category?.toLowerCase() || "",
         description: formData.description || "",
         clipperRequirements: formData.clipperRequirements || "",
-        budget: formData.budget || 0,
+        budget: existingGig?.budget || formData.budget || 0,
         rewardPer1k: formData.rewardPer1k || 0,
         maxEarnings: formData.maxEarnings || 0,
         platforms: formData.platforms,
@@ -112,7 +112,7 @@ export default function EditGig() {
         <p className="mt-2 text-zinc-400">Update your gig's details.</p>
       </div>
 
-      <CampaignForm mode="edit" initialData={existingGig} onSubmit={handleUpdate} />
+      <CampaignForm mode="edit" kind="gig" initialData={existingGig} onSubmit={handleUpdate} />
     </div>
   );
 }
