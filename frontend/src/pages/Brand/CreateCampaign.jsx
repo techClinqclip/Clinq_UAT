@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import CampaignForm from "../CampaignForm";
@@ -6,27 +6,24 @@ import { api } from "../../lib/api";
 
 export default function CreateCampaign() {
   const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const createdKeyRef = useRef(null);
 
   const handleCreate = async (formData) => {
-    setIsSubmitting(true);
     try {
       const payload = {
         ...formData,
         thumbnail: formData.thumbnail ?? undefined,
-     startDate: formData.startDate || null,
-      endDate: formData.endDate || null,
+        startDate: formData.startDate || null,
+        endDate: formData.endDate || null,
       };
       const created = await api("/api/content/campaigns/", {
         method: "POST",
         body: payload,
       });
-      navigate(`/brand/campaigns/${created.accessKey}`);
+      createdKeyRef.current = created.accessKey;
     } catch (error) {
       console.error("Create campaign failed", error);
-      alert(error.message || "Unable to create campaign. Please try again.");
-    } finally {
-      setIsSubmitting(false);
+      throw error;
     }
   };
 
@@ -45,7 +42,11 @@ export default function CreateCampaign() {
         <p className="mt-2 text-zinc-400">Set up a new campaign for clippers to join.</p>
       </div>
 
-      <CampaignForm mode="create" onSubmit={handleCreate} />
+      <CampaignForm
+        mode="create"
+        onSubmit={handleCreate}
+        onSuccess={() => navigate(`/brand/campaigns/${createdKeyRef.current}`)}
+      />
     </div>
   );
 }

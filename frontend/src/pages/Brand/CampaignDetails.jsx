@@ -214,7 +214,7 @@ export default function CampaignDetails() {
       setIsPauseConfirmOpen(false);
     } catch (error) {
       console.error("Failed to update campaign status", error);
-      alert(error.message || "Unable to update campaign status.");
+      showToast({ type: "error", message: error.message || "Unable to update campaign status." });
     } finally {
       setIsTogglingPause(false);
     }
@@ -237,7 +237,7 @@ export default function CampaignDetails() {
       setCampaign(updatedCampaign);
     } catch (error) {
       console.error("Failed to close campaign", error);
-      alert(error.message || "Unable to close campaign.");
+      showToast({ type: "error", message: error.message || "Unable to close campaign." });
     } finally {
       setIsDeleting(false);
     }

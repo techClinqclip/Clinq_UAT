@@ -316,7 +316,7 @@ export default function CreatorGigDetails() {
       setConfirmAction(null);
     } catch (err) {
       console.error("Failed to close gig", err);
-      alert(err.message || "Unable to close gig.");
+      showToast({ type: "error", message: err.message || "Unable to close gig." });
     } finally {
       setActionLoading(false);
       setConfirmAction(null);

@@ -4,7 +4,6 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import CampaignForm from "./CampaignForm";
 import { api } from "../lib/api";
 import ContentLoader from "../shared/ui/ContentLoader";
-
 export default function EditCampaign() {
   const { id: accessKey } = useParams();
   const navigate = useNavigate();
@@ -75,11 +74,9 @@ export default function EditCampaign() {
         method: "PATCH",
         body: payload,
       });
-
-      navigate(`/brand/campaigns/${accessKey}`);
     } catch (error) {
       console.error("Update campaign failed", error);
-      alert(error.message || "Unable to update campaign. Please try again.");
+      throw error;
     }
   };
 
@@ -127,7 +124,12 @@ export default function EditCampaign() {
         <p className="mt-2 text-zinc-400">Update your campaign&apos;s details.</p>
       </div>
 
-      <CampaignForm mode="edit" initialData={existingCampaign} onSubmit={handleUpdate} />
+      <CampaignForm
+        mode="edit"
+        initialData={existingCampaign}
+        onSubmit={handleUpdate}
+        onSuccess={() => navigate(`/brand/campaigns/${accessKey}`)}
+      />
     </div>
   );
 }

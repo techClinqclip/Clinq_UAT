@@ -1,10 +1,11 @@
+import { useRef } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import CampaignForm from "../CampaignForm";
 import { api } from "../../lib/api";
-
 export default function CreateGig() {
   const navigate = useNavigate();
+  const createdKeyRef = useRef(null);
 
   const handleCreate = async (formData) => {
     const payload = {
@@ -32,11 +33,10 @@ export default function CreateGig() {
         method: "POST",
         body: payload,
       });
-      // Redirect to the new gig (using the unified Campaign model)
-      navigate(`/creator/gigs/${created.accessKey}`);
+      createdKeyRef.current = created.accessKey;
     } catch (error) {
       console.error("Create gig failed", error);
-      alert(error.message || "Unable to create gig. Please try again.");
+      throw error;
     }
   };
 
@@ -57,7 +57,12 @@ export default function CreateGig() {
         </p>
       </div>
 
-      <CampaignForm mode="create" kind="gig" onSubmit={handleCreate} />
+      <CampaignForm
+        mode="create"
+        kind="gig"
+        onSubmit={handleCreate}
+        onSuccess={() => navigate(`/creator/gigs/${createdKeyRef.current}`)}
+      />
     </div>
   );
 }

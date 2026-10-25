@@ -4,7 +4,6 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import CampaignForm from "../CampaignForm";
 import { api } from "../../lib/api";
 import ContentLoader from "../../shared/ui/ContentLoader";
-
 export default function EditGig() {
   const { id: accessKey } = useParams();
   const navigate = useNavigate();
@@ -68,11 +67,9 @@ export default function EditGig() {
         method: "PATCH",
         body: payload,
       });
-
-      navigate(`/creator/gigs/${accessKey}`);
     } catch (error) {
       console.error("Update gig failed", error);
-      alert(error.message || "Unable to update gig. Please try again.");
+      throw error;
     }
   };
 
@@ -112,7 +109,13 @@ export default function EditGig() {
         <p className="mt-2 text-zinc-400">Update your gig's details.</p>
       </div>
 
-      <CampaignForm mode="edit" kind="gig" initialData={existingGig} onSubmit={handleUpdate} />
+      <CampaignForm
+        mode="edit"
+        kind="gig"
+        initialData={existingGig}
+        onSubmit={handleUpdate}
+        onSuccess={() => navigate(`/creator/gigs/${accessKey}`)}
+      />
     </div>
   );
 }
