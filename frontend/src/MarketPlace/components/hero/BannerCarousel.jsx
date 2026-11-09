@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertCircle, ImageOff, RotateCcw } from "lucide-react";
 
@@ -39,7 +39,13 @@ export default function BannerCarousel({
   error = null,
   onRetry,
 }) {
-  const featuredCampaigns = campaigns.slice(0, 4);
+  const { featuredCampaigns, isFallback } = useMemo(() => {
+    const explicit = campaigns.filter(
+      (c) => c.highlightType === "featured" || c.isPaidListing === true
+    );
+    const isF = explicit.length === 0;
+    return { featuredCampaigns: (isF ? campaigns : explicit).slice(0, 4), isFallback: isF };
+  }, [campaigns]);
   const [[current, direction], setState] = useState([0, 1]);
   const [paused, setPaused] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -197,6 +203,7 @@ export default function BannerCarousel({
           <BannerSlide
             campaign={featuredCampaigns[current]}
             onJoinClick={openCampaignDetails}
+            isFeatured={!isFallback}
           />
         </motion.div>
       </AnimatePresence>

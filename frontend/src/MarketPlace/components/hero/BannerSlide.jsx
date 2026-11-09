@@ -18,6 +18,7 @@ function formatMoney(value) {
 export default function BannerSlide({
   campaign,
   onJoinClick,
+  isFeatured = false,
 }) {
   const title =
     campaign?.name ||
@@ -33,12 +34,12 @@ export default function BannerSlide({
   const description = campaign?.description || "";
 
   const reward = campaign?.rewardPer1k
-    ? `${formatMoney(campaign.rewardPer1k)} Reward`
-    : `${formatMoney(campaign?.budget || 0)} Reward Pool`;
+    ? `${formatMoney(campaign.rewardPer1k)} / 1k views`
+    : `${formatMoney(campaign?.budget || 0)} Budget`;
 
   const creators = `${Number(
     campaign?.submissions || 0
-  )} creators joined`;
+  )} submissions`;
 
   const deadline = campaign?.endDate
     ? `${Math.max(
@@ -62,9 +63,11 @@ export default function BannerSlide({
 
       <div className="relative z-10 flex h-full items-center px-5 pb-20 pt-5 sm:px-10 sm:pb-24 sm:pt-10 lg:px-14 lg:pb-16 lg:pt-14">
         <div className="min-w-0 max-w-xl">
-          <span className="inline-block rounded-full border border-violet-500/40 bg-violet-500/20 px-3 py-1.5 text-xs font-medium text-violet-300 sm:px-4 sm:py-2 sm:text-sm">
-            🔥 Featured Campaign
-          </span>
+          {isFeatured && (
+            <span className="inline-block rounded-full border border-violet-500/40 bg-violet-500/20 px-3 py-1.5 text-xs font-medium text-violet-300 sm:px-4 sm:py-2 sm:text-sm">
+              🔥 Featured Campaign
+            </span>
+          )}
 
           <h1 className="mt-3 max-w-full break-words text-2xl font-bold leading-tight text-white sm:mt-6 sm:text-4xl lg:mt-8 lg:text-6xl">
             {title}

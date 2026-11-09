@@ -1,4 +1,3 @@
-import { useState } from "react";
 import Select from "react-select";
 import {
   FaInstagram,
@@ -25,15 +24,15 @@ const categories = [
 ];
 
 const rewards = [
-  { value: "all", label: "All Rewards" },
+  { value: "all", label: "All Budgets" },
   { value: "10k", label: "< ₹10k" },
-  { value: "50k", label: "₹10k - ₹50k" },
+  { value: "50k", label: "₹10k – ₹50k" },
   { value: "100k", label: "> ₹50k" },
 ];
 
 const sorts = [
   { value: "newest", label: "Newest" },
-  { value: "reward", label: "Highest Reward" },
+  { value: "reward", label: "Highest Budget" },
   { value: "popular", label: "Most Popular" },
   { value: "ending", label: "Ending Soon" },
 ];
@@ -105,6 +104,10 @@ const selectStyles = {
   }),
 };
 
+function prettifyCategory(value) {
+  return String(value || "").replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export default function DiscoveryToolbar({ filters = {}, onFilterChange = () => {} }) {
   const search = filters.search || "";
   const platform = filters.platform || "All";
@@ -121,7 +124,7 @@ export default function DiscoveryToolbar({ filters = {}, onFilterChange = () => 
           <input
             value={search}
             onChange={(e) => onFilterChange("search", e.target.value)}
-            placeholder="Search campaigns, brands, creators..."
+            placeholder="Search by name, brand or category..."
             className="
               h-14
               w-full
@@ -172,7 +175,12 @@ export default function DiscoveryToolbar({ filters = {}, onFilterChange = () => 
           <Select
             styles={selectStyles}
             options={categories}
-            value={categories.find((item) => item.value === (filters.category || "all")) || categories[0]}
+            value={
+              categories.find((item) => item.value === (filters.category || "all")) ||
+              (filters.category && filters.category !== "all"
+                ? { value: filters.category, label: prettifyCategory(filters.category) }
+                : categories[0])
+            }
             onChange={(option) => onFilterChange("category", option?.value || "all")}
             placeholder="Category"
             isSearchable={false}
@@ -183,7 +191,7 @@ export default function DiscoveryToolbar({ filters = {}, onFilterChange = () => 
             options={rewards}
             value={rewards.find((item) => item.value === (filters.reward || "all")) || rewards[0]}
             onChange={(option) => onFilterChange("reward", option?.value || "all")}
-            placeholder="Reward"
+            placeholder="Budget"
             isSearchable={false}
           />
 

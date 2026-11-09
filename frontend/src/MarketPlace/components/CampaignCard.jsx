@@ -34,9 +34,15 @@ export default function CampaignCard({ campaign }) {
   return (
     <>
       <div
-        onClick={() => setModalOpen(true)}
-        className={`group relative flex cursor-pointer flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#11111A] shadow-2xl shadow-transparent transition-all duration-300 ease-out hover:z-10 hover:-translate-y-6 hover:scale-[1.07] hover:shadow-[0_35px_60px_-15px_rgba(0,0,0,0.6)] active:scale-[0.98] ${a.border} ${a.glow}`}
+        className={`group relative flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#11111A] shadow-2xl shadow-transparent transition-all duration-300 ease-out hover:z-10 hover:-translate-y-2 hover:scale-[1.02] hover:shadow-[0_16px_40px_-10px_rgba(0,0,0,0.5)] ${a.border} ${a.glow}`}
       >
+        {/* Full-card interactive control — the only interactive element in this card */}
+        <button
+          type="button"
+          onClick={() => setModalOpen(true)}
+          aria-label={`View details for ${title}`}
+          className={`absolute inset-0 z-10 cursor-pointer rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset ${a.ring}`}
+        />
         <div className="relative h-36 overflow-hidden sm:h-40">
           {thumbnail ? (
             <>
@@ -76,7 +82,7 @@ export default function CampaignCard({ campaign }) {
             </div>
           </div>
 
-          <div className="absolute bottom-3 right-3 z-20 flex h-8 w-8 scale-75 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white opacity-0 backdrop-blur-sm transition-all duration-300 group-hover:scale-100 group-hover:opacity-100">
+          <div className="pointer-events-none absolute bottom-3 right-3 z-20 flex h-8 w-8 scale-75 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white opacity-0 backdrop-blur-sm transition-all duration-300 group-hover:scale-100 group-hover:opacity-100">
             <Maximize2 size={13} />
           </div>
         </div>
@@ -88,43 +94,31 @@ export default function CampaignCard({ campaign }) {
           <StatBox icon={<TrendingUp size={15} className="text-emerald-400" />} iconBg="bg-emerald-500/10" label="Paid Out" value={formatMoney(paidOut)} valueClass="text-emerald-400" />
         </div>
 
-        <div className="px-5 pb-5">
-          <div className="mb-1.5 flex items-center justify-between text-xs">
-            <span className="text-zinc-500">{formatMoney(paidOut)} of {formatMoney(budget)} paid out</span>
-            <span className="font-semibold text-white">{progress}%</span>
+        {paidOut > 0 && (
+          <div className="px-5 pb-5">
+            <div className="mb-1.5 flex items-center justify-between text-xs">
+              <span className="text-zinc-500">{formatMoney(paidOut)} of {formatMoney(budget)} paid out</span>
+              <span className="font-semibold text-white">{progress}%</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-white/5">
+              <div className={`h-full rounded-full bg-gradient-to-r ${a.bar} transition-all duration-500`} style={{ width: `${progress}%` }} />
+            </div>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-white/5">
-            <div className={`h-full rounded-full bg-gradient-to-r ${a.bar} transition-all duration-500`} style={{ width: `${progress}%` }} />
-          </div>
-        </div>
+        )}
 
-        {/* Mobile/touch: button stays in normal flow since there's no hover */}
-        <div className="border-t border-white/5 p-5 pt-5 lg:hidden">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setModalOpen(true);
-            }}
-            className={`block w-full rounded-xl px-4 py-3 text-center text-sm font-medium text-white transition ${a.solidBtn}`}
-          >
+        {/* Mobile: persistent visual affordance — the full-card button handles interaction */}
+        <div className="border-t border-white/5 p-5 lg:hidden">
+          <span className={`block w-full rounded-xl px-4 py-3 text-center text-sm font-medium text-white ${a.solidBtn}`}>
             View Details
-          </button>
+          </span>
         </div>
 
-        {/* Desktop: overlay slides up on hover without growing the card's box height */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 hidden translate-y-full opacity-0 transition-all duration-300 ease-out group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:pointer-events-auto group-focus-within:pointer-events-auto lg:block">
+        {/* Desktop: overlay slides up on hover/focus — purely visual, pointer-events off */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 hidden translate-y-full opacity-0 transition-all duration-300 ease-out group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 lg:block">
           <div className="border-t border-white/10 bg-[#11111A]/95 p-5 backdrop-blur-sm">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setModalOpen(true);
-              }}
-              className={`block w-full rounded-xl px-4 py-3 text-center text-sm font-medium text-white transition ${a.solidBtn}`}
-            >
+            <span className={`block w-full rounded-xl px-4 py-3 text-center text-sm font-medium text-white ${a.solidBtn}`}>
               View Details
-            </button>
+            </span>
           </div>
         </div>
       </div>
