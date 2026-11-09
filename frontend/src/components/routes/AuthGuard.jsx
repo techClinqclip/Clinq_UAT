@@ -102,31 +102,37 @@ export default function AuthGuard() {
         return;
       }
 
-      if (isDashboardRoute) {
-        const nextPath = resolveAuthenticatedTarget(resolvedUserType, profile);
-        if (nextPath && nextPath !== location.pathname && nextPath.startsWith('/onboarding/')) {
-          navigate(nextPath, { replace: true });
-          return;
+      // Only redirect based on onboarding state when we have a real profile.
+      // If hydrateAuthState() returned a null profile (transient backend error),
+      // skip these checks — a null profile looks identical to "onboarding not
+      // done" and would incorrectly bounce an existing user to onboarding.
+      if (profile) {
+        if (isDashboardRoute) {
+          const nextPath = resolveAuthenticatedTarget(resolvedUserType, profile);
+          if (nextPath && nextPath !== location.pathname && nextPath.startsWith('/onboarding/')) {
+            navigate(nextPath, { replace: true });
+            return;
+          }
         }
-      }
 
-      if (isOnboardingRoute) {
-        const nextPath = resolveAuthenticatedTarget(resolvedUserType, profile);
-        if (
-          nextPath &&
-          nextPath !== location.pathname &&
-          (nextPath.startsWith('/brand') || nextPath.startsWith('/creator') || nextPath.startsWith('/clipper'))
-        ) {
-          navigate(nextPath, { replace: true });
-          return;
+        if (isOnboardingRoute) {
+          const nextPath = resolveAuthenticatedTarget(resolvedUserType, profile);
+          if (
+            nextPath &&
+            nextPath !== location.pathname &&
+            (nextPath.startsWith('/brand') || nextPath.startsWith('/creator') || nextPath.startsWith('/clipper'))
+          ) {
+            navigate(nextPath, { replace: true });
+            return;
+          }
         }
-      }
 
-      if (location.pathname === '/') {
-        const nextPath = resolveAuthenticatedTarget(resolvedUserType, profile);
-        if (nextPath && nextPath !== location.pathname) {
-          navigate(nextPath, { replace: true });
-          return;
+        if (location.pathname === '/') {
+          const nextPath = resolveAuthenticatedTarget(resolvedUserType, profile);
+          if (nextPath && nextPath !== location.pathname) {
+            navigate(nextPath, { replace: true });
+            return;
+          }
         }
       }
 
