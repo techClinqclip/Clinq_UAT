@@ -23,7 +23,9 @@ export default function Marketplace() {
   const user = useCurrentUser();
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [filters, setFilters] = useState(defaultFilters);
+  const [fetchKey, setFetchKey] = useState(0);
 
   // Only show the full LoadingScreen once per browser session (e.g. right
   // after login/signup). On later visits to /marketplace within the same
@@ -39,16 +41,26 @@ export default function Marketplace() {
     // Hard cap: if the API never resolves (server down, network hang),
     // force loading=false after 12s so the LoadingScreen isn't stuck forever.
     const maxWait = setTimeout(() => {
-      if (mounted) setLoading(false);
+      if (mounted) {
+        mounted = false; // prevent a late successful response from clearing this error
+        setLoading(false);
+        setError("Request timed out. Please check your connection and try again.");
+      }
     }, 12000);
 
     async function loadCampaigns() {
       try {
         const response = await api("/api/content/campaigns/?scope=marketplace");
         const nextCampaigns = Array.isArray(response) ? response : response?.results || [];
-        if (mounted) setCampaigns(nextCampaigns);
-      } catch {
-        if (mounted) setCampaigns([]);
+        if (mounted) {
+          setCampaigns(nextCampaigns);
+          setError(null);
+        }
+      } catch (err) {
+        if (mounted) {
+          setCampaigns([]);
+          setError(err?.message || "Failed to load campaigns. Please try again.");
+        }
       } finally {
         clearTimeout(maxWait);
         if (mounted) setLoading(false);
@@ -60,7 +72,14 @@ export default function Marketplace() {
       mounted = false;
       clearTimeout(maxWait);
     };
-  }, []);
+  }, [fetchKey]);
+
+  const handleRetry = () => {
+    setLoading(true);
+    setError(null);
+    setCampaigns([]);
+    setFetchKey((k) => k + 1);
+  };
 
   const updateFilter = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -86,15 +105,17 @@ export default function Marketplace() {
        role={user?.role}
        campaigns={campaigns}
        loading={loading}
+       onFilterChange={updateFilter}
+       activeCategory={filters.category}
      >
-         <HeroSection campaigns={campaigns} loading={loading} />
+         <HeroSection campaigns={campaigns} loading={loading} error={error} onRetry={handleRetry} />
           <DiscoveryToolbar filters={filters} onFilterChange={updateFilter} />
 
           <div className="mt-12">
-            <FeaturedCampaigns campaigns={campaigns} loading={loading} />
+            <FeaturedCampaigns campaigns={campaigns} loading={loading} error={error} onRetry={handleRetry} />
           </div>
           <div className="mt-16">
-            <AllCampaigns campaigns={campaigns} filters={filters} loading={loading} />
+            <AllCampaigns campaigns={campaigns} filters={filters} loading={loading} error={error} onRetry={handleRetry} />
           </div>
         </MarketplaceLayout>
       )}

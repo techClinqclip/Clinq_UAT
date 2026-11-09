@@ -8,6 +8,8 @@ export default function MarketplaceLayout({
   role,
   campaigns = [],
   loading = false,
+  onFilterChange,
+  activeCategory = "all",
 }) {
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
 
@@ -27,7 +29,7 @@ export default function MarketplaceLayout({
           <div className="hidden xl:block">
             <aside className="fixed right-0 top-16 bottom-0 z-30 w-80 border-l border-white/5 bg-[#0B0B12]">
               <div className="h-full overflow-y-auto px-4 py-6 custom-scrollbar">
-                <RightSidebar campaigns={campaigns} />
+                <RightSidebar campaigns={campaigns} onFilterChange={onFilterChange} activeCategory={activeCategory} />
               </div>
             </aside>
           </div>
@@ -98,7 +100,7 @@ export default function MarketplaceLayout({
 
                 {/* Drawer content */}
                 <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] custom-scrollbar">
-                <RightSidebar campaigns={campaigns} loading={loading} />
+                <RightSidebar campaigns={campaigns} loading={loading} onFilterChange={onFilterChange} activeCategory={activeCategory} />
                 </div>
               </aside>
             </div>

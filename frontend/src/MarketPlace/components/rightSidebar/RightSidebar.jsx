@@ -97,16 +97,26 @@ function SidebarSkeleton() {
 export default function RightSidebar({
   campaigns = [],
   loading = false,
+  onFilterChange,
+  activeCategory = "all",
 }) {
   if (loading) {
     return <SidebarSkeleton />;
   }
 
+  const handleCategoryClick = typeof onFilterChange === "function"
+    ? (value) => onFilterChange("category", value)
+    : undefined;
+
   return (
     <div className="space-y-6">
       <PlatformStats campaigns={campaigns} />
       <TopEarners campaigns={campaigns} />
-      <TrendingCategories campaigns={campaigns} />
+      <TrendingCategories
+        campaigns={campaigns}
+        onCategoryClick={handleCategoryClick}
+        activeCategory={activeCategory}
+      />
       <TipCard />
       <CTACard />
     </div>

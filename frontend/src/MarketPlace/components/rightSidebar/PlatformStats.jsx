@@ -8,25 +8,20 @@ function formatCount(value) {
 
 export default function PlatformStats({ campaigns = [] }) {
   const campaignCount = campaigns.length;
-  const creatorCount = new Set(
-    campaigns
-      .map((campaign) => campaign.creatorEmail || campaign.creator || campaign.creatorId)
-      .filter(Boolean)
-  ).size;
   const brandCount = new Set(
     campaigns
-      .map((campaign) => campaign.brandName || campaign.brand || "Brand")
+      .map((campaign) => campaign.brandName || campaign.brand || null)
       .filter(Boolean)
   ).size;
 
   const stats = [
-    { label: "Campaigns", value: formatCount(campaignCount) },
-    { label: "Creators", value: formatCount(creatorCount) },
+    { label: "Live Campaigns", value: formatCount(campaignCount) },
     { label: "Brands", value: formatCount(brandCount) },
   ];
 
   return (
-    <SidebarCard title="Platform Stats" icon={BarChart3}>
+    <SidebarCard title="Marketplace Overview" icon={BarChart3}>
+      <p className="mb-3 text-xs text-zinc-500">Based on currently loaded campaigns.</p>
       <div className="space-y-3">
         {stats.map((item) => (
           <div key={item.label} className="flex items-center justify-between rounded-xl bg-white/[0.03] px-3 py-2.5">

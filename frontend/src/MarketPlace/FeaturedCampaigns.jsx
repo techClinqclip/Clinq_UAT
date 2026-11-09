@@ -9,9 +9,17 @@ function normalizeCampaignList(data) {
   return [];
 }
 
+const BANNER_COUNT = 4;
+
 export default function FeaturedCampaigns({ campaigns = [], loading = false, error = null, onRetry }) {
   const featuredCampaigns = useMemo(() => {
-    return normalizeCampaignList(campaigns).slice(0, 8);
+    const list = normalizeCampaignList(campaigns);
+    const explicit = list.filter(
+      (c) => c.highlightType === "featured" || c.isPaidListing === true
+    );
+    if (explicit.length > 0) return explicit.slice(0, 8);
+    // Fallback: skip the first BANNER_COUNT entries shown in the banner carousel
+    return list.slice(BANNER_COUNT, BANNER_COUNT + 8);
   }, [campaigns]);
 
   const scrollRef = useRef(null);
@@ -26,17 +34,19 @@ export default function FeaturedCampaigns({ campaigns = [], loading = false, err
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold text-white">Featured Campaigns</h2>
-          <p className="mt-2 text-zinc-400">Hand-picked campaigns from top brands.</p>
+          <p className="mt-2 text-zinc-400">Top campaigns available on the marketplace right now.</p>
         </div>
         {!loading && !error && featuredCampaigns.length > 0 && (
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={() => scroll(-1)}
               className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-700 bg-zinc-900 text-zinc-400 transition-all hover:border-violet-500 hover:bg-violet-600 hover:text-white"
             >
               <ChevronLeft size={18} />
             </button>
             <button
+              type="button"
               onClick={() => scroll(1)}
               className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-700 bg-zinc-900 text-zinc-400 transition-all hover:border-violet-500 hover:bg-violet-600 hover:text-white"
             >
@@ -79,7 +89,7 @@ export default function FeaturedCampaigns({ campaigns = [], loading = false, err
           </div>
           <div>
             <p className="font-medium text-zinc-300">No featured campaigns yet</p>
-            <p className="mt-1 text-sm text-zinc-500">Hand-picked campaigns will show up here once they're live.</p>
+            <p className="mt-1 text-sm text-zinc-500">Check back soon — campaigns will appear here once they're live.</p>
           </div>
         </div>
       ) : (

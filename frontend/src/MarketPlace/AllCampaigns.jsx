@@ -38,7 +38,7 @@ export default function AllCampaigns({ campaigns = [], filters = {}, loading = f
         const platformList = Array.isArray(campaign.platforms) ? campaign.platforms.map((item) => String(item).toLowerCase()) : [];
         const budget = Number(campaign.budget || 0);
 
-        if (query && !`${title} ${brand}`.includes(query)) {
+        if (query && !`${title} ${brand} ${categoryName}`.includes(query)) {
           return false;
         }
 
@@ -94,7 +94,7 @@ export default function AllCampaigns({ campaigns = [], filters = {}, loading = f
     <section className="space-y-8">
       <div>
         <h2 className="text-3xl font-bold text-white">All Campaigns</h2>
-        <p className="mt-2 text-zinc-400">Browse every live campaign from our brand partners.</p>
+        <p className="mt-2 text-zinc-400">Browse live campaigns from brands on the marketplace.</p>
       </div>
 
       {loading ? (

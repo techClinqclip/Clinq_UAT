@@ -253,15 +253,17 @@ export default function CampaignDetailModal({ isOpen, onClose, campaign }) {
                   <Stat icon={<TrendingUp size={15} className="text-emerald-400" />} iconBg="bg-emerald-500/10" label="Paid Out" value={formatMoney(paidOut)} valueClass="text-emerald-400" />
                 </div>
 
-                <div>
-                  <div className="mb-1.5 flex items-center justify-between text-xs">
-                    <span className="text-zinc-500">{formatMoney(paidOut)} of {formatMoney(budget)} paid out</span>
-                    <span className="font-semibold text-white">{progress}%</span>
+                {paidOut > 0 && (
+                  <div>
+                    <div className="mb-1.5 flex items-center justify-between text-xs">
+                      <span className="text-zinc-500">{formatMoney(paidOut)} of {formatMoney(budget)} paid out</span>
+                      <span className="font-semibold text-white">{progress}%</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-white/5">
+                      <div className={`h-full rounded-full bg-gradient-to-r ${a.bar}`} style={{ width: `${progress}%` }} />
+                    </div>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-white/5">
-                    <div className={`h-full rounded-full bg-gradient-to-r ${a.bar}`} style={{ width: `${progress}%` }} />
-                  </div>
-                </div>
+                )}
 
                 {activeTab === "Overview" && (
                   <>
