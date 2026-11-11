@@ -65,11 +65,12 @@ export function getOnboardingRedirectPath({ userType, profile }) {
   if (normalizedRole === 'creator') {
     const niche = profile?.primary_niche || onboardingData?.niche || '';
     const interests = profile?.content_interests || onboardingData?.interests || [];
-    const handles = profile?.handles || onboardingData?.handles || {};
     const hasNiche = Boolean(String(niche).trim());
     const hasInterests = Array.isArray(interests) && interests.length > 0;
-    const hasPlatform = Boolean(Object.values(handles).some((value) => String(value || '').trim()));
-    return hasNiche && hasInterests && hasPlatform ? '/creator/dashboard' : '/onboarding/creator';
+    // Platform handles are optional — the onboarding form allows skipping them,
+    // so requiring a non-empty handle here causes a redirect loop for creators
+    // who submitted with all-blank handles.
+    return hasNiche && hasInterests ? '/creator/dashboard' : '/onboarding/creator';
   }
 
   if (normalizedRole === 'clipper') {
