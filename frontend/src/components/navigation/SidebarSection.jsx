@@ -8,7 +8,24 @@ export default function SidebarSection({
   links,
   isOpen,
   onToggle,
+  collapsible = true,
 }) {
+  if (!collapsible) {
+    return (
+      <div>
+        <div className="mb-2 flex items-center gap-2 px-3 py-2 text-sm font-semibold text-zinc-400">
+          <Icon size={17} />
+          <span>{title}</span>
+        </div>
+        <div className="space-y-1 pl-5">
+          {links.map((link) => (
+            <SidebarItem key={link.path} link={link} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <button

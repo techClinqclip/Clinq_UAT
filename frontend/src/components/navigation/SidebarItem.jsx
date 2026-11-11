@@ -28,6 +28,12 @@ export default function SidebarItem({ link }) {
           <Icon size={18} />
 
           <span className="font-medium">{link.name}</span>
+
+          {link.soon && (
+            <span className="ml-auto rounded-md bg-white/5 px-1.5 py-0.5 text-xs text-zinc-400">
+              Soon
+            </span>
+          )}
         </motion.div>
       )}
     </NavLink>

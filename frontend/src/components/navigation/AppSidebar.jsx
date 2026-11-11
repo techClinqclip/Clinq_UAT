@@ -30,14 +30,12 @@ export default function AppSidebar({ role: propRole }) {
     location.pathname.startsWith(link.path)
   );
 
-  const [openSection, setOpenSection] = useState(
-    isExploreRoute ? "explore" : "workspace"
-  );
+  const [exploreOpen, setExploreOpen] = useState(isExploreRoute);
   const [logoutConfirmationOpen, setLogoutConfirmationOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    setOpenSection(isExploreRoute ? "explore" : "workspace");
+    setExploreOpen(isExploreRoute);
     setMobileMenuOpen(false);
   }, [location.pathname, isExploreRoute]);
 
@@ -107,12 +105,8 @@ export default function AppSidebar({ role: propRole }) {
             title="Explore"
             icon={Compass}
             links={exploreLinks}
-            isOpen={openSection === "explore"}
-            onToggle={() =>
-              setOpenSection((prev) =>
-                prev === "explore" ? null : "explore"
-              )
-            }
+            isOpen={exploreOpen}
+            onToggle={() => setExploreOpen((prev) => !prev)}
           />
 
           <div className="my-5 h-px bg-white/5" />
@@ -121,12 +115,7 @@ export default function AppSidebar({ role: propRole }) {
             title="Workspace"
             icon={BriefcaseBusiness}
             links={workspaceLinks}
-            isOpen={openSection === "workspace"}
-            onToggle={() =>
-              setOpenSection((prev) =>
-                prev === "workspace" ? null : "workspace"
-              )
-            }
+            collapsible={false}
           />
         </nav>
 
