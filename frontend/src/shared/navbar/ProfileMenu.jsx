@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronDown, User, Settings, LogOut } from "lucide-react";
 import useCurrentUser from "../../hooks/useCurrentUser";
@@ -69,7 +69,7 @@ export default function ProfileMenu() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-white/10 bg-[#15151F] shadow-2xl">
+        <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-white/10 bg-surface-3 shadow-2xl">
           <div className="flex items-center gap-3 border-b border-white/10 p-4">
             <UserAvatar user={user} size={40} />
             <div className="min-w-0">

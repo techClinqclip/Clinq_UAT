@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+﻿import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   CheckCircle2,
@@ -100,7 +100,7 @@ export default function Toast({ toast, removeToast }) {
     rounded-xl
     border
     ${style.border}
-    bg-[#111118]/95
+    bg-surface-2/95
     backdrop-blur-xl
     shadow-[0_12px_40px_rgba(0,0,0,0.45)]
   `}

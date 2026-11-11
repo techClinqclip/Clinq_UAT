@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   Eye,
@@ -443,7 +443,7 @@ export default function CreatorGigDetails() {
         Back to Gigs
       </Link>
 
-      <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-violet-600/10 via-[#11111A] to-[#0B0B12] p-8">
+      <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-violet-600/10 via-surface-2 to-surface-1 p-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:justify-between">
           <div>
 
@@ -526,7 +526,7 @@ export default function CreatorGigDetails() {
         </section>
       )}
 
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
         <h2 className="text-2xl font-bold text-white">Gig Overview</h2>
 
         <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
@@ -565,7 +565,7 @@ export default function CreatorGigDetails() {
         </div>
       </section>
 
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
         <h2 className="text-2xl font-bold text-white">Requirements</h2>
 
         <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-5">
@@ -585,7 +585,7 @@ export default function CreatorGigDetails() {
           return (
             <div
               key={item.label}
-              className={`rounded-2xl border border-white/10 bg-[#11111A] p-5 transition ${a.border}`}
+              className={`rounded-2xl border border-white/10 bg-surface-2 p-5 transition ${a.border}`}
             >
               <div className={`mb-3 flex h-9 w-9 items-center justify-center rounded-lg ${a.iconBg}`}>
                 <Icon size={17} className={a.iconText} />
@@ -602,7 +602,7 @@ export default function CreatorGigDetails() {
 
 
       {/* Gig Participants */}
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-white">Gig Participants</h2>
@@ -674,7 +674,7 @@ export default function CreatorGigDetails() {
         </div>
       </section>
 
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
         <h2 className="text-2xl font-bold text-white">Resources</h2>
         <p className="mt-1 text-zinc-500">Reference material shared with clippers for this gig.</p>
 
@@ -708,7 +708,7 @@ export default function CreatorGigDetails() {
           <p className="mt-6 text-sm text-zinc-500">No resources have been added to this gig yet.</p>
         )}
       </section>
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-white">Gig Performance</h2>
@@ -742,7 +742,7 @@ export default function CreatorGigDetails() {
               <Eye size={32} className="text-violet-400" />
             </div>
 
-            <div className="mt-8 h-[220px] rounded-2xl border border-violet-500/20 bg-[#0B0B12] p-3">
+            <div className="mt-8 h-[220px] rounded-2xl border border-violet-500/20 bg-surface-1 p-3">
               <ViewsChart data={chartData.views} xKey="period" dataKey="views" />
             </div>
           </div>
@@ -766,7 +766,7 @@ export default function CreatorGigDetails() {
 
       {isSettlementModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-[#11111A] p-6 shadow-2xl shadow-black/50">
+          <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-surface-2 p-6 shadow-2xl shadow-black/50">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.25em] text-red-400">Settlement</p>
@@ -808,7 +808,7 @@ export default function CreatorGigDetails() {
                     value={newSettlementDeadline || ""}
                     min={new Date().toISOString().split("T")[0]}
                     onChange={(event) => setNewSettlementDeadline(event.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-[#0B0B12] px-3 py-2 text-white"
+                    className="w-full rounded-xl border border-white/10 bg-surface-1 px-3 py-2 text-white"
                   />
                 </div>
               )}

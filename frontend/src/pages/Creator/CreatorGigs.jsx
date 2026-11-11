@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import {
   Plus,
@@ -88,7 +88,7 @@ function GigCard({ gig, onRequestAction, isToggling }) {
           openGig();
         }
       }}
-      className={`group relative flex cursor-pointer flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#11111A] shadow-2xl shadow-transparent transition-all duration-300 ease-out hover:z-10 hover:-translate-y-3 hover:scale-[1.03] hover:shadow-black/40 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${a.border} ${a.glow}`}
+      className={`group relative flex cursor-pointer flex-col overflow-hidden rounded-3xl border border-white/10 bg-surface-2 shadow-2xl shadow-transparent transition-all duration-300 ease-out hover:z-10 hover:-translate-y-3 hover:scale-[1.03] hover:shadow-black/40 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${a.border} ${a.glow}`}
     >
       {/* Cover */}
       <div className="relative h-36 overflow-hidden sm:h-40">
@@ -262,7 +262,7 @@ function GigCard({ gig, onRequestAction, isToggling }) {
 function EmptyGigsState({ hasAnyGigs, onClearFilters }) {
   if (!hasAnyGigs) {
     return (
-      <div className="col-span-full rounded-3xl border border-dashed border-white/10 bg-[#11111A] px-8 py-20 text-center">
+      <div className="col-span-full rounded-3xl border border-dashed border-white/10 bg-surface-2 px-8 py-20 text-center">
         <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-violet-500/10">
           <Megaphone size={36} className="text-violet-400" />
         </div>
@@ -286,7 +286,7 @@ function EmptyGigsState({ hasAnyGigs, onClearFilters }) {
   }
 
   return (
-    <div className="col-span-full rounded-3xl border border-dashed border-white/10 bg-[#11111A] px-8 py-20 text-center">
+    <div className="col-span-full rounded-3xl border border-dashed border-white/10 bg-surface-2 px-8 py-20 text-center">
       <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-violet-500/10">
         <Search size={36} className="text-violet-400" />
       </div>
@@ -474,7 +474,7 @@ export default function CreatorGigs() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search gigs..."
-          className="w-full rounded-2xl border border-white/10 bg-[#11111A] py-3 pl-11 pr-4 text-white outline-none focus:border-violet-500"
+          className="w-full rounded-2xl border border-white/10 bg-surface-2 py-3 pl-11 pr-4 text-white outline-none focus:border-violet-500"
         />
       </div>
 
@@ -501,7 +501,7 @@ export default function CreatorGigs() {
       <div className="grid items-start gap-6 lg:grid-cols-2 xl:grid-cols-3">
         {loading ? (
           Array.from({ length: 3 }).map((_, index) => (
-            <div key={index} className="rounded-3xl border border-white/10 bg-[#11111A] p-6">
+            <div key={index} className="rounded-3xl border border-white/10 bg-surface-2 p-6">
               <div className="h-36 animate-pulse rounded-2xl bg-white/10" />
               <div className="mt-4 h-4 w-24 animate-pulse rounded bg-white/10" />
               <div className="mt-3 h-6 w-32 animate-pulse rounded bg-white/10" />

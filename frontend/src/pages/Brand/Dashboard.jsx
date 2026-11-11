@@ -1,4 +1,4 @@
-import {
+﻿import {
   Plus,
   ArrowRight,
   Megaphone,
@@ -144,7 +144,7 @@ export default function Dashboard() {
       )}
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-violet-600/15 via-[#11111A] to-[#0B0B12] p-8">
+      <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-violet-600/15 via-surface-2 to-surface-1 p-8">
         {coverImage ? (
           <img
             src={coverImage}
@@ -167,7 +167,7 @@ export default function Dashboard() {
                 short ("Clinq · Jonny") or long, rather than a fixed
                 width leaving inconsistent whitespace either way. */}
             <div className="mt-6 inline-flex w-fit items-center gap-4 rounded-2xl border border-white/10 bg-black/30 px-5 py-3.5">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-[#11111A]">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-surface-2">
                 {showAvatarImage ? (
                   <img
                     src={avatarImage}
@@ -206,7 +206,7 @@ export default function Dashboard() {
             <Link
               key={stat.title}
               to={stat.link}
-              className="group block rounded-2xl border border-white/10 bg-gradient-to-br from-[#11111A] to-[#0B0B12] p-6 transition-all duration-300 hover:-translate-y-1 hover:border-violet-500/30"
+              className="group block rounded-2xl border border-white/10 bg-gradient-to-br from-surface-2 to-surface-1 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-violet-500/30"
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10">
                 <Icon size={18} className="text-violet-400" />
@@ -225,7 +225,7 @@ export default function Dashboard() {
       </div>
 
       {/* Top Performing Campaigns */}
-      <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#11111A] to-[#0B0B12] p-8">
+      <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-surface-2 to-surface-1 p-8">
         <div className="mb-8 flex items-center justify-between">
           <h2 className="text-2xl font-bold text-white">Top Performing Campaigns</h2>
           <Link to="/brand/campaigns" className="flex items-center gap-2 text-sm text-violet-400 hover:text-violet-300">
@@ -285,7 +285,7 @@ export default function Dashboard() {
       </section>
 
       {/* Campaign Showcase */}
-      <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#11111A] to-[#0B0B12] p-8">
+      <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-surface-2 to-surface-1 p-8">
         <div className="mb-8 flex items-center justify-between">
           <h2 className="text-2xl font-bold text-white">Campaign Showcase</h2>
           <Link to="/brand/campaigns" className="flex items-center gap-2 text-sm text-violet-400 hover:text-violet-300">

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import {
     ArrowRight,
     Wallet,
@@ -172,7 +172,7 @@ export default function ClipperDashboard() {
 
     return (
         <div className="space-y-8">
-            <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-violet-600/15 via-[#11111A] to-[#0B0B12] p-8">
+            <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-violet-600/15 via-surface-2 to-surface-1 p-8">
                 <div className="absolute right-0 top-0 h-72 w-72 rounded-full bg-violet-500/10 blur-[120px]" />
 
                 <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
@@ -213,7 +213,7 @@ export default function ClipperDashboard() {
                         <Link
                             key={stat.title}
                             to={stat.link}
-                            className="group block rounded-3xl border border-white/10 bg-gradient-to-br from-[#11111A] to-[#0B0B12] p-6 transition-all duration-300 hover:-translate-y-1 hover:border-violet-500/30"
+                            className="group block rounded-3xl border border-white/10 bg-gradient-to-br from-surface-2 to-surface-1 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-violet-500/30"
                         >
                             <div className="flex items-center justify-between">
                                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-500/10">
@@ -227,7 +227,7 @@ export default function ClipperDashboard() {
                 })}
             </div>
 
-            <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#11111A] to-[#0B0B12] p-8">
+            <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-surface-2 to-surface-1 p-8">
                 <div className="mb-8 flex items-center justify-between">
                     <div>
                         <h2 className="text-2xl font-bold text-white">Top Gigs/Campaigns</h2>
@@ -282,7 +282,7 @@ export default function ClipperDashboard() {
                 </div>
             </section>
 
-            <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#11111A] to-[#0B0B12] p-8">
+            <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-surface-2 to-surface-1 p-8">
                 <div className="mb-8 flex items-center justify-between">
                     <div>
                         <h2 className="text-2xl font-bold text-white">Recent Submissions</h2>

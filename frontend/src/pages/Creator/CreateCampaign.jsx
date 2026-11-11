@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import {
   ArrowLeft,
   Plus,
@@ -88,7 +88,7 @@ export default function CreateCampaign() {
       <div className="grid gap-8 xl:grid-cols-[1fr_350px]">
         {/* Form */}
 
-        <div className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+        <div className="rounded-3xl border border-white/10 bg-surface-2 p-8">
           <form className="space-y-8">
             {/* Campaign Name + Category */}
 
@@ -101,7 +101,7 @@ export default function CreateCampaign() {
                 <input
                   type="text"
                   placeholder="Podcast Clips Campaign"
-                  className="w-full rounded-2xl border border-white/10 bg-[#0B0B12] px-4 py-3 text-white"
+                  className="w-full rounded-2xl border border-white/10 bg-surface-1 px-4 py-3 text-white"
                 />
               </div>
 
@@ -110,7 +110,7 @@ export default function CreateCampaign() {
                   Category
                 </label>
 
-                <select className="w-full rounded-2xl border border-white/10 bg-[#0B0B12] px-4 py-3 text-white">
+                <select className="w-full rounded-2xl border border-white/10 bg-surface-1 px-4 py-3 text-white">
                   <option>Entertainment</option>
                   <option>Gaming</option>
                   <option>Finance</option>
@@ -130,7 +130,7 @@ export default function CreateCampaign() {
 
               <input
                 type="file"
-                className="w-full rounded-2xl border border-dashed border-white/10 bg-[#0B0B12] p-4 text-zinc-400"
+                className="w-full rounded-2xl border border-dashed border-white/10 bg-surface-1 p-4 text-zinc-400"
               />
             </div>
 
@@ -144,7 +144,7 @@ export default function CreateCampaign() {
               <textarea
                 rows={5}
                 placeholder="Describe your campaign..."
-                className="w-full rounded-2xl border border-white/10 bg-[#0B0B12] px-4 py-3 text-white"
+                className="w-full rounded-2xl border border-white/10 bg-surface-1 px-4 py-3 text-white"
               />
             </div>
 
@@ -158,7 +158,7 @@ export default function CreateCampaign() {
               <textarea
                 rows={6}
                 placeholder="Hook under 3 seconds, use subtitles, avoid copyrighted music..."
-                className="w-full rounded-2xl border border-white/10 bg-[#0B0B12] px-4 py-3 text-white"
+                className="w-full rounded-2xl border border-white/10 bg-surface-1 px-4 py-3 text-white"
               />
             </div>
 
@@ -184,7 +184,7 @@ export default function CreateCampaign() {
                 {resources.map((resource, index) => (
                   <div
                     key={index}
-                    className="rounded-2xl border border-white/10 bg-[#0B0B12] p-4"
+                    className="rounded-2xl border border-white/10 bg-surface-1 p-4"
                   >
                     <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto]">
                       <input
@@ -288,7 +288,7 @@ export default function CreateCampaign() {
                 <input
                   type="number"
                   placeholder="20"
-                  className="w-full rounded-2xl border border-white/10 bg-[#0B0B12] px-4 py-3 text-white"
+                  className="w-full rounded-2xl border border-white/10 bg-surface-1 px-4 py-3 text-white"
                 />
               </div>
 
@@ -300,7 +300,7 @@ export default function CreateCampaign() {
                 <input
                   type="number"
                   placeholder="10000"
-                  className="w-full rounded-2xl border border-white/10 bg-[#0B0B12] px-4 py-3 text-white"
+                  className="w-full rounded-2xl border border-white/10 bg-surface-1 px-4 py-3 text-white"
                 />
               </div>
             </div>
@@ -315,7 +315,7 @@ export default function CreateCampaign() {
               <input
                 type="number"
                 defaultValue={10}
-                className="w-full rounded-2xl border border-white/10 bg-[#0B0B12] px-4 py-3 text-white"
+                className="w-full rounded-2xl border border-white/10 bg-surface-1 px-4 py-3 text-white"
               />
             </div>
 
@@ -330,7 +330,7 @@ export default function CreateCampaign() {
                 <input
                   type="date"
                   defaultValue={formData.startDate}
-                  className="w-full rounded-2xl border border-white/10 bg-[#0B0B12] px-4 py-3 text-white"
+                  className="w-full rounded-2xl border border-white/10 bg-surface-1 px-4 py-3 text-white"
                 />
               </div>
 
@@ -341,7 +341,7 @@ export default function CreateCampaign() {
 
                 <input
                   type="date"
-                  className="w-full rounded-2xl border border-white/10 bg-[#0B0B12] px-4 py-3 text-white"
+                  className="w-full rounded-2xl border border-white/10 bg-surface-1 px-4 py-3 text-white"
                 />
               </div>
             </div>
@@ -357,7 +357,7 @@ export default function CreateCampaign() {
 
         {/* Summary Card */}
 
-        <div className="h-fit rounded-3xl border border-white/10 bg-[#11111A] p-6">
+        <div className="h-fit rounded-3xl border border-white/10 bg-surface-2 p-6">
           <h3 className="text-xl font-bold text-white">
             Campaign Summary
           </h3>

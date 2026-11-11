@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Search,
@@ -139,7 +139,7 @@ function OpportunityCard({ opportunity, isSaved, onToggleSave }) {
           open();
         }
       }}
-      className={`group relative flex cursor-pointer flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#11111A] shadow-2xl shadow-transparent transition-all duration-300 ease-out hover:z-10 hover:-translate-y-3 hover:scale-[1.03] hover:shadow-black/40 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${a.border} ${a.glow}`}
+      className={`group relative flex cursor-pointer flex-col overflow-hidden rounded-3xl border border-white/10 bg-surface-2 shadow-2xl shadow-transparent transition-all duration-300 ease-out hover:z-10 hover:-translate-y-3 hover:scale-[1.03] hover:shadow-black/40 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${a.border} ${a.glow}`}
     >
       {/* Cover */}
       <div className="relative h-36 overflow-hidden sm:h-40">
@@ -275,7 +275,7 @@ export default function CreatorOpportunities() {
       <Breadcrumbs />
 
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-violet-600/15 via-[#11111A] to-[#0B0B12] p-8">
+      <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-violet-600/15 via-surface-2 to-surface-1 p-8">
         <div className="absolute right-0 top-0 h-72 w-72 rounded-full bg-violet-500/10 blur-[120px]" />
 
         <div className="relative z-10">
@@ -295,7 +295,7 @@ export default function CreatorOpportunities() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search opportunities..."
-          className="w-full rounded-2xl border border-white/10 bg-[#11111A] py-3 pl-11 pr-4 text-white outline-none focus:border-violet-500"
+          className="w-full rounded-2xl border border-white/10 bg-surface-2 py-3 pl-11 pr-4 text-white outline-none focus:border-violet-500"
         />
       </div>
 

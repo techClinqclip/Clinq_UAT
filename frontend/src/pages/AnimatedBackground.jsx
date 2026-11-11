@@ -1,11 +1,11 @@
-import { motion } from "framer-motion";
+﻿import { motion } from "framer-motion";
 
 // Reusable animated backdrop: a dark base with slow-drifting blurred
 // gradient orbs and a faint grid. Shared by ComingSoon and NotFound so
 // both feel like the same "Clinq" family of pages.
 export default function AnimatedBackground() {
   return (
-    <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-[#0B0B12]">
+    <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-surface-1">
       {/* faint grid texture */}
       <div
         className="absolute inset-0 opacity-[0.03]"

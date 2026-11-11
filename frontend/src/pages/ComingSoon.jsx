@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Clapperboard } from "lucide-react";
@@ -44,7 +44,7 @@ export default function ComingSoon() {
   const renderPercent = 42;
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0A0A0F] px-6 py-16 text-white">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-surface-1 px-6 py-16 text-white">
       {/* ambient texture, consistent with Login/Signup */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.05]"

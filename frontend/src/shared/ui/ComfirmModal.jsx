@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Loader2, X } from "lucide-react";
 import { createPortal } from "react-dom";
 
@@ -72,7 +72,7 @@ export default function ConfirmModal({
       }}
     >
       <div
-        className="w-full max-w-md rounded-2xl border border-white/10 bg-[#11111A] p-6 shadow-2xl"
+        className="w-full max-w-md rounded-2xl border border-white/10 bg-surface-2 p-6 shadow-2xl"
         onMouseDown={stop}
         onClick={stop}
       >

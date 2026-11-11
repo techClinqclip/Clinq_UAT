@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
     BriefcaseBusiness,
@@ -113,7 +113,7 @@ export default function MyGigs() {
 
             {/* Hero */}
 
-            <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-violet-600/15 via-[#11111A] to-[#0B0B12] p-8">
+            <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-violet-600/15 via-surface-2 to-surface-1 p-8">
                 <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                     <div>
                         <p className="text-sm uppercase tracking-[0.25em] text-violet-400">
@@ -149,7 +149,7 @@ export default function MyGigs() {
                     return (
                         <div
                             key={stat.title}
-                            className="rounded-3xl border border-white/10 bg-[#11111A] p-6 transition hover:border-violet-500/30"
+                            className="rounded-3xl border border-white/10 bg-surface-2 p-6 transition hover:border-violet-500/30"
                         >
                             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-violet-500/10">
                                 <Icon
@@ -172,7 +172,7 @@ export default function MyGigs() {
 
             {/* Search & Filters */}
 
-            <section className="rounded-3xl border border-white/10 bg-[#11111A] p-6">
+            <section className="rounded-3xl border border-white/10 bg-surface-2 p-6">
                 <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                     {/* Search */}
 
@@ -187,7 +187,7 @@ export default function MyGigs() {
                             placeholder="Search gigs..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-full rounded-2xl border border-white/10 bg-[#0B0B12] py-3 pl-11 pr-4 text-white outline-none transition focus:border-violet-500"
+                            className="w-full rounded-2xl border border-white/10 bg-surface-1 py-3 pl-11 pr-4 text-white outline-none transition focus:border-violet-500"
                         />
                     </div>
 
@@ -222,7 +222,7 @@ export default function MyGigs() {
                 {/* Empty State — only reached once loading has actually finished */}
 
                 {filteredGigs.length === 0 && (
-                    <div className="rounded-3xl border border-dashed border-white/10 bg-[#11111A] px-8 py-20 text-center">
+                    <div className="rounded-3xl border border-dashed border-white/10 bg-surface-2 px-8 py-20 text-center">
                         <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-violet-500/10">
                             <BriefcaseBusiness
                                 size={36}

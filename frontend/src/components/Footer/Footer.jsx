@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+﻿import { Link } from "react-router-dom";
 import {
   FaLinkedin,
   FaInstagram,
@@ -50,7 +50,7 @@ const socials = [
 
 export default function Footer() {
   return (
-    <footer className="border-t border-white/10 bg-[#07070B]">
+    <footer className="border-t border-white/10 bg-surface-0">
       <div className="mx-auto max-w-[1440px] px-6 py-16 md:px-10 md:py-24">
 
         {/* Top */}

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+﻿import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -64,7 +64,7 @@ const DeleteConfirmModal = ({ isOpen, onClose, onConfirm, clipTitle }) => (
           exit={{ opacity: 0, scale: 0.95, y: 10 }}
           transition={{ duration: 0.15 }}
           onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#131316] p-6 shadow-2xl"
+          className="w-full max-w-sm rounded-2xl border border-white/10 bg-surface-2 p-6 shadow-2xl"
         >
           <div className="flex items-start justify-between">
             <div className="flex h-11 w-11 items-center justify-center rounded-full bg-rose-500/10">
@@ -413,7 +413,7 @@ export default function MySubmissions() {
   }
 
   return (
-    <div className="min-h-screen bg-[#08080a] font-[system-ui] text-white">
+    <div className="min-h-screen bg-surface-0 font-[system-ui] text-white">
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 8px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -670,7 +670,7 @@ export default function MySubmissions() {
                       {camp.submissions.length > 0 ? (
                         <div className="custom-scrollbar max-h-[360px] overflow-x-auto overflow-y-auto">
                           <table className="w-full min-w-[900px] border-collapse text-sm">
-                            <thead className="sticky top-0 z-10 bg-[#0c0c0e]">
+                            <thead className="sticky top-0 z-10 bg-surface-1">
                               <tr className="border-b border-white/10 text-left text-sm text-zinc-400">
                                 <th className="px-6 py-3.5 font-medium">Clip</th>
                                 <th className="px-6 py-3.5 font-medium">Platform</th>

@@ -1,4 +1,4 @@
-
+﻿
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { UploadCloud, Check, X, Loader2 } from "lucide-react";
@@ -74,7 +74,7 @@ export default function ProcessingModal({
 
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-      <div className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-white/10 bg-[#11111A] p-8 text-center shadow-2xl">
+      <div className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-white/10 bg-surface-2 p-8 text-center shadow-2xl">
         {allowCancel && !isDone && (
           <button
             type="button"

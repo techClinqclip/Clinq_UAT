@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { Clock3, CheckCircle, Wallet, Eye, Search, Clapperboard, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import Breadcrumbs from "../../components/Breadcrumbs";
@@ -148,7 +148,7 @@ export default function CreatorSubmissions() {
     {/* KPI Cards */}
 <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
   {/* Total Submissions */}
-  <div className="rounded-3xl border border-white/10 bg-[#11111A] p-6 transition hover:border-violet-500/30">
+  <div className="rounded-3xl border border-white/10 bg-surface-2 p-6 transition hover:border-violet-500/30">
     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10">
       <Eye size={18} className="text-violet-400" />
     </div>
@@ -161,7 +161,7 @@ export default function CreatorSubmissions() {
   </div>
 
   {/* Pending */}
-  <div className="rounded-3xl border border-white/10 bg-[#11111A] p-6 transition hover:border-yellow-500/30">
+  <div className="rounded-3xl border border-white/10 bg-surface-2 p-6 transition hover:border-yellow-500/30">
     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-yellow-500/10">
       <Clock3 size={18} className="text-yellow-400" />
     </div>
@@ -174,7 +174,7 @@ export default function CreatorSubmissions() {
   </div>
 
   {/* Active */}
-  <div className="rounded-3xl border border-white/10 bg-[#11111A] p-6 transition hover:border-green-500/30">
+  <div className="rounded-3xl border border-white/10 bg-surface-2 p-6 transition hover:border-green-500/30">
     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500/10">
       <CheckCircle size={18} className="text-green-400" />
     </div>
@@ -187,7 +187,7 @@ export default function CreatorSubmissions() {
   </div>
 
   {/* Total Earned */}
-  <div className="rounded-3xl border border-white/10 bg-[#11111A] p-6 transition hover:border-emerald-500/30">
+  <div className="rounded-3xl border border-white/10 bg-surface-2 p-6 transition hover:border-emerald-500/30">
     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
       <Wallet size={18} className="text-emerald-400" />
     </div>
@@ -204,7 +204,7 @@ export default function CreatorSubmissions() {
 
       {/* Filters — single row: search on the left, pill-style status
           filters on the right, matching the gigs-page filter bar. */}
-      <div className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-[#0d0d12] p-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-surface-1 p-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="relative w-full lg:max-w-sm">
           <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" />
           <input
@@ -237,7 +237,7 @@ export default function CreatorSubmissions() {
       {loading ? (
         <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 3 }).map((_, index) => (
-            <div key={index} className="rounded-3xl border border-white/10 bg-[#11111A] p-6">
+            <div key={index} className="rounded-3xl border border-white/10 bg-surface-2 p-6">
               <div className="h-5 w-40 animate-pulse rounded bg-white/10" />
               <div className="mt-4 h-4 w-24 animate-pulse rounded bg-white/10" />
             </div>
@@ -251,7 +251,7 @@ export default function CreatorSubmissions() {
         </div>
       ) : (
         /* Empty state — same shape as MyGigs' "No Gigs Found" */
-        <div className="rounded-3xl border border-dashed border-white/10 bg-[#11111A] px-8 py-20 text-center">
+        <div className="rounded-3xl border border-dashed border-white/10 bg-surface-2 px-8 py-20 text-center">
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-violet-500/10">
             <Clapperboard size={36} className="text-violet-400" />
           </div>

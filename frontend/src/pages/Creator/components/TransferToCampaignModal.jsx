@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { X, ArrowRightLeft, CircleDollarSign, Wallet, AlertCircle } from "lucide-react";
 import useToast from "../../../hooks/useToast"; // ADJUST to match this file's actual path
 import { api } from "../../../lib/api";
@@ -83,7 +83,7 @@ export default function TransferToCampaignModal({ isOpen, onClose, availableEarn
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-2xl border border-white/10 bg-[#131316] p-6 shadow-2xl"
+        className="w-full max-w-md rounded-2xl border border-white/10 bg-surface-2 p-6 shadow-2xl"
       >
         <div className="flex items-start justify-between">
           <div>

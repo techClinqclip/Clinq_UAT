@@ -1,4 +1,4 @@
-import { Sparkles } from "lucide-react";
+﻿import { Sparkles } from "lucide-react";
 import Avatar from "./Avatar";
 import { useLeaderboard } from "../LeaderboardContext";
 
@@ -15,7 +15,7 @@ export default function CurrentUserPinnedCard() {
       <button
         type="button"
         onClick={() => openProfile(currentUserRanked.id)}
-        className="pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-2xl border border-violet-500/50 bg-[#15151F]/95 p-4 shadow-2xl shadow-violet-500/20 backdrop-blur-xl transition hover:border-violet-500 hover:shadow-violet-500/30"
+        className="pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-2xl border border-violet-500/50 bg-surface-3/95 p-4 shadow-2xl shadow-violet-500/20 backdrop-blur-xl transition hover:border-violet-500 hover:shadow-violet-500/30"
       >
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500/25 to-fuchsia-500/25 text-sm font-bold text-violet-300">
           {currentUserRanked.rank}

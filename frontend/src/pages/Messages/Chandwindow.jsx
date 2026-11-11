@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import { MoreHorizontal, Send, Phone, Video } from "lucide-react";
 import { useMessaging } from "../../shared/messaging/MessagingContext";
 
@@ -56,7 +56,7 @@ export default function ChatWindow() {
 
   if (!peer) {
     return (
-      <div className="flex h-full flex-1 flex-col items-center justify-center gap-2 bg-[#0B0B12]">
+      <div className="flex h-full flex-1 flex-col items-center justify-center gap-2 bg-surface-1">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/5">
           <Send size={22} className="text-zinc-600" />
         </div>
@@ -79,7 +79,7 @@ export default function ChatWindow() {
   };
 
   return (
-    <div className="flex h-full flex-1 flex-col bg-[#0B0B12]">
+    <div className="flex h-full flex-1 flex-col bg-surface-1">
       {/* Header */}
       <div className="flex shrink-0 items-center justify-between border-b border-white/10 p-4">
         <div className="flex items-center gap-3">

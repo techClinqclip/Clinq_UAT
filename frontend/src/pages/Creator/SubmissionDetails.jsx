@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+﻿import { useCallback, useEffect, useState } from "react";
 import {
   ArrowLeft,
   CheckCircle,
@@ -143,7 +143,7 @@ function LoadingState() {
 
       <div className="mt-10 grid gap-6 sm:grid-cols-2 xl:grid-cols-5">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="rounded-3xl border border-white/10 bg-[#11111A] p-6">
+          <div key={i} className="rounded-3xl border border-white/10 bg-surface-2 p-6">
             <SkeletonBlock className="h-8 w-8 rounded-xl" />
             <SkeletonBlock className="mt-4 h-8 w-20" />
             <SkeletonBlock className="mt-2 h-4 w-28" />
@@ -236,7 +236,7 @@ function NotFoundState() {
 
 function KpiCard({ icon: Icon, iconClass, iconBg, label, value }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#11111A] px-5 py-4">
+    <div className="rounded-2xl border border-white/10 bg-surface-2 px-5 py-4">
       <div className={`flex h-7 w-7 items-center justify-center rounded-lg ${iconBg}`}>
         <Icon size={14} className={iconClass} />
       </div>
@@ -665,7 +665,7 @@ export default function SubmissionDetails() {
 
       {/* My Performance + Budget Utilization */}
       <div className="mt-8 grid gap-6 lg:grid-cols-[1.3fr_1fr]">
-        <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+        <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
           <h2 className="text-lg font-semibold text-white">My Performance</h2>
 
           <div className="mt-6 grid grid-cols-2 gap-4">
@@ -696,7 +696,7 @@ export default function SubmissionDetails() {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+        <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
           <h2 className="text-lg font-semibold text-white">Budget Utilization</h2>
 
           <div className="mt-6 flex flex-col items-center text-center">
@@ -709,7 +709,7 @@ export default function SubmissionDetails() {
       </div>
 
       {/* Campaign Information */}
-      <section className="mt-8 rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="mt-8 rounded-3xl border border-white/10 bg-surface-2 p-8">
         <h2 className="text-lg font-semibold text-white">Campaign Information</h2>
 
         <div className="mt-6">
@@ -744,7 +744,7 @@ export default function SubmissionDetails() {
 
       {/* Resources */}
       {submission.campaign_resources?.length > 0 && (
-        <section className="mt-8 rounded-3xl border border-white/10 bg-[#11111A] p-8">
+        <section className="mt-8 rounded-3xl border border-white/10 bg-surface-2 p-8">
           <h2 className="text-lg font-semibold text-white">Resources</h2>
 
           <div className="mt-6 overflow-x-auto rounded-2xl border border-white/10">
@@ -810,7 +810,7 @@ export default function SubmissionDetails() {
       )}
 
       {/* My Submissions */}
-      <section className="mt-8 rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="mt-8 rounded-3xl border border-white/10 bg-surface-2 p-8">
         <h2 className="text-lg font-semibold text-white">My Submissions</h2>
         <p className="mt-2 text-sm text-zinc-500">
           Manage your submitted clips, monitor review status and track your earnings.

@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { MoreHorizontal, ArrowUp, Trophy } from "lucide-react";
 import Avatar from "../../pages/Community/components/Avatar";
 import { useMessaging } from "../messaging/MessagingContext";
@@ -27,7 +27,7 @@ export default function ProfileHoverCard({ user }) {
 
   return (
 <div
-  className="w-80 overflow-hidden rounded-2xl border border-white/10 bg-[#15151F] shadow-2xl"
+  className="w-80 overflow-hidden rounded-2xl border border-white/10 bg-surface-3 shadow-2xl"
   onClick={(e) => e.stopPropagation()}
 >
   <div
@@ -51,7 +51,7 @@ export default function ProfileHoverCard({ user }) {
           <button
             type="button"
             onClick={goToProfile}
-            className="-mt-7 rounded-full ring-4 ring-[#15151F] transition hover:scale-[1.03]"
+            className="-mt-7 rounded-full ring-4 ring-surface-3 transition hover:scale-[1.03]"
           >
             <Avatar src={user.avatar} name={user.name} size={64} />
           </button>
@@ -88,7 +88,7 @@ export default function ProfileHoverCard({ user }) {
           <div className="mt-2 flex items-center gap-2">
             <div className="flex -space-x-2">
               {(user.followedByPreview || []).slice(0, 3).map((src, i) => (
-                <img key={i} src={src} alt="" className="h-5 w-5 rounded-full border-2 border-[#15151F] object-cover" />
+                <img key={i} src={src} alt="" className="h-5 w-5 rounded-full border-2 border-surface-3 object-cover" />
               ))}
             </div>
             <p className="text-xs text-zinc-500">

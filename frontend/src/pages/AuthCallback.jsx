@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { finishGoogleAuth, setAuthStorage } from '../lib/api';
 import { hydrateAuthState, getOnboardingRedirectPath } from '../lib/auth';
@@ -43,7 +43,7 @@ export default function AuthCallback() {
   }, [navigate, searchParams]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0A0A0F] px-6 text-center text-white">
+    <div className="flex min-h-screen items-center justify-center bg-surface-1 px-6 text-center text-white">
       <div className="max-w-md rounded-2xl border border-white/10 bg-white/[0.03] p-8">
         <h1 className="text-2xl font-semibold">Finishing sign-in</h1>
         <p className="mt-3 text-sm text-zinc-400">

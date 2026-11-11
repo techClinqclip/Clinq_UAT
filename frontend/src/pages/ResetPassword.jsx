@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Eye, EyeOff, Loader2, CheckCircle2, Lock } from "lucide-react";
 import useToast from "../hooks/useToast";
@@ -97,7 +97,7 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0A0A0F] px-6 py-10">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-surface-1 px-6 py-10">
 
       {/* ambient texture */}
       <div

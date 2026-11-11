@@ -1,6 +1,6 @@
-export default function AuthLayout({ children }) {
+﻿export default function AuthLayout({ children }) {
     return (
-      <div className="min-h-screen bg-[#07070B] relative overflow-hidden flex items-center justify-center px-6">
+      <div className="min-h-screen bg-surface-0 relative overflow-hidden flex items-center justify-center px-6">
   
         {/* Background Glow */}
         <div className="absolute w-[500px] h-[500px] rounded-full bg-violet-600/20 blur-[120px]" />

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../../lib/api";
 import {
@@ -119,7 +119,7 @@ function CampaignCard({ campaign, onRequestAction, isToggling }) {
 
   return (
     <div
-      className={`group relative z-0 flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#11111A] shadow-2xl shadow-transparent transition-all duration-300 ease-out hover:z-10 hover:-translate-y-3 hover:scale-[1.03] hover:shadow-black/40 ${a.border} ${a.glow}`}
+      className={`group relative z-0 flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-surface-2 shadow-2xl shadow-transparent transition-all duration-300 ease-out hover:z-10 hover:-translate-y-3 hover:scale-[1.03] hover:shadow-black/40 ${a.border} ${a.glow}`}
     >
       {/* Cover */}
       <button
@@ -477,7 +477,7 @@ export default function Campaigns() {
           placeholder="Search campaigns..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-2xl border border-white/10 bg-[#11111A] py-3 pl-11 pr-4 text-white outline-none focus:border-violet-500"
+          className="w-full rounded-2xl border border-white/10 bg-surface-2 py-3 pl-11 pr-4 text-white outline-none focus:border-violet-500"
         />
       </div>
 
@@ -513,7 +513,7 @@ export default function Campaigns() {
             />
           ))
         ) : (
-          <div className="col-span-full flex flex-col items-center justify-center rounded-3xl border border-white/10 bg-[#11111A] py-20 text-center">
+          <div className="col-span-full flex flex-col items-center justify-center rounded-3xl border border-white/10 bg-surface-2 py-20 text-center">
             <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/[0.03]">
               <Wallet size={28} className="text-zinc-500" strokeWidth={1.5} />
             </div>

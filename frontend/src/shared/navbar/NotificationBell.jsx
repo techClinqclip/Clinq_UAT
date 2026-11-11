@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import {
   Bell,
   Heart,
@@ -118,7 +118,7 @@ export default function NotificationBell() {
             rounded-2xl
             border
             border-white/10
-            bg-[#15151F]
+            bg-surface-3
             shadow-2xl
             sm:absolute
             sm:right-0

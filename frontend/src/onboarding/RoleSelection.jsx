@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+﻿import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
   Users,
@@ -164,7 +164,7 @@ export default function RoleSelection() {
   const currentStep = 0;
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#0A0A0F] px-4 py-5 text-white sm:px-6 md:py-10">
+    <div className="relative min-h-screen overflow-hidden bg-surface-1 px-4 py-5 text-white sm:px-6 md:py-10">
       {/* ambient texture */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.05]"

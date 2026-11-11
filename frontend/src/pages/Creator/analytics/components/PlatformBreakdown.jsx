@@ -1,4 +1,4 @@
-import {
+﻿import {
     FaInstagram,
     FaYoutube,
     FaFacebook,
@@ -15,7 +15,7 @@ import {
   
   export default function PlatformBreakdown({ platforms = [] }) {
     return (
-      <section className="h-full rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="h-full rounded-3xl border border-white/10 bg-surface-2 p-8">
         {/* Header */}
   
         <div className="mb-8">

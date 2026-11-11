@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import { Calendar, ChevronLeft, ChevronRight, X } from "lucide-react";
 
 /*
@@ -136,7 +136,7 @@ export default function DatePicker({
       <button
         type="button"
         onClick={() => setIsOpen((o) => !o)}
-        className={`flex h-[50px] w-full items-center justify-between gap-2 rounded-2xl border border-white/10 bg-[#0B0B12] px-4 text-left text-white outline-none transition focus:border-violet-500 ${className}`}
+        className={`flex h-[50px] w-full items-center justify-between gap-2 rounded-2xl border border-white/10 bg-surface-1 px-4 text-left text-white outline-none transition focus:border-violet-500 ${className}`}
       >
         <span
           className={`flex items-center gap-2 ${
@@ -168,7 +168,7 @@ export default function DatePicker({
       </button>
 
       {isOpen && (
-        <div className="absolute bottom-full left-0 z-50 mb-2 w-72 rounded-2xl border border-white/10 bg-[#11111A] p-4 shadow-2xl">
+        <div className="absolute bottom-full left-0 z-50 mb-2 w-72 rounded-2xl border border-white/10 bg-surface-2 p-4 shadow-2xl">
           <div className="flex items-center justify-between">
             <button
               type="button"

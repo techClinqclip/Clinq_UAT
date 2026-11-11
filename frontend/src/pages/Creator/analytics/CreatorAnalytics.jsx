@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import {
   Eye,
   Users,
@@ -194,7 +194,7 @@ export default function Analytics() {
       {loading ? (
         <div className="grid gap-5 lg:grid-cols-2">
           {[0, 1].map((i) => (
-            <div key={i} className="grid grid-cols-2 divide-x divide-white/10 rounded-3xl border border-white/10 bg-[#11111A]">
+            <div key={i} className="grid grid-cols-2 divide-x divide-white/10 rounded-3xl border border-white/10 bg-surface-2">
               {[0, 1].map((j) => (
                 <div key={j} className="p-6">
                   <div className="h-10 w-10 animate-pulse rounded-xl bg-white/10" />
@@ -207,7 +207,7 @@ export default function Analytics() {
         </div>
       ) : (
         <div className="grid gap-5 lg:grid-cols-2">
-          <div className="grid grid-cols-2 divide-x divide-white/10 rounded-3xl border border-white/10 bg-[#11111A] transition hover:border-violet-500/30">
+          <div className="grid grid-cols-2 divide-x divide-white/10 rounded-3xl border border-white/10 bg-surface-2 transition hover:border-violet-500/30">
             <StatHalf
               icon={Eye}
               iconBg="bg-violet-500/10"
@@ -224,7 +224,7 @@ export default function Analytics() {
             />
           </div>
 
-          <div className="grid grid-cols-2 divide-x divide-white/10 rounded-3xl border border-white/10 bg-[#11111A] transition hover:border-cyan-500/30">
+          <div className="grid grid-cols-2 divide-x divide-white/10 rounded-3xl border border-white/10 bg-surface-2 transition hover:border-cyan-500/30">
             <ComingSoonHalf icon={Users} iconBg="bg-cyan-500/10" iconText="text-cyan-400" label="Unique Viewers" />
             <ComingSoonHalf icon={Clock3} iconBg="bg-amber-500/10" iconText="text-amber-400" label="Avg Watch Time" />
           </div>
@@ -263,7 +263,7 @@ export default function Analytics() {
             <Eye size={28} className="text-violet-400" />
           </div>
 
-          <div className="mt-6 rounded-2xl border border-violet-500/20 bg-[#0B0B12] p-4">
+          <div className="mt-6 rounded-2xl border border-violet-500/20 bg-surface-1 p-4">
             {hasViewsData ? (
               <ViewsChart data={activeViewsData} xKey="period" dataKey="views" />
             ) : (
@@ -289,7 +289,7 @@ export default function Analytics() {
             <Wallet size={28} className="text-emerald-400" />
           </div>
 
-          <div className="mt-6 rounded-2xl border border-emerald-500/20 bg-[#0B0B12] p-4">
+          <div className="mt-6 rounded-2xl border border-emerald-500/20 bg-surface-1 p-4">
             {hasPayoutData ? (
               <PayoutChart data={activePayoutData} xKey="period" dataKey="payout" />
             ) : (
@@ -307,7 +307,7 @@ export default function Analytics() {
       </div>
 
       {/* Platform Breakdown */}
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
         <h2 className="text-2xl font-bold text-white">Platform Breakdown</h2>
 
         {hasPlatformData ? (
@@ -343,7 +343,7 @@ export default function Analytics() {
       </section>
 
       {/* Gig Performance */}
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
         <h2 className="text-2xl font-bold text-white">Gig Performance</h2>
 
         {hasGigs ? (
@@ -383,7 +383,7 @@ export default function Analytics() {
 
       {/* Top Gigs + Top Clippers */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+        <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
           <div className="flex items-center gap-2">
             <Trophy size={20} className="text-amber-400" />
             <h2 className="text-2xl font-bold text-white">Top Gigs</h2>
@@ -419,7 +419,7 @@ export default function Analytics() {
           )}
         </section>
 
-        <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+        <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
           <div className="flex items-center gap-2">
             <Trophy size={20} className="text-amber-400" />
             <h2 className="text-2xl font-bold text-white">Top Clippers</h2>

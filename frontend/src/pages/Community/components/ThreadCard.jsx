@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Heart, MessageCircle, Share2, Eye, MoreHorizontal, ArrowUpRight } from "lucide-react";
 import Avatar from "./Avatar";
 import HoverProfileTrigger from "../../../shared/social/HoverProfileTrigger";
@@ -33,7 +33,7 @@ export default function ThreadCard({ thread }) {
 
   return (
     <>
-      <article className="min-w-0 rounded-2xl border border-white/10 bg-[#11111A] p-4 transition hover:border-white/15 sm:p-5">
+      <article className="min-w-0 rounded-2xl border border-white/10 bg-surface-2 p-4 transition hover:border-white/15 sm:p-5">
         {thread.source && (
           <p className="mb-3 flex items-center gap-1 text-xs text-zinc-500">
             <span className="text-zinc-400">{thread.source.label}</span>

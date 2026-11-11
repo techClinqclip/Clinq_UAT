@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { ChevronLeft, X } from "lucide-react";
 import AppSidebar from "../../../components/navigation/AppSidebar";
 import RightSidebar from "../rightSidebar/RightSidebar";
@@ -27,7 +27,7 @@ export default function MarketplaceLayout({
               Right sidebar remains sticky while main content scrolls.
           ========================================================= */}
           <div className="hidden xl:block">
-            <aside className="fixed right-0 top-16 bottom-0 z-30 w-80 border-l border-white/5 bg-[#0B0B12]">
+            <aside className="fixed right-0 top-16 bottom-0 z-30 w-80 border-l border-white/5 bg-surface-1">
               <div className="h-full overflow-y-auto px-4 py-6 custom-scrollbar">
                 <RightSidebar campaigns={campaigns} onFilterChange={onFilterChange} activeCategory={activeCategory} />
               </div>
@@ -53,7 +53,7 @@ export default function MarketplaceLayout({
             type="button"
             onClick={() => setRightSidebarOpen(true)}
             aria-label="Open marketplace sidebar"
-            className={`fixed right-0 top-1/2 z-40 flex h-12 w-7 -translate-y-1/2 items-center justify-center rounded-l-xl border border-r-0 border-white/10 bg-[#15151F]/95 text-zinc-400 shadow-xl backdrop-blur-xl transition-all duration-300 hover:text-white xl:hidden ${
+            className={`fixed right-0 top-1/2 z-40 flex h-12 w-7 -translate-y-1/2 items-center justify-center rounded-l-xl border border-r-0 border-white/10 bg-surface-3/95 text-zinc-400 shadow-xl backdrop-blur-xl transition-all duration-300 hover:text-white xl:hidden ${
               rightSidebarOpen
                 ? "pointer-events-none translate-x-full opacity-0"
                 : "translate-x-0 opacity-100"
@@ -76,7 +76,7 @@ export default function MarketplaceLayout({
               />
 
               {/* Drawer */}
-              <aside className="absolute inset-y-0 right-0 flex h-dvh w-full max-w-[380px] flex-col border-l border-white/10 bg-[#0B0B12] shadow-2xl sm:w-[min(88vw,380px)]">
+              <aside className="absolute inset-y-0 right-0 flex h-dvh w-full max-w-[380px] flex-col border-l border-white/10 bg-surface-1 shadow-2xl sm:w-[min(88vw,380px)]">
                 {/* Drawer header */}
                 <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/10 px-5">
                   <div>

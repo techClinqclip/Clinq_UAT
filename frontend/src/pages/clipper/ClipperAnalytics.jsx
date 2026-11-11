@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+﻿import { useState, useMemo, useEffect } from "react";
 import {
     Eye,
     Heart,
@@ -379,7 +379,7 @@ export default function ClipperAnalytics() {
                 ) : null}
 
                 {/* Hero */}
-                <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#11111A] p-8">
+                <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-surface-2 p-8">
                     <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
                         <div>
                             <span className="inline-flex items-center gap-2 rounded-full border border-violet-400/20 bg-violet-500/10 px-3.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-violet-300">
@@ -471,7 +471,7 @@ export default function ClipperAnalytics() {
 
                 {/* Chart + platform split */}
                 <section className="grid gap-6 lg:grid-cols-[1.7fr_1fr]">
-                    <div className="rounded-3xl border border-white/10 bg-[#11111A] p-6">
+                    <div className="rounded-3xl border border-white/10 bg-surface-2 p-6">
                         <div className="mb-4 flex items-center justify-between">
                             <div>
                                 <h3 className="text-sm font-semibold text-white">Views over time</h3>
@@ -512,7 +512,7 @@ export default function ClipperAnalytics() {
                         )}
                     </div>
 
-                    <div className="rounded-3xl border border-white/10 bg-[#11111A] p-6">
+                    <div className="rounded-3xl border border-white/10 bg-surface-2 p-6">
                         <h3 className="text-sm font-semibold text-white">Views by platform</h3>
                         <p className="mt-0.5 text-xs text-zinc-500">Where clips are landing</p>
                         {hasPlatformData ? (
@@ -547,7 +547,7 @@ export default function ClipperAnalytics() {
                 </section>
 
                 {/* Clip performance table */}
-                <section className="rounded-3xl border border-white/10 bg-[#11111A] p-6">
+                <section className="rounded-3xl border border-white/10 bg-surface-2 p-6">
                     <div className="mb-5 flex items-center justify-between">
                         <div>
                             <h3 className="text-sm font-semibold text-white">Clip performance</h3>
@@ -558,7 +558,7 @@ export default function ClipperAnalytics() {
                     {hasClips ? (
                         <div className="custom-scrollbar -mx-2 max-h-[360px] overflow-x-auto overflow-y-auto px-2 sm:mx-0 sm:px-0">
                             <table className="w-full min-w-[720px] border-collapse text-sm">
-                                <thead className="sticky top-0 z-10 bg-[#0c0c0e]">
+                                <thead className="sticky top-0 z-10 bg-surface-1">
                                     <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wide text-zinc-500">
                                         <th className="px-4 py-3 font-medium">Clip</th>
                                         <th className="px-4 py-3 font-medium">Platform</th>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { X, MoreHorizontal, BadgeCheck, Calendar, Trophy, Users, Crown, Medal, Star, IndianRupee } from "lucide-react";
 import Avatar from "../../pages/Community/components/Avatar";
 import { useSocial } from "./SocialContext";
@@ -46,7 +46,7 @@ export default function ProfileModal() {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#11111A] shadow-2xl"
+        className="flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-surface-2 shadow-2xl"
       >
         {/* Cover + avatar wrapper — not overflow-hidden, so the avatar
             never gets clipped by the cover or a scroll container. */}
@@ -57,7 +57,7 @@ export default function ProfileModal() {
             ) : (
               <div className="h-full w-full bg-gradient-to-br from-violet-500/25 via-fuchsia-500/10 to-transparent" />
             )}
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#11111A] via-transparent to-black/20" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-surface-2 via-transparent to-black/20" />
           </div>
 
           <button
@@ -75,7 +75,7 @@ export default function ProfileModal() {
             </div>
           )}
 
-          <div className="absolute -bottom-10 left-6 rounded-2xl ring-4 ring-[#11111A]">
+          <div className="absolute -bottom-10 left-6 rounded-2xl ring-4 ring-surface-2">
             <Avatar src={user.avatar} name={user.name} size={84} className="rounded-2xl" />
           </div>
         </div>

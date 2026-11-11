@@ -1,4 +1,4 @@
-import { Crown, Trophy, Medal } from "lucide-react";
+﻿import { Crown, Trophy, Medal } from "lucide-react";
 import Avatar from "./Avatar";
 import HoverProfileTrigger from "../../../shared/social/HoverProfileTrigger";
 import { useLeaderboard } from "../LeaderboardContext";
@@ -77,7 +77,7 @@ export default function PodiumTop3() {
                 <Icon size={16} className="text-black/70" />
               </div>
 
-              <div className="absolute -bottom-1 left-1/2 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full border-2 border-[#0B0B12] bg-[#1a1a24] text-[11px] font-bold text-white">
+              <div className="absolute -bottom-1 left-1/2 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full border-2 border-surface-1 bg-surface-3 text-[11px] font-bold text-white">
                 {person.rank}
               </div>
             </div>

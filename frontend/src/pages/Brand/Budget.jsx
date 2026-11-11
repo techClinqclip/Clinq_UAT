@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { IndianRupee, Wallet, PieChart, TrendingUp, ArrowRight } from "lucide-react";
 import PayoutTrendChart from "./PayoutTrendChart";
@@ -208,7 +208,7 @@ export default function Budget() {
           const Icon = stat.icon;
           const a = STAT_ACCENTS[stat.accent];
           return (
-            <div key={stat.title} className="rounded-3xl border border-white/10 bg-[#11111A] p-6">
+            <div key={stat.title} className="rounded-3xl border border-white/10 bg-surface-2 p-6">
               <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${a.iconBg}`}>
                 <Icon size={22} className={a.iconText} />
               </div>
@@ -220,7 +220,7 @@ export default function Budget() {
       </div>
 
       {/* Payout Distribution Trend */}
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-sm uppercase tracking-[0.2em] text-violet-400">Payout Overview</p>
@@ -245,13 +245,13 @@ export default function Budget() {
           </div>
         </div>
 
-        <div className="mt-8 rounded-2xl border border-white/10 bg-[#0B0B12] p-4">
+        <div className="mt-8 rounded-2xl border border-white/10 bg-surface-1 p-4">
           <PayoutTrendChart data={activePayoutData} />
         </div>
       </section>
 
       {/* Campaign Budget Tracking */}
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
         <h2 className="text-2xl font-bold text-white">Campaign Budget Tracking</h2>
         <p className="mt-1 text-sm text-zinc-500">
           Campaigns with remaining budget. Fully spent campaigns are hidden here.
@@ -288,7 +288,7 @@ export default function Budget() {
       </section>
 
       {/* Recent Transactions */}
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
         <h2 className="text-2xl font-bold text-white">Recent Transactions</h2>
 
         <div className="mt-6 space-y-3">

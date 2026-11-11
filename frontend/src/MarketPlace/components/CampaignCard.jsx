@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import {
   Eye,
   Wallet,
@@ -34,7 +34,7 @@ export default function CampaignCard({ campaign }) {
   return (
     <>
       <div
-        className={`group relative flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#11111A] shadow-2xl shadow-transparent transition-all duration-300 ease-out hover:z-10 hover:-translate-y-2 hover:scale-[1.02] hover:shadow-[0_16px_40px_-10px_rgba(0,0,0,0.5)] ${a.border} ${a.glow}`}
+        className={`group relative flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-surface-2 shadow-2xl shadow-transparent transition-all duration-300 ease-out hover:z-10 hover:-translate-y-2 hover:scale-[1.02] hover:shadow-[0_16px_40px_-10px_rgba(0,0,0,0.5)] ${a.border} ${a.glow}`}
       >
         {/* Full-card interactive control — the only interactive element in this card */}
         <button
@@ -115,7 +115,7 @@ export default function CampaignCard({ campaign }) {
 
         {/* Desktop: overlay slides up on hover/focus — purely visual, pointer-events off */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 hidden translate-y-full opacity-0 transition-all duration-300 ease-out group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 lg:block">
-          <div className="border-t border-white/10 bg-[#11111A]/95 p-5 backdrop-blur-sm">
+          <div className="border-t border-white/10 bg-surface-2/95 p-5 backdrop-blur-sm">
             <span className={`block w-full rounded-xl px-4 py-3 text-center text-sm font-medium text-white ${a.solidBtn}`}>
               View Details
             </span>

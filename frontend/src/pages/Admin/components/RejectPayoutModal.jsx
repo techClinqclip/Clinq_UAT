@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { X, XCircle } from "lucide-react";
 
 export default function RejectPayoutModal({ open, item, busy = false, onClose, onConfirm }) {
@@ -30,7 +30,7 @@ export default function RejectPayoutModal({ open, item, busy = false, onClose, o
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#131316] p-6 shadow-2xl">
+      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-surface-2 p-6 shadow-2xl">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="text-lg font-semibold text-white">Reject withdrawal</h3>

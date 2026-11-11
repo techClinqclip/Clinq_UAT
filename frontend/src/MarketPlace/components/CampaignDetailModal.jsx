@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import {
   X, Eye, Wallet, TrendingUp, FileVideo, Calendar, CheckCircle2,
   Sparkles, Link2, FileText, ExternalLink,
@@ -154,7 +154,7 @@ export default function CampaignDetailModal({ isOpen, onClose, campaign }) {
       >
         <div
           onClick={(e) => e.stopPropagation()}
-          className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#11111A] shadow-2xl"
+          className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-surface-2 shadow-2xl"
         >
           {/* Cover */}
           <div className="relative h-48 shrink-0 overflow-hidden sm:h-56">
@@ -163,7 +163,7 @@ export default function CampaignDetailModal({ isOpen, onClose, campaign }) {
             ) : (
               <div className={`absolute inset-0 bg-gradient-to-br ${a.cover}`} />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#11111A] via-black/30 to-black/10" />
+            <div className="absolute inset-0 bg-gradient-to-t from-surface-2 via-black/30 to-black/10" />
 
             <div className="absolute right-4 top-4 flex gap-2">
               <button

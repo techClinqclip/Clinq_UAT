@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+﻿import { Link } from "react-router-dom";
 import {
   Users,
   Scissors,
@@ -35,7 +35,7 @@ const communities = [
 
 export default function Communities() {
   return (
-    <section className="bg-[#07070B] px-5 py-20 md:px-6 md:py-28">
+    <section className="bg-surface-0 px-5 py-20 md:px-6 md:py-28">
       <div className="mx-auto max-w-7xl">
 
         {/* Heading */}
@@ -64,7 +64,7 @@ export default function Communities() {
           {/* Mobile Swipe Hint */}
 
           <div className="pointer-events-none absolute inset-y-0 right-0 z-10 flex items-center pr-2 lg:hidden">
-            <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-[#07070B] via-[#07070B]/80 to-transparent" />
+            <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-surface-0 via-surface-0/80 to-transparent" />
 
             <ArrowRight className="relative h-5 w-5 animate-pulse text-violet-400" />
           </div>

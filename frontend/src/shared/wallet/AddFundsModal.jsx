@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { createPortal } from "react-dom";
 import { X, IndianRupee, ShieldCheck, Loader2 } from "lucide-react";
 import useToast from "../../hooks/useToast";
@@ -94,7 +94,7 @@ export default function AddFundsModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="my-auto w-full max-w-md rounded-2xl border border-white/10 bg-[#131316] p-6 shadow-2xl"
+        className="my-auto w-full max-w-md rounded-2xl border border-white/10 bg-surface-2 p-6 shadow-2xl"
       >
         <div className="flex items-start justify-between">
           <div>

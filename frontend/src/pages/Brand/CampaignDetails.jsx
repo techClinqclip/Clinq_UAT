@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   Eye,
@@ -458,7 +458,7 @@ export default function CampaignDetails() {
       {header}
 
       {/* Hero */}
-      <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-violet-600/10 via-[#11111A] to-[#0B0B12] p-8">
+      <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-violet-600/10 via-surface-2 to-surface-1 p-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:justify-between">
           <div>
            
@@ -558,7 +558,7 @@ export default function CampaignDetails() {
       )}
 
       {/* Overview */}
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
         <h2 className="text-2xl font-bold text-white">Campaign Overview</h2>
 
         <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
@@ -609,7 +609,7 @@ export default function CampaignDetails() {
           return (
             <div
               key={item.label}
-              className={`group rounded-2xl border border-white/10 bg-[#11111A] p-6 transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20 ${a.border}`}
+              className={`group rounded-2xl border border-white/10 bg-surface-2 p-6 transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20 ${a.border}`}
             >
               <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${a.iconBg} transition group-hover:scale-105`}>
                 <Icon size={20} className={a.iconText} />
@@ -626,7 +626,7 @@ export default function CampaignDetails() {
       </div>
 
       {/* Clippers */}
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
         <h2 className="text-2xl font-bold text-white">Campaign Participants</h2>
 
         <div className="mt-6 overflow-x-auto">
@@ -692,7 +692,7 @@ export default function CampaignDetails() {
     
 
       {/* Analytics */}
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-white">Campaign Performance</h2>
@@ -717,7 +717,7 @@ export default function CampaignDetails() {
         </div>
 
         {performanceLoading ? (
-          <div className="mt-8 rounded-3xl border border-white/10 bg-[#11111A] p-8 text-sm text-zinc-400">
+          <div className="mt-8 rounded-3xl border border-white/10 bg-surface-2 p-8 text-sm text-zinc-400">
             Loading campaign performance…
           </div>
         ) : (
@@ -756,7 +756,7 @@ export default function CampaignDetails() {
       </section>
 
         {/* Resources */}
-        <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+        <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
         <h2 className="text-2xl font-bold text-white">Resources</h2>
         <p className="mt-1 text-zinc-500">Reference material shared with clippers for this campaign.</p>
 
@@ -790,7 +790,7 @@ export default function CampaignDetails() {
 
       {isSettlementModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-[#11111A] p-6 shadow-2xl shadow-black/50">
+          <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-surface-2 p-6 shadow-2xl shadow-black/50">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.25em] text-red-400">Settlement</p>
@@ -837,7 +837,7 @@ export default function CampaignDetails() {
                     value={newSettlementDeadline || ""}
                     min={new Date().toISOString().split("T")[0]}
                     onChange={(e) => setNewSettlementDeadline(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-[#0B0B12] px-3 py-2 text-white"
+                    className="w-full rounded-xl border border-white/10 bg-surface-1 px-3 py-2 text-white"
                   />
                 </div>
               )}
