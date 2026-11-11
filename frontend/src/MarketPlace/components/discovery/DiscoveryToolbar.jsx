@@ -181,21 +181,21 @@ export default function DiscoveryToolbar({ filters = {}, onFilterChange = () => 
           </div>
         </div>
 
-        {/* Platform icons row — below 640px only */}
-        <div className="flex sm:hidden items-center gap-1">
+        {/* Platform icons row — below 640px only, icon-only for compact fit */}
+        <div className="flex sm:hidden items-center gap-2">
           {platformIcons.map(({ name, icon: Icon }) => (
             <button
               key={name}
               onClick={() => onFilterChange("platform", platform === name ? "All" : name)}
               title={name}
-              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-all duration-200 ${
+              aria-label={name}
+              className={`p-3 rounded-xl transition-all duration-200 ${
                 platform === name
                   ? "bg-violet-600 text-white shadow-md shadow-violet-600/30"
                   : "text-zinc-400 hover:text-white hover:bg-zinc-800 border border-zinc-800"
               }`}
             >
-              <Icon size={15} />
-              <span>{name}</span>
+              <Icon size={18} />
             </button>
           ))}
         </div>
