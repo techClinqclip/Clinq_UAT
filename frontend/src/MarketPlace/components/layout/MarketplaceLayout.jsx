@@ -1,5 +1,5 @@
 ﻿import { useState } from "react";
-import { ChevronLeft, X } from "lucide-react";
+import { PanelRight, X } from "lucide-react";
 import AppSidebar from "../../../components/navigation/AppSidebar";
 import RightSidebar from "../rightSidebar/RightSidebar";
 import TopNavbar from "../../../shared/navbar/TopNavbar";
@@ -39,28 +39,23 @@ export default function MarketplaceLayout({
               On desktop, reserve ONLY the actual sidebar width.
               No artificial huge gap.
           ========================================================= */}
-          <div className="w-full px-3 pb-5 pt-5 sm:px-6 sm:pb-8 sm:pt-8 md:pt-24 lg:px-8 xl:pr-[21rem]">
+          <div className="w-full px-3 pb-5 pt-20 sm:px-6 sm:pb-8 md:pt-24 lg:px-8 xl:pr-[21rem]">
             <div className="min-w-0">
+              {/* Inline insights button — replaces the fixed mid-right handle on sub-xl screens */}
+              <div className="mb-4 flex justify-end xl:hidden">
+                <button
+                  type="button"
+                  onClick={() => setRightSidebarOpen(true)}
+                  aria-label="Open marketplace insights"
+                  className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-surface-3/80 px-3 py-1.5 text-xs font-medium text-zinc-300 backdrop-blur transition hover:border-white/20 hover:text-white"
+                >
+                  <PanelRight size={13} />
+                  Insights
+                </button>
+              </div>
               {children}
             </div>
           </div>
-
-          {/* =========================================================
-              MOBILE RIGHT SIDEBAR HANDLE
-              Small drawer tab in the middle-right.
-          ========================================================= */}
-          <button
-            type="button"
-            onClick={() => setRightSidebarOpen(true)}
-            aria-label="Open marketplace sidebar"
-            className={`fixed right-0 top-1/2 z-40 flex h-12 w-7 -translate-y-1/2 items-center justify-center rounded-l-xl border border-r-0 border-white/10 bg-surface-3/95 text-zinc-400 shadow-xl backdrop-blur-xl transition-all duration-300 hover:text-white xl:hidden ${
-              rightSidebarOpen
-                ? "pointer-events-none translate-x-full opacity-0"
-                : "translate-x-0 opacity-100"
-            }`}
-          >
-            <ChevronLeft size={16} />
-          </button>
 
           {/* =========================================================
               MOBILE RIGHT SIDEBAR DRAWER

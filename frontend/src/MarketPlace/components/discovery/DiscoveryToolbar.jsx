@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Select from "react-select";
 import {
   FaInstagram,
@@ -6,6 +7,8 @@ import {
   FaXTwitter,
 } from "react-icons/fa6";
 import { FiSearch } from "react-icons/fi";
+import { SlidersHorizontal } from "lucide-react";
+import Modal from "../../../shared/ui/Modal";
 
 const statuses = [
   { value: "all", label: "All Status" },
@@ -108,13 +111,27 @@ function prettifyCategory(value) {
   return String(value || "").replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+const modalSelectStyles = {
+  ...selectStyles,
+  menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+};
+
 export default function DiscoveryToolbar({ filters = {}, onFilterChange = () => {} }) {
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const search = filters.search || "";
   const platform = filters.platform || "All";
+
+  const activeFilterCount = [
+    (filters.status || "all") !== "all",
+    (filters.category || "all") !== "all",
+    (filters.reward || "all") !== "all",
+    (filters.sort || "newest") !== "newest",
+  ].filter(Boolean).length;
 
   return (
     <section className="py-8">
       <div className="rounded-3xl border border-zinc-800 bg-zinc-950/70 backdrop-blur-xl p-6 shadow-2xl space-y-6">
+        {/* Search row */}
         <div className="relative">
           <FiSearch
             size={20}
@@ -133,7 +150,8 @@ export default function DiscoveryToolbar({ filters = {}, onFilterChange = () => 
               border-zinc-800
               bg-zinc-900
               pl-14
-              pr-48
+              pr-4
+              sm:pr-48
               text-white
               placeholder:text-zinc-500
               outline-none
@@ -143,7 +161,8 @@ export default function DiscoveryToolbar({ filters = {}, onFilterChange = () => 
             "
           />
 
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+          {/* Platform icons inline with search input — 640px and up only */}
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-1">
             <div className="w-px h-5 bg-zinc-700 mr-1" />
             {platformIcons.map(({ name, icon: Icon }) => (
               <button
@@ -162,7 +181,27 @@ export default function DiscoveryToolbar({ filters = {}, onFilterChange = () => 
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {/* Platform icons row — below 640px only */}
+        <div className="flex sm:hidden items-center gap-1">
+          {platformIcons.map(({ name, icon: Icon }) => (
+            <button
+              key={name}
+              onClick={() => onFilterChange("platform", platform === name ? "All" : name)}
+              title={name}
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-all duration-200 ${
+                platform === name
+                  ? "bg-violet-600 text-white shadow-md shadow-violet-600/30"
+                  : "text-zinc-400 hover:text-white hover:bg-zinc-800 border border-zinc-800"
+              }`}
+            >
+              <Icon size={15} />
+              <span>{name}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Filter dropdowns — 640px and up */}
+        <div className="hidden sm:grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <Select
             styles={selectStyles}
             options={statuses}
@@ -204,7 +243,91 @@ export default function DiscoveryToolbar({ filters = {}, onFilterChange = () => 
             isSearchable={false}
           />
         </div>
+
+        {/* Filters button — below 640px only */}
+        <div className="sm:hidden">
+          <button
+            type="button"
+            onClick={() => setFiltersOpen(true)}
+            className="flex items-center gap-2 rounded-2xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm font-medium text-zinc-200 transition hover:border-violet-500/50 hover:text-white w-full justify-center"
+          >
+            <SlidersHorizontal size={15} />
+            Filters
+            {activeFilterCount > 0 && (
+              <span className="ml-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-violet-600 text-[11px] font-semibold text-white">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
+
+      {/* Mobile filter modal */}
+      <Modal
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        title="Filters"
+        size="md"
+      >
+        <div className="space-y-4">
+          <Select
+            styles={modalSelectStyles}
+            menuPortalTarget={document.body}
+            menuPosition="fixed"
+            options={statuses}
+            value={statuses.find((item) => item.value === (filters.status || "all")) || statuses[0]}
+            onChange={(option) => onFilterChange("status", option?.value || "all")}
+            placeholder="Status"
+            isSearchable={false}
+          />
+
+          <Select
+            styles={modalSelectStyles}
+            menuPortalTarget={document.body}
+            menuPosition="fixed"
+            options={categories}
+            value={
+              categories.find((item) => item.value === (filters.category || "all")) ||
+              (filters.category && filters.category !== "all"
+                ? { value: filters.category, label: prettifyCategory(filters.category) }
+                : categories[0])
+            }
+            onChange={(option) => onFilterChange("category", option?.value || "all")}
+            placeholder="Category"
+            isSearchable={false}
+          />
+
+          <Select
+            styles={modalSelectStyles}
+            menuPortalTarget={document.body}
+            menuPosition="fixed"
+            options={rewards}
+            value={rewards.find((item) => item.value === (filters.reward || "all")) || rewards[0]}
+            onChange={(option) => onFilterChange("reward", option?.value || "all")}
+            placeholder="Budget"
+            isSearchable={false}
+          />
+
+          <Select
+            styles={modalSelectStyles}
+            menuPortalTarget={document.body}
+            menuPosition="fixed"
+            options={sorts}
+            value={sorts.find((item) => item.value === (filters.sort || "newest")) || sorts[0]}
+            onChange={(option) => onFilterChange("sort", option?.value || "newest")}
+            placeholder="Sort By"
+            isSearchable={false}
+          />
+
+          <button
+            type="button"
+            onClick={() => setFiltersOpen(false)}
+            className="mt-2 w-full rounded-2xl bg-violet-600 py-3 text-sm font-semibold text-white transition hover:bg-violet-500"
+          >
+            Apply Filters
+          </button>
+        </div>
+      </Modal>
     </section>
   );
 }
