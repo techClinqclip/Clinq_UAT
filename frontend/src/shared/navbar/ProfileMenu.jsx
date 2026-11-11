@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ChevronDown, User, Settings, LogOut } from "lucide-react";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { clearAuthStorage } from "../../lib/api";
-import ConfirmModal from "../ui/ComfirmModal";
+import ConfirmModal from "../ui/ConfirmModal";
 
 const ROLE_BADGE = {
   creator: "bg-violet-500/10 text-violet-300",

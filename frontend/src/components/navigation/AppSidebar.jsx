@@ -12,7 +12,7 @@ import {
 import SidebarSection from "./SidebarSection";
 import { sidebarConfig } from "./sidebarConfig";
 import { clearAuthStorage } from "../../lib/api";
-import ConfirmModal from "../../shared/ui/ComfirmModal";
+import ConfirmModal from "../../shared/ui/ConfirmModal";
 
 export default function AppSidebar({ role: propRole }) {
   const user = useCurrentUser();

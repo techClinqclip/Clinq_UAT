@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { LogOut } from "lucide-react";
 import { clearAuthStorage } from "../lib/api";
-import ConfirmModal from "../shared/ui/ComfirmModal";
+import ConfirmModal from "../shared/ui/ConfirmModal";
 
 export default function OnboardingLogout() {
   const navigate = useNavigate();

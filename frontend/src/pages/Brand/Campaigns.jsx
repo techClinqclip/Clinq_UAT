@@ -19,7 +19,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import CampaignCardSkeleton from "../../shared/ui/CampaignCardSkeleton";
-import ConfirmModal from "../../shared/ui/ComfirmModal";
+import ConfirmModal from "../../shared/ui/ConfirmModal";
 import useToast from "../../hooks/useToast";
 
 const ACCENTS = {

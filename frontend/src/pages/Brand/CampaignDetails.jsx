@@ -25,7 +25,7 @@ import ViewsChart from "./Components/ViewsChart";
 import PayoutChart from "./Components/PayoutChart";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import ContentLoader from "../../shared/ui/ContentLoader";
-import ConfirmModal from "../../shared/ui/ComfirmModal";
+import ConfirmModal from "../../shared/ui/ConfirmModal";
 import useToast from "../../hooks/useToast";
 
 const formatCompactNumber = (value) => {

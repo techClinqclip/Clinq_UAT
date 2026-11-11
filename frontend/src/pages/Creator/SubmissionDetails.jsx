@@ -31,7 +31,7 @@ import { api } from "../../lib/api";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import useToast from "../../hooks/useToast";
 import SubmitClipDialog from "./SubmitClipDialog";
-import ConfirmModal from "../../shared/ui/ComfirmModal";
+import ConfirmModal from "../../shared/ui/ConfirmModal";
 
 const STATUS_STYLES = {
   pending: "bg-yellow-500/10 text-yellow-400",
