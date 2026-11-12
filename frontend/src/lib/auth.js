@@ -45,6 +45,31 @@ export function getRoleFromPayload(payload) {
   return payload?.user_type || payload?.type || payload?.user?.user_type || payload?.user?.type || '';
 }
 
+// The profile API returns both dedicated columns (e.g. content_interests)
+// and the legacy onboarding_data blob. Columns default to [] / "" in the DB,
+// and an empty array is truthy in JS, so `column || blob` never falls back.
+// Always take the first value that actually has content.
+function firstNonEmptyArray(...candidates) {
+  for (const value of candidates) {
+    if (Array.isArray(value) && value.length > 0) return value;
+  }
+  return [];
+}
+
+function firstNonBlank(...candidates) {
+  for (const value of candidates) {
+    if (value !== null && value !== undefined && String(value).trim()) return String(value);
+  }
+  return '';
+}
+
+function hasAnyHandle(...candidates) {
+  return candidates.some(
+    (handles) =>
+      handles && typeof handles === 'object' && Object.values(handles).some((value) => String(value || '').trim())
+  );
+}
+
 export function getOnboardingRedirectPath({ userType, profile }) {
   const normalizedRole = String(userType || '').toLowerCase();
   const onboardingData = profile?.onboarding_data || {};
@@ -53,37 +78,37 @@ export function getOnboardingRedirectPath({ userType, profile }) {
 
   if (normalizedRole === 'brand') {
     const hasCompanyDetails = Boolean(
-      profile?.company_name?.trim() || profile?.brand_name?.trim() || onboardingData?.companyName?.trim()
+      firstNonBlank(profile?.company_name, profile?.brand_name, onboardingData?.companyName)
     );
     const hasManagerDetails = Boolean(
-      profile?.manager_first_name?.trim() && profile?.manager_last_name?.trim() ||
-      (onboardingData?.managerFirstName?.trim() && onboardingData?.managerLastName?.trim())
+      (firstNonBlank(profile?.manager_first_name) && firstNonBlank(profile?.manager_last_name)) ||
+      (firstNonBlank(onboardingData?.managerFirstName) && firstNonBlank(onboardingData?.managerLastName))
     );
     return hasCompanyDetails && hasManagerDetails ? '/brand/dashboard' : '/onboarding/brand';
   }
 
   if (normalizedRole === 'creator') {
-    const niche = profile?.primary_niche || onboardingData?.niche || '';
-    const interests = profile?.content_interests || onboardingData?.interests || [];
-    const hasNiche = Boolean(String(niche).trim());
-    const hasInterests = Array.isArray(interests) && interests.length > 0;
+    const niche = firstNonBlank(profile?.primary_niche, onboardingData?.niche);
+    const interests = firstNonEmptyArray(profile?.content_interests, onboardingData?.interests);
     // Platform handles are optional — the onboarding form allows skipping them,
     // so requiring a non-empty handle here causes a redirect loop for creators
     // who submitted with all-blank handles.
-    return hasNiche && hasInterests ? '/creator/dashboard' : '/onboarding/creator';
+    return niche && interests.length > 0 ? '/creator/dashboard' : '/onboarding/creator';
   }
 
   if (normalizedRole === 'clipper') {
-    const experience = profile?.experience_level || onboardingData?.experienceLevel || onboardingData?.experience || '';
-    const hasExperience = Boolean(String(experience || '').trim());
-    const tools = Array.isArray(profile?.editing_tools) ? profile.editing_tools : Array.isArray(onboardingData?.editingTools) ? onboardingData.editingTools : Array.isArray(onboardingData?.tools) ? onboardingData.tools : [];
-    const skills = Array.isArray(profile?.skills) ? profile.skills : Array.isArray(onboardingData?.skills) ? onboardingData.skills : [];
-    const interests = Array.isArray(onboardingData?.categories) ? onboardingData.categories : Array.isArray(onboardingData?.interests) ? onboardingData.interests : [];
-    const hasTools = tools.length > 0;
-    const hasSkills = skills.length > 0;
-    const hasInterests = interests.length > 0;
-    const hasHandle = Boolean(Object.values(profile?.handles || onboardingData?.handles || {}).some((value) => String(value || '').trim()));
-    return hasExperience && hasTools && hasSkills && hasInterests && hasHandle ? '/clipper/dashboard' : '/onboarding/clipper';
+    const experience = firstNonBlank(
+      profile?.experience_level,
+      onboardingData?.experienceLevel,
+      onboardingData?.experience
+    );
+    const tools = firstNonEmptyArray(profile?.editing_tools, onboardingData?.editingTools, onboardingData?.tools);
+    const skills = firstNonEmptyArray(profile?.skills, onboardingData?.skills);
+    const interests = firstNonEmptyArray(onboardingData?.categories, onboardingData?.interests);
+    const hasHandle = hasAnyHandle(profile?.handles, onboardingData?.handles);
+    return experience && tools.length > 0 && skills.length > 0 && interests.length > 0 && hasHandle
+      ? '/clipper/dashboard'
+      : '/onboarding/clipper';
   }
 
   return '/onboarding/role';
