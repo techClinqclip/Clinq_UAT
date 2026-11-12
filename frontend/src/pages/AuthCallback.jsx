@@ -21,16 +21,27 @@ export default function AuthCallback() {
         
         // If this is a login (user already has onboarding data), redirect to their dashboard
         // If this is a new signup, redirect to onboarding
-        let nextPath = nextParam || '/onboarding/role';
-        
-        if (hydrationResult) {
+        let nextPath = '/onboarding/role';
+
+        if (hydrationResult?.profile) {
           const { profile, userType } = hydrationResult;
-          const dashboardPath = getOnboardingRedirectPath({ userType, profile });
-          if (!dashboardPath.includes('onboarding')) {
-            nextPath = dashboardPath;
-          } else if (nextParam && nextParam !== '/dashboard') {
-            nextPath = nextParam;
+          const target = getOnboardingRedirectPath({ userType, profile });
+
+          if (!target.startsWith('/onboarding')) {
+            // Onboarding finished: go where the sign-in asked, else the dashboard.
+            nextPath = nextParam && !['/dashboard', '/marketplace'].includes(nextParam) && !nextParam.startsWith('/onboarding')
+              ? nextParam
+              : target;
+          } else if (type) {
+            // Not finished, and a role was picked on the Sign up page: that role's onboarding.
+            nextPath = target;
+          } else {
+            // Not finished, and no role was picked (Log in with Google): choose a role first.
+            nextPath = '/onboarding/role';
           }
+        } else if (hydrationResult) {
+          // Profile couldn't be loaded (temporary error): let the normal checks decide later.
+          nextPath = nextParam || '/marketplace';
         }
 
         navigate(nextPath, { replace: true });
