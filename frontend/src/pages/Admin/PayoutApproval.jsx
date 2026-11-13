@@ -15,6 +15,7 @@ import { api } from "../../lib/api";
 import AdminLoadingSkeleton, { AdminListSkeleton } from "./components/AdminLoadingSkeleton";
 import ManualPayoutModal from "./components/ManualPayoutModal";
 import RejectPayoutModal from "./components/RejectPayoutModal";
+import ConfirmModal from "../../shared/ui/ConfirmModal";
 
 const MODE_LABELS = {
   manual: "Manual Pay",
@@ -38,45 +39,6 @@ const STATUS_STYLES = {
 };
 
 const STATUS_SECTION_ORDER = ["pending", "completed", "rejected", "failed"];
-
-function ConfirmToggleModal({ open, title, body, confirmLabel, confirmClassName, onCancel, onConfirm, busy }) {
-  if (!open) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-surface-2 p-6 shadow-2xl">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10">
-            <ShieldAlert size={18} className="text-amber-300" />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-white">{title}</h3>
-            <p className="mt-2 text-sm leading-6 text-zinc-400">{body}</p>
-          </div>
-        </div>
-
-        <div className="mt-6 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={busy}
-            className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-white/5 disabled:opacity-50"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            disabled={busy}
-            className={`rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition disabled:opacity-50 ${confirmClassName}`}
-          >
-            {busy ? "Saving..." : confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function ToggleRow({ title, description, enabled, onToggle, disabled = false }) {
   return (
@@ -281,7 +243,7 @@ export default function AdminPayoutApproval() {
         ? "Admin will pay each withdrawal manually and enter UTR/reference to mark it paid. RazorpayX autopay will not run."
         : "System will switch to RazorpayX autopay. Use “With approval” to decide whether admin approval is required before transfer.",
       confirmLabel: nextValue ? "Enable Manual Pay" : "Use RazorpayX Autopay",
-      confirmClassName: nextValue ? "bg-violet-600 hover:bg-violet-500" : "bg-amber-600 hover:bg-amber-500",
+      confirmColor: nextValue ? "violet" : "amber",
     });
   };
 
@@ -294,7 +256,7 @@ export default function AdminPayoutApproval() {
         ? "New withdrawal requests will wait for admin approval. After approval, RazorpayX transfers money and stores data automatically."
         : "New withdrawal requests will transfer via RazorpayX immediately and store data automatically.",
       confirmLabel: nextValue ? "Enable With Approval" : "Disable Approval (full autopay)",
-      confirmClassName: nextValue ? "bg-violet-600 hover:bg-violet-500" : "bg-amber-600 hover:bg-amber-500",
+      confirmColor: nextValue ? "violet" : "amber",
     });
   };
 
@@ -557,13 +519,16 @@ export default function AdminPayoutApproval() {
         )}
       </section>
 
-      <ConfirmToggleModal
+      <ConfirmModal
         open={Boolean(confirmConfig)}
         title={confirmConfig?.title}
-        body={confirmConfig?.body}
-        confirmLabel={confirmConfig?.confirmLabel}
-        confirmClassName={confirmConfig?.confirmClassName}
-        busy={savingToggle}
+        description={confirmConfig?.body}
+        icon={ShieldAlert}
+        color={confirmConfig?.confirmColor ?? "violet"}
+        iconColor="amber"
+        confirmText={confirmConfig?.confirmLabel}
+        loading={savingToggle}
+        loadingText="Saving..."
         onCancel={() => {
           if (savingToggle) return;
           setConfirmConfig(null);

@@ -1,5 +1,6 @@
 ﻿import { useState } from "react";
-import { X, Send } from "lucide-react";
+import { Send } from "lucide-react";
+import Modal from "../../../shared/ui/Modal";
 import Avatar from "./Avatar";
 import HoverProfileTrigger from "../../../shared/social/HoverProfileTrigger";
 import { useCommunity } from "../CommunityContext";
@@ -18,13 +19,12 @@ export default function CommentModal() {
   const { threads, usersById, activeCommentThreadId, closeComments, getComments, addComment } = useCommunity();
   const [text, setText] = useState("");
 
-  if (!activeCommentThreadId) return null;
+  const thread = activeCommentThreadId
+    ? threads.find((t) => t.id === activeCommentThreadId)
+    : null;
 
-  const thread = threads.find((t) => t.id === activeCommentThreadId);
-  if (!thread) return null;
-
-  const threadAuthor = usersById[thread.userId];
-  const comments = getComments(thread.id);
+  const threadAuthor = thread ? usersById[thread.userId] : null;
+  const comments = thread ? getComments(thread.id) : [];
   const currentUser = usersById["u_me"];
 
   const handleSend = () => {
@@ -41,29 +41,12 @@ export default function CommentModal() {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
-      onClick={closeComments}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-3xl border border-white/10 bg-surface-2 shadow-2xl"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/10 p-5">
-          <h3 className="text-lg font-semibold text-white">Comments</h3>
-          <button
-            type="button"
-            onClick={closeComments}
-            className="rounded-xl p-1.5 text-zinc-500 transition hover:bg-white/5 hover:text-white"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
+    <Modal open={Boolean(thread)} onClose={closeComments} title="Comments" size="lg">
+      {thread && (
+      <div className="flex max-h-[calc(85vh-4.5rem)] flex-col">
         {/* Original thread preview */}
         {threadAuthor && (
-          <div className="border-b border-white/5 bg-white/[0.02] p-5">
+          <div className="-mx-6 border-y border-white/5 bg-white/[0.02] px-6 py-5">
             <div className="flex items-start gap-3">
               <Avatar src={threadAuthor.avatar} name={threadAuthor.name} size={36} />
               <div className="min-w-0">
@@ -78,7 +61,7 @@ export default function CommentModal() {
         )}
 
         {/* Comments list */}
-        <div className="flex-1 space-y-4 overflow-y-auto p-5">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto py-5">
           {comments.length > 0 ? (
             comments.map((comment) => {
               const author = usersById[comment.userId];
@@ -115,7 +98,7 @@ export default function CommentModal() {
         </div>
 
         {/* Reply box */}
-        <div className="flex items-center gap-2.5 border-t border-white/10 p-4">
+        <div className="-mx-6 -mb-6 flex items-center gap-2.5 border-t border-white/10 p-4">
           <Avatar src={currentUser?.avatar} name={currentUser?.name} size={32} />
           <input
             type="text"
@@ -135,6 +118,7 @@ export default function CommentModal() {
           </button>
         </div>
       </div>
-    </div>
+      )}
+    </Modal>
   );
 }

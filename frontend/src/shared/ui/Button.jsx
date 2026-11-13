@@ -15,6 +15,8 @@ const VARIANT_CLASSES = {
     "bg-green-500 text-white hover:bg-green-400 disabled:opacity-60",
   info:
     "bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-60",
+  caution:
+    "bg-amber-600 text-white hover:bg-amber-500 disabled:opacity-60",
 };
 
 const SIZE_CLASSES = {

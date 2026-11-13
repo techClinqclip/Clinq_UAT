@@ -1,11 +1,10 @@
 ﻿import { useState } from "react";
-import { X, Copy, Check, Link2 } from "lucide-react";
+import { Copy, Check, Link2 } from "lucide-react";
 import { FaXTwitter, FaWhatsapp, FaFacebook } from "react-icons/fa6";
+import Modal from "../../../shared/ui/Modal";
 
 export default function ShareDialog({ isOpen, onClose, threadId }) {
   const [copied, setCopied] = useState(false);
-
-  if (!isOpen) return null;
 
   const shareUrl = `${window.location.origin}/community/thread/${threadId}`;
 
@@ -22,26 +21,8 @@ export default function ShareDialog({ isOpen, onClose, threadId }) {
   ];
 
   return (
-    <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm overflow-hidden rounded-3xl border border-white/10 bg-surface-2 shadow-2xl"
-      >
-        <div className="flex items-center justify-between border-b border-white/10 p-5">
-          <h3 className="text-lg font-semibold text-white">Share Post</h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-xl p-1.5 text-zinc-500 transition hover:bg-white/5 hover:text-white"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        <div className="space-y-5 p-5">
+    <Modal open={isOpen} onClose={onClose} title="Share Post" size="sm">
+        <div className="space-y-5">
           <div className="flex justify-center gap-4">
             {shareTargets.map(({ icon: Icon, label, href }) => (
               <a
@@ -72,7 +53,6 @@ export default function ShareDialog({ isOpen, onClose, threadId }) {
             </button>
           </div>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
