@@ -19,7 +19,7 @@ import {
 import Breadcrumbs from "../../components/Breadcrumbs";
 import useToast from "../../hooks/useToast";
 import { api } from "../../lib/api";
-import ConfirmModal from "./components/ConfirmModal";
+import ConfirmModal from "../../shared/ui/ConfirmModal";
 
 const initialGigs = [];
 

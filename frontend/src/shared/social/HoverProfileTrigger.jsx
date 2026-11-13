@@ -42,7 +42,7 @@ export default function HoverProfileTrigger({ user, children, align = "left" }) 
       {hovering &&
         createPortal(
           <div
-            style={{ position: "fixed", top: coords.top, left: coords.left, zIndex: 100 }}
+            style={{ position: "fixed", top: coords.top, left: coords.left, zIndex: 210 }}
             onMouseEnter={handleEnter}
             onMouseLeave={handleLeave}
           >

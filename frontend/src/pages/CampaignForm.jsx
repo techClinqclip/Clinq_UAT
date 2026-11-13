@@ -14,7 +14,7 @@ import useToast from "../hooks/useToast"; // adjust path to match this file's ac
 import ProcessingModal from "../shared/ui/ProcessingModal"; // adjust path to match this file's actual location
 import { api } from "../lib/api";
 import { downloadResourceSampleTemplate } from "../lib/resourceTemplate";
-import ConfirmModal from "./clipper/components/ConfirmModal";
+import ConfirmModal from "../shared/ui/ConfirmModal";
 
 /*
   CampaignForm — shared by CreateCampaign and EditCampaign so the two

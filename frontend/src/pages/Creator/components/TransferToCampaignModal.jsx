@@ -1,5 +1,6 @@
 ﻿import { useState } from "react";
-import { X, ArrowRightLeft, CircleDollarSign, Wallet, AlertCircle } from "lucide-react";
+import { ArrowRightLeft, CircleDollarSign, Wallet, AlertCircle } from "lucide-react";
+import Modal from "../../../shared/ui/Modal";
 import useToast from "../../../hooks/useToast"; // ADJUST to match this file's actual path
 import { api } from "../../../lib/api";
 
@@ -77,26 +78,8 @@ export default function TransferToCampaignModal({ isOpen, onClose, availableEarn
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
-      onClick={handleClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-2xl border border-white/10 bg-surface-2 p-6 shadow-2xl"
-      >
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-white">Transfer to campaign wallet</h3>
-            <p className="mt-1 text-sm text-zinc-500">Move earned funds straight into your spend balance.</p>
-          </div>
-          <button
-            onClick={handleClose}
-            className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-white/5 hover:text-white"
-          >
-            <X size={16} />
-          </button>
-        </div>
+    <Modal open onClose={handleClose} title="Transfer to campaign wallet" size="md">
+        <p className="-mt-2 text-sm text-zinc-500">Move earned funds straight into your spend balance.</p>
 
         {/* Flow diagram */}
         <div className="mt-5 flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3">
@@ -184,7 +167,6 @@ export default function TransferToCampaignModal({ isOpen, onClose, availableEarn
             {submitting ? "Transferring\u2026" : `Transfer ₹${amount ? Number(amount).toLocaleString() : "0"}`}
           </button>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }

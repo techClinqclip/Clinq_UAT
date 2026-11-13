@@ -23,14 +23,19 @@ const COLORS = {
     bg: "bg-blue-500/10",
     text: "text-blue-400",
   },
+  amber: {
+    bg: "bg-amber-500/10",
+    text: "text-amber-300",
+  },
 };
 
 const CONFIRM_VARIANT = {
   red: "danger",
-  yellow: "primary",
-  green: "primary",
+  yellow: "warning",
+  green: "success",
   violet: "primary",
-  blue: "primary",
+  blue: "info",
+  amber: "caution",
 };
 
 export default function ConfirmModal({
@@ -39,9 +44,11 @@ export default function ConfirmModal({
   description,
   icon: Icon,
   color = "violet",
+  iconColor,
   confirmText = "Confirm",
   cancelText = "Cancel",
   loading = false,
+  loadingText = "Please wait...",
   onCancel,
   onConfirm,
 }) {
@@ -56,7 +63,7 @@ export default function ConfirmModal({
     return () => window.clearTimeout(timer);
   }, [open]);
 
-  const theme = COLORS[color] ?? COLORS.violet;
+  const theme = COLORS[iconColor ?? color] ?? COLORS.violet;
 
   return (
     <Modal
@@ -95,7 +102,7 @@ export default function ConfirmModal({
           loading={loading}
           onClick={onConfirm}
         >
-          {loading ? "Please wait..." : confirmText}
+          {loading ? loadingText : confirmText}
         </Button>
       </div>
     </Modal>

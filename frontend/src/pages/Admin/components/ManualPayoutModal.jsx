@@ -1,5 +1,6 @@
 ﻿import { useState } from "react";
-import { Building2, CheckCircle2, Smartphone, X } from "lucide-react";
+import { Building2, CheckCircle2, Smartphone } from "lucide-react";
+import Modal from "../../../shared/ui/Modal";
 
 function formatINR(value) {
   return `₹${Number(value || 0).toLocaleString("en-IN")}`;
@@ -51,24 +52,10 @@ export default function ManualPayoutModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-surface-2 p-6 shadow-2xl">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h3 className="text-lg font-semibold text-white">Mark withdrawal as paid</h3>
-            <p className="mt-1 text-sm text-zinc-500">
-              Record the offline transfer details after you have paid the user.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={resetAndClose}
-            disabled={busy}
-            className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-white/5 hover:text-white disabled:opacity-50"
-          >
-            <X size={16} />
-          </button>
-        </div>
+    <Modal open onClose={resetAndClose} title="Mark withdrawal as paid" size="lg" closeOnBackdrop={false}>
+        <p className="-mt-2 text-sm text-zinc-500">
+          Record the offline transfer details after you have paid the user.
+        </p>
 
         <div className="mt-5 space-y-3 rounded-xl border border-white/10 bg-white/[0.03] p-4">
           <div className="flex items-center justify-between gap-3">
@@ -164,7 +151,6 @@ export default function ManualPayoutModal({
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }

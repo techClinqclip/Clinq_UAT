@@ -1,6 +1,6 @@
 ﻿import { useState } from "react";
-import { createPortal } from "react-dom";
-import { X, IndianRupee, ShieldCheck, Loader2 } from "lucide-react";
+import { IndianRupee, ShieldCheck, Loader2 } from "lucide-react";
+import Modal from "../ui/Modal";
 import useToast from "../../hooks/useToast";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { startWalletTopUp } from "./razorpayCheckout";
@@ -87,29 +87,9 @@ export default function AddFundsModal({
     }
   };
 
-  return createPortal(
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm"
-      onClick={handleClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="my-auto w-full max-w-md rounded-2xl border border-white/10 bg-surface-2 p-6 shadow-2xl"
-      >
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-white">{title}</h3>
-            <p className="mt-1 text-sm text-zinc-500">{subtitle}</p>
-          </div>
-          <button
-            type="button"
-            onClick={handleClose}
-            disabled={processing}
-            className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-white/5 hover:text-white disabled:opacity-40"
-          >
-            <X size={16} />
-          </button>
-        </div>
+  return (
+    <Modal open onClose={handleClose} title={title} size="md">
+        <p className="-mt-2 text-sm text-zinc-500">{subtitle}</p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-5">
           <div>
@@ -174,8 +154,6 @@ export default function AddFundsModal({
             )}
           </button>
         </form>
-      </div>
-    </div>,
-    document.body
+    </Modal>
   );
 }

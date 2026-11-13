@@ -1,5 +1,6 @@
 ﻿import { useState } from "react";
-import { X, XCircle } from "lucide-react";
+import { XCircle } from "lucide-react";
+import Modal from "../../../shared/ui/Modal";
 
 export default function RejectPayoutModal({ open, item, busy = false, onClose, onConfirm }) {
   const [reason, setReason] = useState("");
@@ -29,24 +30,10 @@ export default function RejectPayoutModal({ open, item, busy = false, onClose, o
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-surface-2 p-6 shadow-2xl">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h3 className="text-lg font-semibold text-white">Reject withdrawal</h3>
-            <p className="mt-1 text-sm text-zinc-500">
-              This restores ₹{Number(item.amount || 0).toLocaleString("en-IN")} to the user&apos;s available earnings.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={resetAndClose}
-            disabled={busy}
-            className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-white/5 hover:text-white disabled:opacity-50"
-          >
-            <X size={16} />
-          </button>
-        </div>
+    <Modal open onClose={resetAndClose} title="Reject withdrawal" size="md" closeOnBackdrop={false}>
+        <p className="-mt-2 text-sm text-zinc-500">
+          This restores ₹{Number(item.amount || 0).toLocaleString("en-IN")} to the user&apos;s available earnings.
+        </p>
 
         <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
           <p className="text-sm font-medium text-white">{item.userEmail || `User #${item.userId}`}</p>
@@ -89,7 +76,6 @@ export default function RejectPayoutModal({ open, item, busy = false, onClose, o
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }

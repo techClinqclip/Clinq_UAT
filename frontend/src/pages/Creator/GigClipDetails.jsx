@@ -8,7 +8,6 @@ import {
     IndianRupee,
     Trash2,
     Check,
-    X,
     ExternalLink,
     CalendarDays,
     Link2,
@@ -16,51 +15,13 @@ import {
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import { api } from "../../lib/api";
+import ConfirmModal from "../../shared/ui/ConfirmModal";
 
 const STATUS_STYLES = {
     Approved: "bg-green-500/10 text-green-400",
     Pending: "bg-yellow-500/10 text-yellow-400",
     Rejected: "bg-red-500/10 text-red-400",
 };
-
-function DeleteConfirmModal({ clipTitle, onCancel, onConfirm, isDeleting }) {
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-2xl border border-white/10 bg-surface-2 p-6">
-                <div className="flex items-start justify-between">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/10">
-                        <Trash2 size={18} className="text-red-400" />
-                    </div>
-                    <button onClick={onCancel} className="text-zinc-500 hover:text-white">
-                        <X size={18} />
-                    </button>
-                </div>
-
-                <h3 className="mt-4 text-lg font-bold text-white">Delete this submission?</h3>
-                <p className="mt-1.5 text-sm text-zinc-400">
-                    "{clipTitle}" will be permanently removed from this campaign. This can't be undone.
-                </p>
-
-                <div className="mt-6 flex gap-3">
-                    <button
-                        onClick={onCancel}
-                        disabled={isDeleting}
-                        className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-white transition hover:border-white/20"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        onClick={onConfirm}
-                        disabled={isDeleting}
-                        className="flex-1 rounded-xl bg-red-500 py-2.5 text-sm font-medium text-white transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                        {isDeleting ? "Deleting..." : "Delete"}
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-}
 
 export default function GigClipDetails() {
     const { gigId, participantId, submissionId } = useParams();
@@ -174,17 +135,21 @@ export default function GigClipDetails() {
 
     return (
         <div className="space-y-8">
-            {isDeleteOpen && (
-                <DeleteConfirmModal
-                    clipTitle={clip.title}
-                    isDeleting={isDeleting}
-                    onCancel={() => {
-                        setIsDeleteOpen(false);
-                        setDeleteReason("");
-                    }}
-                    onConfirm={handleDeleteConfirm}
-                />
-            )}
+            <ConfirmModal
+                open={isDeleteOpen}
+                title="Delete this submission?"
+                description={`"${clip.title}" will be permanently removed from this campaign. This can't be undone.`}
+                icon={Trash2}
+                color="red"
+                confirmText="Delete"
+                loading={isDeleting}
+                loadingText="Deleting..."
+                onCancel={() => {
+                    setIsDeleteOpen(false);
+                    setDeleteReason("");
+                }}
+                onConfirm={handleDeleteConfirm}
+            />
 
             {/* Header */}
             <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-violet-600/15 via-surface-2 to-surface-1 p-8">
