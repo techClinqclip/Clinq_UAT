@@ -1,6 +1,7 @@
 ﻿import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { X, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
+import Modal from "../../../shared/ui/Modal";
 import useToast from "../../../hooks/useToast";
 import { api } from "../../../lib/api";
 
@@ -169,28 +170,10 @@ export default function WithdrawModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
-      onClick={handleClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-2xl border border-white/10 bg-surface-2 p-6 shadow-2xl"
-      >
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-white">Withdraw earnings</h3>
-            <p className="mt-1 text-sm text-zinc-500">
-              Send your available balance to your payment method.
-            </p>
-          </div>
-          <button
-            onClick={handleClose}
-            className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-white/5 hover:text-white"
-          >
-            <X size={16} />
-          </button>
-        </div>
+    <Modal open onClose={handleClose} title="Withdraw earnings" size="md">
+        <p className="-mt-2 text-sm text-zinc-500">
+          Send your available balance to your payment method.
+        </p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-5">
           <div>
@@ -306,7 +289,6 @@ export default function WithdrawModal({
               : `Withdraw ₹${amount ? Number(amount).toLocaleString() : "0"}`}
           </button>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }

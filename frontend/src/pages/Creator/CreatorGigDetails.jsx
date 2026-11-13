@@ -9,7 +9,6 @@ import {
   Play,
   Download,
   Trash2,
-  X,
   Wallet,
   Globe,
   Link as LinkIcon,
@@ -19,6 +18,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { FaYoutube, FaInstagram, FaFacebook, FaXTwitter } from "react-icons/fa6";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import ConfirmModal from "../../shared/ui/ConfirmModal";
+import Modal from "../../shared/ui/Modal";
 import ViewsChart from "../Brand/Components/ViewsChart";
 import PayoutChart from "../Brand/Components/PayoutChart";
 import { api } from "../../lib/api";
@@ -764,28 +764,23 @@ export default function CreatorGigDetails() {
         </div>
       </section>
 
-      {isSettlementModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-surface-2 p-6 shadow-2xl shadow-black/50">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-[0.25em] text-red-400">Settlement</p>
-                <h2 className="mt-2 text-2xl font-bold text-white">Settle remaining budget</h2>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSettlementModalOpen(false);
-                  setSettlementOption(null);
-                  setNewSettlementDeadline(null);
-                }}
-                className="rounded-full border border-white/10 p-2 text-zinc-400 transition hover:border-white/20 hover:text-white"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="mt-6 rounded-2xl border border-yellow-500/20 bg-yellow-500/10 p-4">
+      <Modal
+        open={isSettlementModalOpen}
+        onClose={() => {
+          setIsSettlementModalOpen(false);
+          setSettlementOption(null);
+          setNewSettlementDeadline(null);
+        }}
+        title={
+          <>
+            <span className="block text-xs font-normal uppercase tracking-[0.25em] text-red-400">Settlement</span>
+            <span className="mt-2 block text-2xl">Settle remaining budget</span>
+          </>
+        }
+        size="lg"
+        closeOnBackdrop={false}
+      >
+            <div className="mt-2 rounded-2xl border border-yellow-500/20 bg-yellow-500/10 p-4">
               <p className="text-sm text-yellow-300">Remaining budget</p>
               <p className="mt-2 text-3xl font-bold text-white">₹{Number(remainingBudget).toLocaleString("en-IN")}</p>
             </div>
@@ -844,9 +839,7 @@ export default function CreatorGigDetails() {
                 {isSettlingFunds ? "Processing..." : "Confirm"}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }
