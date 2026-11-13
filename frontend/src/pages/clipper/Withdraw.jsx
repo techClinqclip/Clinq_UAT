@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import useToast from "../../hooks/useToast";
 import { api } from "../../lib/api";
+import { formatINR } from "../../lib/format";
 
 import {
     Wallet,
@@ -145,7 +146,7 @@ export default function Withdraw() {
             showToast({
                 type: 'success',
                 title: 'Withdrawal Requested',
-                message: response?.message || `₹${withdrawalAmount.toLocaleString()} has been requested successfully.`,
+                message: response?.message || `${formatINR(withdrawalAmount, { decimals: 2 })} has been requested successfully.`,
             });
             setAmount('');
 
@@ -207,7 +208,7 @@ export default function Withdraw() {
                     </p>
 
                     <h3 className="mt-2 text-3xl font-bold">
-                        ₹{availableBalance.toLocaleString()}
+                        {formatINR(availableBalance, { decimals: 2 })}
                     </h3>
                 </div>
 
@@ -222,7 +223,7 @@ export default function Withdraw() {
                     </p>
 
                     <h3 className="mt-2 text-3xl font-bold">
-                        ₹{pendingReview.toLocaleString()}
+                        {formatINR(pendingReview, { decimals: 2 })}
                     </h3>
 
                     <p className="mt-2 text-xs text-zinc-500">
@@ -241,7 +242,7 @@ export default function Withdraw() {
                     </p>
 
                     <h3 className="mt-2 text-3xl font-bold">
-                        ₹{lifetimeWithdrawn.toLocaleString()}
+                        {formatINR(lifetimeWithdrawn)}
                     </h3>
                 </div>
 
@@ -256,7 +257,7 @@ export default function Withdraw() {
                     </p>
 
                     <h3 className="mt-2 text-3xl font-bold">
-                        ₹{minimumWithdrawal}
+                        {formatINR(minimumWithdrawal)}
                     </h3>
                 </div>
             </section>
@@ -297,15 +298,8 @@ export default function Withdraw() {
                         />
 
                         <div className="mt-3 flex items-center justify-between text-sm text-zinc-500">
-                            <span>
-                                Available: ₹
-                                {availableBalance.toLocaleString()}
-                            </span>
-
-                            <span>
-                                Minimum: ₹
-                                {minimumWithdrawal.toLocaleString()}
-                            </span>
+                            <span>Available: {formatINR(availableBalance, { decimals: 2 })}</span>
+                            <span>Minimum: {formatINR(minimumWithdrawal)}</span>
                         </div>
                     </div>
 
@@ -318,7 +312,7 @@ export default function Withdraw() {
                                 onClick={() => quickSelect(value)}
                                 className="rounded-xl border border-white/10 px-5 py-2 transition hover:bg-white/5"
                             >
-                                ₹{value.toLocaleString()}
+                                {formatINR(value)}
                             </button>
                         ))}
 
@@ -344,9 +338,7 @@ export default function Withdraw() {
 
                     {amount && hasPaymentMethod && !isValid && (
                         <div className="mt-6 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300">
-                            Withdrawal amount must be between ₹
-                            {minimumWithdrawal.toLocaleString()} and ₹
-                            {availableBalance.toLocaleString()}.
+                            Withdrawal amount must be between {formatINR(minimumWithdrawal)} and {formatINR(availableBalance, { decimals: 2 })}.
                         </div>
                     )}
 
@@ -431,9 +423,7 @@ export default function Withdraw() {
                             <div className="flex justify-between text-zinc-400">
                                 <span>Withdrawal Amount</span>
 
-                                <span>
-                                    ₹{withdrawalAmount.toLocaleString()}
-                                </span>
+                                <span>{formatINR(withdrawalAmount, { decimals: 2 })}</span>
                             </div>
 
                             <div className="flex justify-between text-zinc-400">
@@ -447,7 +437,7 @@ export default function Withdraw() {
                                     <span>You'll Receive</span>
 
                                     <span className="text-emerald-400">
-                                        ₹{receiveAmount.toLocaleString()}
+                                        {formatINR(receiveAmount, { decimals: 2 })}
                                     </span>
                                 </div>
                             </div>
@@ -463,8 +453,7 @@ export default function Withdraw() {
 
                         <ul className="mt-5 space-y-4 text-sm leading-6 text-zinc-400">
                             <li>
-                                • Minimum withdrawal amount is ₹
-                                {minimumWithdrawal}.
+                                • Minimum withdrawal amount is {formatINR(minimumWithdrawal)}.
                             </li>
 
                             <li>

@@ -5,6 +5,7 @@ import useToast from "../../hooks/useToast";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { startWalletTopUp } from "./razorpayCheckout";
 import { notifyWalletBalanceChanged } from "./walletBalanceEvents";
+import { formatINR } from "../../lib/format";
 
 /*
   Shared AddFundsModal — used by Brand wallet, navbar WalletChip, and
@@ -48,7 +49,7 @@ export default function AddFundsModal({
     if (value < MIN_AMOUNT) {
       showToast({
         type: "error",
-        message: `Minimum top-up is ₹${MIN_AMOUNT.toLocaleString()}.`,
+        message: `Minimum top-up is ${formatINR(MIN_AMOUNT)}.`,
       });
       return;
     }
@@ -71,7 +72,7 @@ export default function AddFundsModal({
       onSuccess?.(result);
       showToast({
         type: "success",
-        message: `₹${Number(result.amount).toLocaleString()} added to your wallet.`,
+        message: `${formatINR(result.amount, { decimals: 2 })} added to your wallet.`,
       });
     } catch (error) {
       const message = error?.message || "Unable to complete payment.";
@@ -121,7 +122,7 @@ export default function AddFundsModal({
                       : "border-white/10 bg-white/[0.03] text-zinc-400 hover:border-white/20 hover:text-white"
                   }`}
                 >
-                  ₹{preset.toLocaleString()}
+                  {formatINR(preset)}
                 </button>
               ))}
             </div>
@@ -150,7 +151,7 @@ export default function AddFundsModal({
                 Waiting for payment...
               </>
             ) : (
-              `Add ₹${amount ? Number(amount).toLocaleString() : "0"}`
+              `Add ${formatINR(amount || 0)}`
             )}
           </button>
         </form>

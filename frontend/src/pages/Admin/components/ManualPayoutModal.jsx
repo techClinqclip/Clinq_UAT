@@ -1,10 +1,7 @@
 ﻿import { useState } from "react";
 import { Building2, CheckCircle2, Smartphone } from "lucide-react";
 import Modal from "../../../shared/ui/Modal";
-
-function formatINR(value) {
-  return `₹${Number(value || 0).toLocaleString("en-IN")}`;
-}
+import { formatINR } from "../../../lib/format";
 
 export default function ManualPayoutModal({
   open,
@@ -65,7 +62,7 @@ export default function ManualPayoutModal({
             </div>
             <div className="text-right">
               <p className="text-xs uppercase tracking-wide text-zinc-500">Amount</p>
-              <p className="mt-1 text-xl font-semibold text-emerald-400">{formatINR(item.amount)}</p>
+              <p className="mt-1 text-xl font-semibold text-emerald-400">{formatINR(item.amount, { decimals: 2 })}</p>
             </div>
           </div>
 
@@ -125,7 +122,7 @@ export default function ManualPayoutModal({
               className="mt-1"
             />
             <span className="text-sm leading-6 text-zinc-300">
-              I confirm ₹{Number(item.amount || 0).toLocaleString("en-IN")} has already been transferred
+              I confirm {formatINR(item.amount, { decimals: 2 })} has already been transferred
               to this user&apos;s {isUpi ? "UPI ID" : "bank account"}.
             </span>
           </label>

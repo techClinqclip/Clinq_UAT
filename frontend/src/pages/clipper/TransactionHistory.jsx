@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { api } from "../../lib/api";
 import { formatWithdrawalDescription } from "../../shared/wallet/formatWithdrawalDescription";
+import { formatINR } from "../../lib/format";
 
 /*
   Clipper withdrawal history — same shell as Creator transactions,
@@ -256,7 +257,7 @@ export default function TransactionHistory() {
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
                     <CircleDollarSign className="mb-4 text-sky-400" size={28} />
                     <p className="text-sm text-zinc-500">Total Paid Out</p>
-                    <h3 className="mt-2 text-3xl font-bold">₹{totalWithdrawn.toLocaleString("en-IN")}</h3>
+                    <h3 className="mt-2 text-3xl font-bold">{formatINR(totalWithdrawn)}</h3>
                 </div>
             </section>
 
@@ -357,7 +358,7 @@ export default function TransactionHistory() {
                                                 </td>
                                                 <td className="px-6 py-5">{t.label}</td>
                                                 <td className={`px-6 py-5 font-semibold ${meta.color}`}>
-                                                    {meta.sign}₹{t.amount.toLocaleString("en-IN")}
+                                                    {meta.sign}{formatINR(t.amount, { decimals: 2 })}
                                                 </td>
                                                 <td className="px-6 py-5">
                                                     <span

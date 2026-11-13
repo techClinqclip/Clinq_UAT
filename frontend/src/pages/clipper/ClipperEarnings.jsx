@@ -13,6 +13,7 @@ import EarningsChartCard from "./components/EarningsChartCard";
 import useToast from "../../hooks/useToast";
 import { api } from "../../lib/api";
 import { normalizeClipperWithdrawal } from "./TransactionHistory";
+import { formatINR } from "../../lib/format";
 
 const defaultOverview = {
     total_earnings: 0,
@@ -135,28 +136,28 @@ export default function ClipperEarnings() {
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
                     <CircleDollarSign className="mb-4 text-violet-400" size={28} />
                     <p className="text-sm text-zinc-500">Total Earnings</p>
-                    <h3 className="mt-2 text-3xl font-bold">₹{overview.total_earnings.toLocaleString()}</h3>
+                    <h3 className="mt-2 text-3xl font-bold">{formatINR(overview.total_earnings, { decimals: 2 })}</h3>
                     <p className="mt-3 text-sm text-emerald-400">Live payout summary</p>
                 </div>
 
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
                     <Wallet className="mb-4 text-emerald-400" size={28} />
                     <p className="text-sm text-zinc-500">Available Balance</p>
-                    <h3 className="mt-2 text-3xl font-bold">₹{overview.available_balance.toLocaleString()}</h3>
+                    <h3 className="mt-2 text-3xl font-bold">{formatINR(overview.available_balance, { decimals: 2 })}</h3>
                     <p className="mt-3 text-sm text-zinc-400">Ready to withdraw</p>
                 </div>
 
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
                     <Clock3 className="mb-4 text-amber-400" size={28} />
                     <p className="text-sm text-zinc-500">Pending Rewards</p>
-                    <h3 className="mt-2 text-3xl font-bold">₹{overview.pending_earnings.toLocaleString()}</h3>
+                    <h3 className="mt-2 text-3xl font-bold">{formatINR(overview.pending_earnings, { decimals: 2 })}</h3>
                     <p className="mt-3 text-sm text-zinc-400">Under review</p>
                 </div>
 
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
                     <CircleDollarSign className="mb-4 text-sky-400" size={28} />
                     <p className="text-sm text-zinc-500">Total Paid</p>
-                    <h3 className="mt-2 text-3xl font-bold">₹{overview.total_withdrawals.toLocaleString()}</h3>
+                    <h3 className="mt-2 text-3xl font-bold">{formatINR(overview.total_withdrawals)}</h3>
                     <p className="mt-3 text-sm text-zinc-400">Successfully withdrawn</p>
                 </div>
             </section>
@@ -217,7 +218,7 @@ export default function ClipperEarnings() {
                                     </div>
                                     <div className="flex items-center gap-6 md:gap-8">
                                         <h4 className="text-xl font-semibold text-violet-400">
-                                            −₹{Number(txn.amount || 0).toLocaleString("en-IN")}
+                                            −{formatINR(txn.amount)}
                                         </h4>
                                         <span
                                             className={`rounded-full px-3 py-1 text-xs font-medium ${

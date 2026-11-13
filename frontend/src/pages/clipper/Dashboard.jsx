@@ -12,6 +12,7 @@ import { Link } from "react-router-dom";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import MarketplaceLoadingSkeleton from "../../components/MarketplaceLoadingSkeleton";
 import { api } from "../../lib/api";
+import { formatINR } from "../../lib/format";
 import { FaInstagram, FaYoutube, FaFacebook } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
 
@@ -99,7 +100,7 @@ export default function ClipperDashboard() {
         return [
             {
                 title: "Total Earnings",
-                value: `₹${totalEarnings.toLocaleString()}`,
+                value: formatINR(totalEarnings, { decimals: 2 }),
                 icon: Wallet,
                 link: "/clipper/earnings",
             },
@@ -141,10 +142,7 @@ export default function ClipperDashboard() {
         return date.toLocaleDateString("en-IN", DATE_OPTIONS);
     };
 
-    const formatRupees = (value) => {
-        const amount = Number(value || 0);
-        return `₹${amount.toLocaleString()}`;
-    };
+    const formatRupees = (value, decimals = 0) => formatINR(value, { decimals });
 
     const platformIcon = (platform) => {
         if (!platform) return null;
@@ -320,7 +318,7 @@ export default function ClipperDashboard() {
                                                 {submission.status || "Unknown"}
                                             </span>
                                         </td>
-                                        <td className="py-5 font-semibold text-green-400">{formatRupees(submission.earned || submission.earning || 0)}</td>
+                                        <td className="py-5 font-semibold text-green-400">{formatRupees(submission.earned || submission.earning || 0, 2)}</td>
                                         <td className="py-5 text-zinc-400">{submission.submittedAt ? new Date(submission.submittedAt).toLocaleDateString("en-IN", DATE_OPTIONS) : "—"}</td>
                                     </tr>
                                 ))}

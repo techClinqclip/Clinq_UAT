@@ -13,6 +13,7 @@ import { api } from "../../lib/api";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import MarketplaceLoadingSkeleton from "../../components/MarketplaceLoadingSkeleton";
 import GigCard from "./GigCard";
+import { formatINR } from "../../lib/format";
 
 const filters = [
     "All",
@@ -90,10 +91,7 @@ export default function MyGigs() {
         },
         {
             title: "Total Earnings",
-            value: `₹${gigs.reduce(
-                (sum, gig) => sum + gig.myEarnings,
-                0
-            ).toLocaleString()}`,
+            value: formatINR(gigs.reduce((sum, gig) => sum + gig.myEarnings, 0), { decimals: 2 }),
             icon: IndianRupee,
         },
     ];
