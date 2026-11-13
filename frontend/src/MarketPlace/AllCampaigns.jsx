@@ -11,7 +11,7 @@ function normalizeCampaignList(data) {
   return [];
 }
 
-export default function AllCampaigns({ campaigns = [], filters = {}, loading = false, error = null, onRetry }) {
+export default function AllCampaigns({ campaigns = [], filters = {}, loading = false, error = null, onRetry, onClearFilters }) {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [loadingMore, setLoadingMore] = useState(false);
 
@@ -128,8 +128,17 @@ export default function AllCampaigns({ campaigns = [], filters = {}, loading = f
           No campaigns are live right now — check back soon.
         </div>
       ) : filteredCampaigns.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-white/10 bg-surface-2 px-6 py-10 text-center text-zinc-400">
-          No campaigns match your filters right now.
+        <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-white/10 bg-surface-2 px-6 py-10 text-center text-zinc-400">
+          <p>No campaigns match your filters right now.</p>
+          {onClearFilters && (
+            <button
+              type="button"
+              onClick={onClearFilters}
+              className="rounded-xl border border-white/10 bg-white/5 px-5 py-2 text-sm font-medium text-zinc-200 transition hover:border-white/20 hover:bg-white/10"
+            >
+              Clear filters
+            </button>
+          )}
         </div>
       ) : (
         <>
