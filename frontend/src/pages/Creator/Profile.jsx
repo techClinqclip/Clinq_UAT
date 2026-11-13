@@ -247,8 +247,13 @@ function buildInitialForm(profile = {}) {
   const handles = (hasRealHandles ? profileHandles : onboardingHandles) || {
     youtube: "", instagram: "", facebook: "", twitter: "",
   };
-  const interests = onboardingData?.interests || [];
-  const niche = onboardingData?.niche || "";
+  const interests =
+    Array.isArray(profile?.content_interests) && profile.content_interests.length > 0
+      ? profile.content_interests
+      : Array.isArray(onboardingData?.interests)
+        ? onboardingData.interests
+        : [];
+  const niche = String(profile?.primary_niche || "").trim() || onboardingData?.niche || "";
 
   const rawContact = profile?.contact_number || onboardingData?.contactNumber || "";
   const parsedContact = splitContactNumber(rawContact);
