@@ -1,4 +1,4 @@
-import {
+﻿import {
     Eye,
     Wallet,
     Megaphone,
@@ -61,7 +61,7 @@ import {
           return (
             <div
               key={item.key}
-              className="group rounded-3xl border border-white/10 bg-gradient-to-br from-[#11111A] to-[#0B0B12] p-6 transition-all duration-300 hover:-translate-y-1 hover:border-violet-500/30"
+              className="group rounded-3xl border border-white/10 bg-gradient-to-br from-surface-2 to-surface-1 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-violet-500/30"
             >
               <div className="flex items-center justify-between">
                 <div

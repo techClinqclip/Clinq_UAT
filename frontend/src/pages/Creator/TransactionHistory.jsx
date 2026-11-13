@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+﻿import { Link } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import { api } from "../../lib/api";
@@ -430,7 +430,7 @@ export default function CreatorTransactionHistory() {
                     <>
                         <div className="overflow-x-auto">
                             <table className="w-full">
-                                <thead className="bg-[#0B0B0B]">
+                                <thead className="bg-surface-1">
                                     <tr className="border-b border-white/10 text-left text-sm text-zinc-400">
                                         <th className="px-6 py-4">ID</th>
                                         <th className="px-6 py-4">Date</th>

@@ -1,4 +1,12 @@
 @import "tailwindcss";
+
+@theme {
+  --color-surface-0: #07070B;
+  --color-surface-1: #0B0B12;
+  --color-surface-2: #11111A;
+  --color-surface-3: #15151F;
+}
+
 @keyframes toast-progress {
     from {
       width: 100%;

@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+﻿import { useMemo, useRef } from "react";
 import { AlertCircle, RotateCcw, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import CampaignCard from "./components/CampaignCard";
 import MarketplaceLoadingSkeleton from "../components/MarketplaceLoadingSkeleton";
@@ -83,7 +83,7 @@ export default function FeaturedCampaigns({ campaigns = [], loading = false, err
           )}
         </div>
       ) : featuredCampaigns.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-white/10 bg-[#11111A] px-6 py-14 text-center">
+        <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-white/10 bg-surface-2 px-6 py-14 text-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/5">
             <Sparkles size={22} className="text-zinc-500" />
           </div>

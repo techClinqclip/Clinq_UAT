@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Building2, CheckCircle2, Smartphone, X } from "lucide-react";
 
 function formatINR(value) {
@@ -52,7 +52,7 @@ export default function ManualPayoutModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#131316] p-6 shadow-2xl">
+      <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-surface-2 p-6 shadow-2xl">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="text-lg font-semibold text-white">Mark withdrawal as paid</h3>

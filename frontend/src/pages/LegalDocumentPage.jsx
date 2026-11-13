@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { Download, Loader2 } from "lucide-react";
 import Navbar from "../components/Hero/Navbar";
 import Footer from "../components/Footer/Footer";
@@ -63,7 +63,7 @@ export default function LegalDocumentPage({
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0A0F] text-white">
+    <div className="min-h-screen bg-surface-1 text-white">
       <Navbar />
       <main className="mx-auto max-w-5xl px-4 pb-16 pt-28 sm:px-6 lg:px-8">
         <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 sm:p-8">

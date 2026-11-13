@@ -1,4 +1,4 @@
-import { Trophy, TrendingUp, Wallet, FileCheck, Users } from "lucide-react";
+﻿import { Trophy, TrendingUp, Wallet, FileCheck, Users } from "lucide-react";
 
 const icons = {
   views: TrendingUp,
@@ -10,7 +10,7 @@ const icons = {
 
 export default function MilestonesTimeline({ milestones = [] }) {
   return (
-    <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+    <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
 
       {/* Header */}
 

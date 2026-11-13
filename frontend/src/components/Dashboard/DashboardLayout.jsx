@@ -1,4 +1,4 @@
-import { Outlet, useLocation } from "react-router-dom";
+﻿import { Outlet, useLocation } from "react-router-dom";
 import AppSidebar from "../navigation/AppSidebar";
 import TopNavbar from "../../shared/navbar/TopNavbar";
 
@@ -11,7 +11,7 @@ export default function DashboardLayout({ role }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#07070B]">
+    <div className="min-h-screen bg-surface-0">
       <AppSidebar role={role} />
 
       <main className="ml-0 min-h-screen md:ml-64">

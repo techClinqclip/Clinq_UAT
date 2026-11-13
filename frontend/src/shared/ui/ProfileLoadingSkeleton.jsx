@@ -1,4 +1,4 @@
-/*
+﻿/*
   ProfileLoadingSkeleton — one shared skeleton for Brand / Creator / Clipper
   profile pages. Mirrors the real layout (cover, avatar, stats grid, tab nav,
   panel) so there's no layout shift when real data lands. Pulse color is
@@ -28,7 +28,7 @@ export default function ProfileLoadingSkeleton({ tabCount = 5 }) {
           <div className={`h-36 sm:h-44 ${pulse}`} />
           <div className="px-6 pb-6">
             <div className="flex flex-col items-start gap-4 sm:flex-row">
-              <div className={`-mt-10 h-20 w-20 shrink-0 rounded-2xl border-4 border-[#0A0A0F] ${pulse}`} />
+              <div className={`-mt-10 h-20 w-20 shrink-0 rounded-2xl border-4 border-surface-1 ${pulse}`} />
               <div className="min-w-0 flex-1 space-y-2 pb-1 pt-2 sm:pt-3">
                 <div className={`h-6 w-48 rounded-md ${pulse}`} />
                 <div className={`h-4 w-32 rounded-md ${pulse}`} />

@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom";
+﻿import { Link, useParams } from "react-router-dom";
 import {
     ArrowLeft,
     CalendarDays,
@@ -757,7 +757,7 @@ export default function ClipperGigDetails() {
 
                     <table className="min-w-full">
 
-                        <thead className="bg-[#11111A]/95">
+                        <thead className="bg-surface-2/95">
                             <tr className="border-b border-white/10">
                                 <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">
                                     Resource
@@ -845,7 +845,7 @@ export default function ClipperGigDetails() {
 
                         <table className="min-w-full">
 
-                            <thead className="sticky top-0 z-20 bg-[#11111A]/95 backdrop-blur-md">
+                            <thead className="sticky top-0 z-20 bg-surface-2/95 backdrop-blur-md">
 
                                 <tr className="border-b border-white/10">
 

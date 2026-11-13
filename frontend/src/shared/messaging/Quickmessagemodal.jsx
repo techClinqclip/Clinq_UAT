@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import { X, Send, Minus, Headphones } from "lucide-react";
 import { useMessaging } from "./MessagingContext";
 
@@ -76,7 +76,7 @@ export default function QuickMessageModal() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[70] w-80 overflow-hidden rounded-2xl border border-white/10 bg-[#15151F] shadow-2xl">
+    <div className="fixed bottom-6 right-6 z-[70] w-80 overflow-hidden rounded-2xl border border-white/10 bg-surface-3 shadow-2xl">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.03] px-4 py-3">
         <div className="flex min-w-0 items-center gap-2.5">

@@ -1,4 +1,4 @@
-import {
+﻿import {
   Scissors,
   Gift,
   IndianRupee,
@@ -8,8 +8,8 @@ import {
 import { Link } from "react-router-dom";
 export default function CTA() {
   return (
-    <section className="bg-[#07070B] px-6 py-24">
-      <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[36px] border border-white/10 bg-gradient-to-br from-[#11111a] via-[#0d0d15] to-[#09090B] px-10 py-24">
+    <section className="bg-surface-0 px-6 py-24">
+      <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[36px] border border-white/10 bg-gradient-to-br from-surface-2 via-[#0d0d15] to-[#09090B] px-10 py-24">
 
         {/* Background Glow */}
         <div className="absolute left-1/2 top-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-600/20 blur-[140px]" />

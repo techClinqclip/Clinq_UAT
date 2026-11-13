@@ -1,4 +1,4 @@
-import { ArrowLeft } from "lucide-react";
+﻿import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function CreateCampaign() {
@@ -29,7 +29,7 @@ export default function CreateCampaign() {
 
       {/* Form */}
 
-      <div className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <div className="rounded-3xl border border-white/10 bg-surface-2 p-8">
 
         <form className="space-y-6">
 
@@ -43,7 +43,7 @@ export default function CreateCampaign() {
             <input
               type="text"
               placeholder="Podcast Clips Campaign"
-              className="w-full rounded-2xl border border-white/10 bg-[#0B0B12] px-4 py-3 text-white outline-none focus:border-violet-500"
+              className="w-full rounded-2xl border border-white/10 bg-surface-1 px-4 py-3 text-white outline-none focus:border-violet-500"
             />
           </div>
 
@@ -57,7 +57,7 @@ export default function CreateCampaign() {
             <textarea
               rows="5"
               placeholder="Describe your campaign..."
-              className="w-full rounded-2xl border border-white/10 bg-[#0B0B12] px-4 py-3 text-white outline-none focus:border-violet-500"
+              className="w-full rounded-2xl border border-white/10 bg-surface-1 px-4 py-3 text-white outline-none focus:border-violet-500"
             />
           </div>
 
@@ -73,7 +73,7 @@ export default function CreateCampaign() {
               <input
                 type="number"
                 placeholder="10000"
-                className="w-full rounded-2xl border border-white/10 bg-[#0B0B12] px-4 py-3 text-white outline-none focus:border-violet-500"
+                className="w-full rounded-2xl border border-white/10 bg-surface-1 px-4 py-3 text-white outline-none focus:border-violet-500"
               />
             </div>
 
@@ -85,7 +85,7 @@ export default function CreateCampaign() {
               <input
                 type="number"
                 placeholder="500"
-                className="w-full rounded-2xl border border-white/10 bg-[#0B0B12] px-4 py-3 text-white outline-none focus:border-violet-500"
+                className="w-full rounded-2xl border border-white/10 bg-surface-1 px-4 py-3 text-white outline-none focus:border-violet-500"
               />
             </div>
 
@@ -126,7 +126,7 @@ export default function CreateCampaign() {
 
               <input
                 type="date"
-                className="w-full rounded-2xl border border-white/10 bg-[#0B0B12] px-4 py-3 text-white outline-none focus:border-violet-500"
+                className="w-full rounded-2xl border border-white/10 bg-surface-1 px-4 py-3 text-white outline-none focus:border-violet-500"
               />
             </div>
 
@@ -137,7 +137,7 @@ export default function CreateCampaign() {
 
               <input
                 type="date"
-                className="w-full rounded-2xl border border-white/10 bg-[#0B0B12] px-4 py-3 text-white outline-none focus:border-violet-500"
+                className="w-full rounded-2xl border border-white/10 bg-surface-1 px-4 py-3 text-white outline-none focus:border-violet-500"
               />
             </div>
 

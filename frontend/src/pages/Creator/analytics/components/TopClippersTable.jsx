@@ -1,9 +1,9 @@
-import { Link } from "react-router-dom";
+﻿import { Link } from "react-router-dom";
 import { ArrowRight, Trophy } from "lucide-react";
 
 export default function TopClippersTable({ clippers = [] }) {
   return (
-    <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+    <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
 
       {/* Header */}
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -447,7 +447,7 @@ function NiceSelect({ value, onChange, options, disabled, placeholder = "Select"
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
             transition={{ duration: 0.15 }}
-            className={`absolute left-0 top-full z-30 mt-1.5 max-h-64 overflow-y-auto rounded-xl border border-white/10 bg-[#15151F] p-1.5 shadow-2xl ${menuClassName}`}
+            className={`absolute left-0 top-full z-30 mt-1.5 max-h-64 overflow-y-auto rounded-xl border border-white/10 bg-surface-3 p-1.5 shadow-2xl ${menuClassName}`}
           >
             {normalized.map((opt) => {
               const isSelected = opt.value === value;
@@ -483,7 +483,7 @@ function ConfirmDialog({ state, onCancel }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#12121A] p-6 shadow-xl">
+      <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-surface-2 p-6 shadow-xl">
         <div className="flex items-start gap-3">
           <div
             className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
@@ -922,7 +922,7 @@ export default function Profile() {
 
         <div className="px-6 pb-6">
           <div className="flex flex-col items-start gap-4 sm:flex-row">
-            <div className="-mt-10 group relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-[#0A0A0F] bg-[#11111A]">
+            <div className="-mt-10 group relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-surface-1 bg-surface-2">
               {form.photo ? (
                 <img src={form.photo} alt="Logo" className="h-full w-full object-cover" />
               ) : (

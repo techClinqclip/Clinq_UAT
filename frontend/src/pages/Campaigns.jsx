@@ -1,4 +1,4 @@
-import { Plus, Search } from "lucide-react";
+﻿import { Plus, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 const campaigns = [
   {
@@ -64,7 +64,7 @@ export default function Campaigns() {
         <input
           type="text"
           placeholder="Search campaigns..."
-          className="w-full rounded-2xl border border-white/10 bg-[#11111A] py-3 pl-11 pr-4 text-white outline-none focus:border-violet-500"
+          className="w-full rounded-2xl border border-white/10 bg-surface-2 py-3 pl-11 pr-4 text-white outline-none focus:border-violet-500"
         />
 
       </div>
@@ -94,7 +94,7 @@ export default function Campaigns() {
         {campaigns.map((campaign) => (
           <div
             key={campaign.id}
-            className="rounded-3xl border border-white/10 bg-[#11111A] p-6 transition hover:border-violet-500/30"
+            className="rounded-3xl border border-white/10 bg-surface-2 p-6 transition hover:border-violet-500/30"
           >
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 

@@ -103,7 +103,7 @@ export default function SubmissionReviewModal({ submission, onClose, onApprove, 
           exit={{ opacity: 0, scale: 0.96, y: 8 }}
           transition={{ duration: 0.15 }}
           onClick={(e) => e.stopPropagation()}
-          className="custom-scrollbar max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-white/10 bg-[#11111A] p-6 shadow-2xl sm:p-8"
+          className="custom-scrollbar max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-white/10 bg-surface-2 p-6 shadow-2xl sm:p-8"
         >
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">

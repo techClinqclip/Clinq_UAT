@@ -1,4 +1,4 @@
-import {
+﻿import {
   Search,
   Scissors,
   BadgeCheck,
@@ -39,7 +39,7 @@ const steps = [
 
 export default function HowItWorks() {
   return (
-    <section id="how-it-works" className="bg-[#07070B] py-24 md:py-32 px-5 md:px-6">
+    <section id="how-it-works" className="bg-surface-0 py-24 md:py-32 px-5 md:px-6">
       <div className="mx-auto max-w-7xl">
 
         {/* Heading */}

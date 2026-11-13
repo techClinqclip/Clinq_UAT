@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Building2, UserRound, Mail, CheckCircle2, ChevronDown, Check ,  Loader2, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -143,7 +143,7 @@ function NiceSelect({ value, onChange, options, disabled, placeholder = "Select"
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
             transition={{ duration: 0.15 }}
-            className={`absolute left-0 top-full z-30 mt-1.5 max-h-64 overflow-y-auto rounded-xl border border-white/10 bg-[#15151F] p-1.5 shadow-2xl ${menuClassName}`}
+            className={`absolute left-0 top-full z-30 mt-1.5 max-h-64 overflow-y-auto rounded-xl border border-white/10 bg-surface-3 p-1.5 shadow-2xl ${menuClassName}`}
           >
             {normalized.map((opt) => {
               const isSelected = opt.value === value;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import {
   UserRound,
   Flame,
@@ -267,7 +267,7 @@ function ConfirmDialog({ state, onCancel }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#12121A] p-6 shadow-xl">
+      <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-surface-2 p-6 shadow-xl">
         <div className="flex items-start gap-3">
           <div
             className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
@@ -518,7 +518,7 @@ export default function CreatorProfile() {
 
         <div className="px-6 pb-6">
           <div className="-mt-10 flex flex-col gap-4 sm:flex-row sm:items-end">
-            <div className="group relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-[#0A0A0F] bg-[#11111A]">
+            <div className="group relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-surface-1 bg-surface-2">
               {form.photo ? (
                 <img src={form.photo} alt="Photo" className="h-full w-full object-cover" />
               ) : (

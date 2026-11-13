@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -268,7 +268,7 @@ function UserSupportTickets() {
             <span className="rounded-full bg-white/[0.06] px-3 py-1.5 text-xs font-medium text-zinc-300">{tickets.length} total</span>
           </div>
           {loading ? <TicketListSkeleton /> : tickets.length === 0 ? <div className="flex flex-col items-center justify-center py-10 text-center"><LifeBuoy size={34} className="mb-3 text-zinc-600" /><p className="font-medium text-zinc-300">No support tickets yet</p><p className="mt-1 text-sm text-zinc-500">Create a ticket and our team will respond here.</p></div> : <div className="mt-4 space-y-3">{tickets.map((ticket) => <button type="button" onClick={() => setSelectedId(ticket.id)} key={ticket.id} className="w-full rounded-2xl border border-white/[0.08] bg-black/20 p-4 text-left transition hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.04]"><div className="flex items-start justify-between gap-3"><h3 className="min-w-0 truncate font-semibold text-white">{ticket.subject}</h3><span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_STYLES[ticket.status] || "bg-white/10 text-zinc-300"}`}>{ticket.status}</span></div><div className="mt-3 flex flex-wrap items-center gap-2"><span className="rounded-md bg-white/[0.05] px-2 py-1 text-xs text-zinc-300">{ticket.category}</span><span className={`rounded-md px-2 py-1 text-xs font-medium ${PRIORITY_STYLES[ticket.priority] || "bg-white/5 text-zinc-400"}`}>{ticket.priority}</span><span className="ml-auto text-xs text-zinc-500">{ticket.createdAt}</span></div></button>)}</div>}
-          {selectedTicket && createPortal(<div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Support conversation" onClick={() => setSelectedId(null)}><div className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#11111A] shadow-2xl shadow-black/60" onClick={(event) => event.stopPropagation()}><div className="flex items-start justify-between gap-3 border-b border-white/10 px-6 py-5">
+          {selectedTicket && createPortal(<div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Support conversation" onClick={() => setSelectedId(null)}><div className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-surface-2 shadow-2xl shadow-black/60" onClick={(event) => event.stopPropagation()}><div className="flex items-start justify-between gap-3 border-b border-white/10 px-6 py-5">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-emerald-400" />
@@ -312,7 +312,7 @@ function TicketThreadModal({ ticket, onClose, onReply, onStatusChange }) {
         exit={{ opacity: 0, scale: 0.96, y: 8 }}
         transition={{ duration: 0.15 }}
         onClick={(e) => e.stopPropagation()}
-        className="custom-scrollbar flex max-h-[85vh] w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#11111A] shadow-2xl"
+        className="custom-scrollbar flex max-h-[85vh] w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-surface-2 shadow-2xl"
       >
         <div className="flex items-start justify-between gap-4 border-b border-white/10 p-6">
           <div className="min-w-0">

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Loader2, X } from "lucide-react";
 
 const COLORS = {
@@ -58,7 +58,7 @@ export default function ConfirmModal({
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#11111A] p-6 shadow-2xl">
+      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-surface-2 p-6 shadow-2xl">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div

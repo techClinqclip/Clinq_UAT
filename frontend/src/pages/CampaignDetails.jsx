@@ -1,4 +1,4 @@
-import {
+﻿import {
   ArrowLeft,
   Eye,
   Users,
@@ -87,7 +87,7 @@ export default function CampaignDetails() {
 
       {/* Hero */}
 
-      <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-violet-600/10 via-[#11111A] to-[#0B0B12] p-8">
+      <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-violet-600/10 via-surface-2 to-surface-1 p-8">
 
         <div className="flex flex-col gap-6 lg:flex-row lg:justify-between">
 
@@ -133,7 +133,7 @@ export default function CampaignDetails() {
 
       {/* Overview */}
 
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
 
         <h2 className="text-2xl font-bold text-white">
           Campaign Overview
@@ -221,7 +221,7 @@ export default function CampaignDetails() {
           return (
             <div
               key={item.label}
-              className="rounded-2xl border border-white/10 bg-[#11111A] p-5"
+              className="rounded-2xl border border-white/10 bg-surface-2 p-5"
             >
               <Icon
                 size={18}
@@ -243,7 +243,7 @@ export default function CampaignDetails() {
 
       {/* Clippers */}
 
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
 
         <h2 className="text-2xl font-bold text-white">
           Clippers Working On This Campaign
@@ -299,7 +299,7 @@ export default function CampaignDetails() {
 
       {/* Submissions */}
 
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
 
         <h2 className="text-2xl font-bold text-white">
           Submitted Work
@@ -360,7 +360,7 @@ export default function CampaignDetails() {
 
       {/* Analytics */}
 
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
 
         <h2 className="text-2xl font-bold text-white">
           Analytics

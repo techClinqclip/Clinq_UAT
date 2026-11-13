@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from "react";
+﻿import { useRef, useState, useCallback } from "react";
 import { Image as ImageIcon, Smile, BarChart3, X, Plus } from "lucide-react";
 import Avatar from "./Avatar";
 import { useCommunity } from "../CommunityContext";
@@ -98,7 +98,7 @@ export default function PostComposer() {
   };
 
   return (
-    <div className="min-w-0 rounded-2xl border border-white/10 bg-[#11111A] p-4 sm:p-5">
+    <div className="min-w-0 rounded-2xl border border-white/10 bg-surface-2 p-4 sm:p-5">
       <div className="flex gap-3">
         <Avatar src={currentUser.avatar} name={currentUser.name} size={40} />
 
@@ -222,7 +222,7 @@ export default function PostComposer() {
                   GIF
                 </button>
                 {showGif && (
-                  <div className="absolute left-0 top-full z-20 mt-2 grid w-[min(16rem,calc(100vw-2rem))] grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-[#15151F] p-3 shadow-2xl">
+                  <div className="absolute left-0 top-full z-20 mt-2 grid w-[min(16rem,calc(100vw-2rem))] grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-surface-3 p-3 shadow-2xl">
                     {MOCK_GIFS.map((gif) => (
                       <button
                         key={gif}
@@ -250,7 +250,7 @@ export default function PostComposer() {
                   <Smile size={17} />
                 </button>
                 {showEmoji && (
-                  <div className="absolute left-0 top-full z-20 mt-2 grid w-[min(14rem,calc(100vw-2rem))] grid-cols-6 gap-1 rounded-2xl border border-white/10 bg-[#15151F] p-3 shadow-2xl">
+                  <div className="absolute left-0 top-full z-20 mt-2 grid w-[min(14rem,calc(100vw-2rem))] grid-cols-6 gap-1 rounded-2xl border border-white/10 bg-surface-3 p-3 shadow-2xl">
                     {EMOJIS.map((emoji) => (
                       <button
                         key={emoji}

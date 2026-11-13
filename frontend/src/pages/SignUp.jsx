@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Check, Loader2, ArrowLeft } from "lucide-react";
 import useToast from "../hooks/useToast";
@@ -250,7 +250,7 @@ export default function Signup() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0A0A0F] px-6 py-10">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-surface-1 px-6 py-10">
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.05]"
         style={{
@@ -479,7 +479,7 @@ export default function Signup() {
                     <div className="w-full border-t border-white/10" />
                   </div>
                   <div className="relative flex justify-center">
-                    <span className="bg-[#0A0A0F] px-3 text-[11px] uppercase tracking-widest text-zinc-600">or</span>
+                    <span className="bg-surface-1 px-3 text-[11px] uppercase tracking-widest text-zinc-600">or</span>
                   </div>
                 </div>
 

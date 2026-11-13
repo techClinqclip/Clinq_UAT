@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import {
   ArrowLeft,
   IndianRupee,
@@ -98,7 +98,7 @@ export default function OpportunityDetails() {
       </Link>
 
       {/* Hero */}
-      <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-violet-600/15 via-[#11111A] to-[#0B0B12] p-8">
+      <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-violet-600/15 via-surface-2 to-surface-1 p-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <span className="rounded-full bg-violet-500/10 px-3 py-1 text-xs font-medium text-violet-400">
@@ -125,7 +125,7 @@ export default function OpportunityDetails() {
 
       {/* Stats */}
       <div className="grid gap-5 md:grid-cols-2">
-        <div className="rounded-3xl border border-white/10 bg-[#11111A] p-6">
+        <div className="rounded-3xl border border-white/10 bg-surface-2 p-6">
           <div className="flex items-center gap-3">
             <IndianRupee className="text-green-400" />
             <span className="text-zinc-400">Reward</span>
@@ -133,7 +133,7 @@ export default function OpportunityDetails() {
           <h2 className="mt-4 text-4xl font-bold text-green-400">{opportunity.reward}</h2>
         </div>
 
-        <div className="rounded-3xl border border-white/10 bg-[#11111A] p-6">
+        <div className="rounded-3xl border border-white/10 bg-surface-2 p-6">
           <div className="flex items-center gap-3">
             <Clock3 className="text-yellow-400" />
             <span className="text-zinc-400">Deadline</span>
@@ -156,7 +156,7 @@ export default function OpportunityDetails() {
       </div>
 
       {/* Requirements */}
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
         <h2 className="text-2xl font-bold text-white">Requirements</h2>
         <div className="mt-6 space-y-3">
           {opportunity.requirements.map((item) => (
@@ -169,7 +169,7 @@ export default function OpportunityDetails() {
       </section>
 
       {/* Deliverables */}
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
         <h2 className="text-2xl font-bold text-white">Deliverables</h2>
         <div className="mt-6 space-y-3">
           {opportunity.deliverables.map((item) => (
@@ -182,7 +182,7 @@ export default function OpportunityDetails() {
       </section>
 
       {/* Resources */}
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
         <h2 className="text-2xl font-bold text-white">Resources</h2>
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           {opportunity.resources.map((resource) => (
@@ -201,7 +201,7 @@ export default function OpportunityDetails() {
       </section>
 
       {/* Submit Your Content — merges the old Submission Status + Upload sections */}
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-2xl font-bold text-white">Submit Your Content</h2>
           <span
@@ -257,7 +257,7 @@ export default function OpportunityDetails() {
                   onChange={(e) => setLinkInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && addLink()}
                   placeholder="https://..."
-                  className="w-full rounded-xl border border-white/10 bg-[#0B0B12] py-3 pl-11 pr-4 text-white outline-none focus:border-violet-500"
+                  className="w-full rounded-xl border border-white/10 bg-surface-1 py-3 pl-11 pr-4 text-white outline-none focus:border-violet-500"
                 />
               </div>
               <button

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+﻿import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -144,7 +144,7 @@ export default function SupportPanel() {
               rounded-2xl
               border
               border-white/10
-              bg-[#131316]
+              bg-surface-2
               shadow-2xl
 
               sm:absolute

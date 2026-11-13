@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import {
@@ -12,7 +12,7 @@ import {
 import SidebarSection from "./SidebarSection";
 import { sidebarConfig } from "./sidebarConfig";
 import { clearAuthStorage } from "../../lib/api";
-import ConfirmModal from "../../shared/ui/ComfirmModal";
+import ConfirmModal from "../../shared/ui/ConfirmModal";
 
 export default function AppSidebar({ role: propRole }) {
   const user = useCurrentUser();
@@ -30,14 +30,12 @@ export default function AppSidebar({ role: propRole }) {
     location.pathname.startsWith(link.path)
   );
 
-  const [openSection, setOpenSection] = useState(
-    isExploreRoute ? "explore" : "workspace"
-  );
+  const [exploreOpen, setExploreOpen] = useState(isExploreRoute);
   const [logoutConfirmationOpen, setLogoutConfirmationOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    setOpenSection(isExploreRoute ? "explore" : "workspace");
+    setExploreOpen(isExploreRoute);
     setMobileMenuOpen(false);
   }, [location.pathname, isExploreRoute]);
 
@@ -58,7 +56,7 @@ export default function AppSidebar({ role: propRole }) {
   <button
     type="button"
     onClick={() => setMobileMenuOpen(true)}
-    className="fixed left-4 top-4 z-[100] flex items-center justify-center rounded-xl border border-white/10 bg-[#0B0B12] p-3 text-white shadow-lg md:hidden"
+    className="fixed left-4 top-4 z-[100] flex items-center justify-center rounded-xl border border-white/10 bg-surface-1 p-3 text-white shadow-lg md:hidden"
     aria-label="Open navigation"
   >
     <Menu size={22} />
@@ -74,7 +72,7 @@ export default function AppSidebar({ role: propRole }) {
       )}
 
       <aside
-        className={`fixed left-0 top-0 z-50 flex h-screen w-64 flex-col border-r border-white/10 bg-[#0B0B12] transition-transform duration-300 ${
+        className={`fixed left-0 top-0 z-50 flex h-screen w-64 flex-col border-r border-white/10 bg-surface-1 transition-transform duration-300 ${
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         } md:translate-x-0`}
       >
@@ -107,12 +105,8 @@ export default function AppSidebar({ role: propRole }) {
             title="Explore"
             icon={Compass}
             links={exploreLinks}
-            isOpen={openSection === "explore"}
-            onToggle={() =>
-              setOpenSection((prev) =>
-                prev === "explore" ? null : "explore"
-              )
-            }
+            isOpen={exploreOpen}
+            onToggle={() => setExploreOpen((prev) => !prev)}
           />
 
           <div className="my-5 h-px bg-white/5" />
@@ -121,12 +115,7 @@ export default function AppSidebar({ role: propRole }) {
             title="Workspace"
             icon={BriefcaseBusiness}
             links={workspaceLinks}
-            isOpen={openSection === "workspace"}
-            onToggle={() =>
-              setOpenSection((prev) =>
-                prev === "workspace" ? null : "workspace"
-              )
-            }
+            collapsible={false}
           />
         </nav>
 

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Placeholder card matching CampaignCard's layout, for the moment
  * before real campaign data arrives. Usually reads better than a
  * spinner for grid content — the shape of what's coming is already
@@ -11,7 +11,7 @@
  */
 export default function CampaignCardSkeleton() {
     return (
-      <div className="overflow-hidden rounded-3xl border border-white/10 bg-[#11111A]">
+      <div className="overflow-hidden rounded-3xl border border-white/10 bg-surface-2">
         {/* Cover */}
         <div className="relative h-36 overflow-hidden bg-white/[0.04] sm:h-40">
           <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />

@@ -1,4 +1,4 @@
-export default function HeroBackground() {
+﻿export default function HeroBackground() {
     return (
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
   
@@ -65,11 +65,11 @@ export default function HeroBackground() {
         />
   
         {/* Dark Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-black/55 to-[#07070B]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-black/55 to-surface-0" />
   
         {/* Side Fade */}
-        <div className="absolute inset-y-0 left-0 w-40 bg-gradient-to-r from-[#07070B] to-transparent" />
-        <div className="absolute inset-y-0 right-0 w-40 bg-gradient-to-l from-[#07070B] to-transparent" />
+        <div className="absolute inset-y-0 left-0 w-40 bg-gradient-to-r from-surface-0 to-transparent" />
+        <div className="absolute inset-y-0 right-0 w-40 bg-gradient-to-l from-surface-0 to-transparent" />
       </div>
     );
   }

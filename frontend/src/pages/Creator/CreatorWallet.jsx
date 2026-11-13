@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
     Wallet,
@@ -427,7 +427,7 @@ export default function CreatorWallet() {
             <Breadcrumbs />
 
             {/* Hero */}
-            <section className="relative mt-6 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-violet-600/15 via-[#11111A] to-[#0B0B12] p-8">
+            <section className="relative mt-6 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-violet-600/15 via-surface-2 to-surface-1 p-8">
                 <div className="pointer-events-none absolute right-0 top-0 h-72 w-72 rounded-full bg-violet-500/10 blur-[120px]" />
 
                 <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
@@ -597,7 +597,7 @@ export default function CreatorWallet() {
                 <div className="mt-8 overflow-hidden rounded-2xl border border-white/10">
                     <div className="custom-scrollbar max-h-[450px] overflow-y-auto">
                         <table className="min-w-full">
-                            <thead className="sticky top-0 z-20 bg-[#11111A]/95 backdrop-blur-md">
+                            <thead className="sticky top-0 z-20 bg-surface-2/95 backdrop-blur-md">
                                 <tr className="border-b border-white/10 text-left text-sm text-zinc-400">
                                     <th className="px-6 py-4">Campaing</th>
                                     <th className="px-6 py-4">Views</th>
@@ -662,7 +662,7 @@ export default function CreatorWallet() {
                 <div className="mt-8 overflow-hidden rounded-2xl border border-white/10">
                     <div className="custom-scrollbar max-h-[450px] overflow-y-auto">
                         <table className="min-w-full">
-                            <thead className="sticky top-0 z-20 bg-[#11111A]/95 backdrop-blur-md">
+                            <thead className="sticky top-0 z-20 bg-surface-2/95 backdrop-blur-md">
                                 <tr className="border-b border-white/10 text-left text-sm text-zinc-400">
                                     <th className="px-6 py-4">Gig</th>
                                     <th className="px-6 py-4">Status</th>

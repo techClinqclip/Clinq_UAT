@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   Download,
@@ -180,7 +180,7 @@ const EmptyState = ({ icon: Icon = Inbox, title, description }) => (
 function DeleteConfirmModal({ count, onCancel, onConfirm, isDeleting }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#11111A] p-6">
+      <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-surface-2 p-6">
         <div className="flex items-start justify-between">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/10">
             <Trash2 size={18} className="text-red-400" />
@@ -398,7 +398,7 @@ export default function ClipperSubmissions() {
       )}
  
       {/* Header */}
-      <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-violet-600/15 via-[#11111A] to-[#0B0B12] p-8">
+      <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-violet-600/15 via-surface-2 to-surface-1 p-8">
         <div className="absolute right-0 top-0 h-72 w-72 rounded-full bg-violet-500/10 blur-[120px]" />
  
         <div className="relative z-10">
@@ -435,25 +435,25 @@ export default function ClipperSubmissions() {
  
       {/* KPI Cards */}
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border border-white/10 bg-[#11111A] p-6 transition hover:border-violet-500/30">
+        <div className="rounded-2xl border border-white/10 bg-surface-2 p-6 transition hover:border-violet-500/30">
           <p className="text-zinc-500">Total Views</p>
           <h2 className="mt-3 text-4xl font-bold text-white">{totalViews.toLocaleString()}</h2>
           <p className="mt-2 text-sm text-green-400">{approvalRate}% approval rate</p>
         </div>
  
-        <div className="rounded-2xl border border-white/10 bg-[#11111A] p-6 transition hover:border-violet-500/30">
+        <div className="rounded-2xl border border-white/10 bg-surface-2 p-6 transition hover:border-violet-500/30">
           <p className="text-zinc-500">Total Earnings</p>
           <h2 className="mt-3 text-4xl font-bold text-white">₹{totalEarnings.toLocaleString()}</h2>
           <p className="mt-2 text-sm text-violet-400">Lifetime earnings</p>
         </div>
  
-        <div className="rounded-2xl border border-white/10 bg-[#11111A] p-6 transition hover:border-violet-500/30">
+        <div className="rounded-2xl border border-white/10 bg-surface-2 p-6 transition hover:border-violet-500/30">
           <p className="text-zinc-500">Approved Clips</p>
           <h2 className="mt-3 text-4xl font-bold text-white">{approvedCount}</h2>
           <p className="mt-2 text-sm text-green-400">Successfully approved</p>
         </div>
  
-        <div className="rounded-2xl border border-white/10 bg-[#11111A] p-6 transition hover:border-violet-500/30">
+        <div className="rounded-2xl border border-white/10 bg-surface-2 p-6 transition hover:border-violet-500/30">
           <p className="text-zinc-500">Pending Review</p>
           <h2 className="mt-3 text-4xl font-bold text-white">{pendingCount}</h2>
           <p className="mt-2 text-sm text-yellow-400">Awaiting approval</p>
@@ -461,7 +461,7 @@ export default function ClipperSubmissions() {
       </div>
  
       {/* Submission Management */}
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h2 className="text-2xl font-bold text-white">Submission Management</h2>
@@ -585,7 +585,7 @@ export default function ClipperSubmissions() {
       </section>
  
       {/* Top Performing Clips */}
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
         <div>
           <h2 className="text-2xl font-bold text-white">Top Performing Clips</h2>
           <p className="mt-1 text-zinc-500">Highest performing content from this clipper.</p>
@@ -630,7 +630,7 @@ export default function ClipperSubmissions() {
       </section>
  
       {/* Performance Analytics */}
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-white">Performance Analytics</h2>
@@ -684,7 +684,7 @@ export default function ClipperSubmissions() {
       </section>
  
       {/* Clipper Insights */}
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
         <div>
           <h2 className="text-2xl font-bold text-white">Clipper Insights</h2>
           <p className="mt-1 text-zinc-500">Performance indicators and engagement quality.</p>

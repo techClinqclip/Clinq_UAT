@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, ImagePlus, Plus } from "lucide-react";
 import OnboardingLogout from "./OnboardingLogout";
 
@@ -272,7 +272,7 @@ export default function OnboardingLayout({
   const progressPct = steps.length ? ((currentStep + 1) / steps.length) * 100 : 0;
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#0A0A0F] px-4 pb-28 pt-5 text-white sm:px-6 md:pb-32 md:pt-10">
+    <div className="relative min-h-screen overflow-hidden bg-surface-1 px-4 pb-28 pt-5 text-white sm:px-6 md:pb-32 md:pt-10">
       {/* ambient texture */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.05]"
@@ -362,7 +362,7 @@ export default function OnboardingLayout({
       </div>
 
       {/* Sticky footer nav */}
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-white/10 bg-[#0A0A0F]/90 px-4 py-4 backdrop-blur-md sm:px-6">
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-white/10 bg-surface-1/90 px-4 py-4 backdrop-blur-md sm:px-6">
         <div className="mx-auto flex max-w-2xl items-center gap-3">
           {secondaryLabel && (
             <button

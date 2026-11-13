@@ -152,7 +152,7 @@ export default function About() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0A0F]">
+    <div className="min-h-screen bg-surface-1">
       <Navbar />
 
       <section className="relative overflow-hidden px-6 pb-24 pt-40">
@@ -247,7 +247,7 @@ export default function About() {
                   style={{ left: `${(pos.x / 500) * 100}%`, top: `${(pos.y / 440) * 100}%` }}
                 >
                   <div
-                    className={`rounded-2xl border border-white/10 bg-[#12121A]/90 p-4 text-center ring-1 backdrop-blur-md ${a.ring} ${a.glow}`}
+                    className={`rounded-2xl border border-white/10 bg-surface-2/90 p-4 text-center ring-1 backdrop-blur-md ${a.ring} ${a.glow}`}
                   >
                     <div className={`mx-auto flex h-9 w-9 items-center justify-center rounded-xl ${a.bg}`}>
                       <Icon size={17} className={a.text} />

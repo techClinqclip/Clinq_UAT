@@ -1,4 +1,4 @@
-import {
+﻿import {
     Wallet,
     Lock,
     CircleDollarSign,
@@ -341,7 +341,7 @@ export default function BrandWallet() {
                     </div>
                 </div>
 
-                <div className="mt-8 rounded-2xl border border-violet-500/20 bg-[#0B0B12] p-4">
+                <div className="mt-8 rounded-2xl border border-violet-500/20 bg-surface-1 p-4">
                     {activeSpendData.some((point) => Number(point.amount || 0) > 0) ? (
                         <PayoutTrendChart data={activeSpendData} xKey="period" dataKey="amount" />
                     ) : (
@@ -362,7 +362,7 @@ export default function BrandWallet() {
                 <div className="mt-8 overflow-hidden rounded-2xl border border-white/10">
                     <div className="custom-scrollbar max-h-[450px] overflow-y-auto">
                         <table className="min-w-full">
-                            <thead className="sticky top-0 z-20 bg-[#11111A]/95 backdrop-blur-md">
+                            <thead className="sticky top-0 z-20 bg-surface-2/95 backdrop-blur-md">
                                 <tr className="border-b border-white/10 text-left text-sm text-zinc-400">
                                     <th className="px-6 py-4">Campaign</th>
                                     <th className="px-6 py-4">Views</th>

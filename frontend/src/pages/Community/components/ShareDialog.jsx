@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { X, Copy, Check, Link2 } from "lucide-react";
 import { FaXTwitter, FaWhatsapp, FaFacebook } from "react-icons/fa6";
 
@@ -28,7 +28,7 @@ export default function ShareDialog({ isOpen, onClose, threadId }) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm overflow-hidden rounded-3xl border border-white/10 bg-[#11111A] shadow-2xl"
+        className="w-full max-w-sm overflow-hidden rounded-3xl border border-white/10 bg-surface-2 shadow-2xl"
       >
         <div className="flex items-center justify-between border-b border-white/10 p-5">
           <h3 className="text-lg font-semibold text-white">Share Post</h3>

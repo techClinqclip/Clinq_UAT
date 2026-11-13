@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import {
   Plus,
   Trash2,
@@ -120,7 +120,7 @@ function getTodayDate() {
 
 function Section({ title, children }) {
   return (
-    <section className="rounded-3xl border border-white/10 bg-[#11111A] p-6 sm:p-8">
+    <section className="rounded-3xl border border-white/10 bg-surface-2 p-6 sm:p-8">
       <h2 className="mb-6 text-xl font-semibold text-white">{title}</h2>
       {children}
     </section>
@@ -153,13 +153,13 @@ function Field({ label, hint, optional = false, error, children }) {
 }
 
 const inputClasses =
-  "h-[50px] w-full rounded-2xl border border-white/10 bg-[#0B0B12] px-4 text-white outline-none transition focus:border-violet-500";
+  "h-[50px] w-full rounded-2xl border border-white/10 bg-surface-1 px-4 text-white outline-none transition focus:border-violet-500";
 
 const textareaClasses =
-  "w-full resize-y rounded-2xl border border-white/10 bg-[#0B0B12] px-4 py-3 text-white outline-none transition focus:border-violet-500";
+  "w-full resize-y rounded-2xl border border-white/10 bg-surface-1 px-4 py-3 text-white outline-none transition focus:border-violet-500";
 
 const inputErrorClasses =
-  "h-[50px] w-full rounded-2xl border border-red-500/60 bg-[#0B0B12] px-4 text-white outline-none transition focus:border-red-500";
+  "h-[50px] w-full rounded-2xl border border-red-500/60 bg-surface-1 px-4 text-white outline-none transition focus:border-red-500";
 
 
 // Full validation pass — returns { fieldKey: errorMessage } for anything
@@ -654,7 +654,7 @@ export default function CampaignForm({
                 />
                 {mode === "edit" ? (
                   <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-                    <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-[#11111A] px-2.5 py-1 text-[11px] font-medium text-zinc-400">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-surface-2 px-2.5 py-1 text-[11px] font-medium text-zinc-400">
                       <Lock size={11} />
                       Locked
                     </span>
@@ -707,8 +707,8 @@ export default function CampaignForm({
                     isSelected
                       ? "border-violet-500 bg-violet-500/10"
                       : errors.platforms
-                      ? "border-red-500/40 bg-[#0B0B12] hover:border-red-500/60"
-                      : "border-white/10 bg-[#0B0B12] hover:border-violet-500/40"
+                      ? "border-red-500/40 bg-surface-1 hover:border-red-500/60"
+                      : "border-white/10 bg-surface-1 hover:border-violet-500/40"
                   }`}
                 >
                   {isSelected && (
@@ -795,7 +795,7 @@ export default function CampaignForm({
               {form.resources.map((resource) => (
                 <div
                   key={resource.id}
-                  className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-[#0B0B12] p-4"
+                  className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-surface-1 p-4"
                 >
                   <div className="min-w-0">
                     <h3 className="truncate font-medium text-white">

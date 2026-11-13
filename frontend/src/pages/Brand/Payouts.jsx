@@ -1,4 +1,4 @@
-import {
+﻿import {
   IndianRupee,
   Wallet,
   Clock3,
@@ -161,7 +161,7 @@ export default function Payouts() {
           return (
             <div
               key={stat.title}
-              className="rounded-3xl border border-white/10 bg-[#11111A] p-6"
+              className="rounded-3xl border border-white/10 bg-surface-2 p-6"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-500/10">
                 <Icon
@@ -184,7 +184,7 @@ export default function Payouts() {
 
       {/* Payout Trend */}
 
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
 
         <div className="flex items-center justify-between">
           
@@ -232,7 +232,7 @@ export default function Payouts() {
 
         </div>
 
-        <div className="mt-8 rounded-2xl border border-white/10 bg-[#0B0B12] p-4">
+        <div className="mt-8 rounded-2xl border border-white/10 bg-surface-1 p-4">
           <PayoutTrendChart data={activeData} />
         </div>
 
@@ -242,7 +242,7 @@ export default function Payouts() {
 
       {/* Pending Requests */}
 
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
 
 <div className="flex items-center justify-between">
   <div>
@@ -337,7 +337,7 @@ export default function Payouts() {
 
         {/* Transactions */}
 
-        <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+        <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
 
           <h2 className="text-2xl font-bold text-white">
             Recent Transactions
@@ -378,7 +378,7 @@ export default function Payouts() {
 
         {/* Top Earners */}
 
-        <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+        <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
 
           <h2 className="text-2xl font-bold text-white">
             Top Earners

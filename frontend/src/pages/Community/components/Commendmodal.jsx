@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { X, Send } from "lucide-react";
 import Avatar from "./Avatar";
 import HoverProfileTrigger from "../../../shared/social/HoverProfileTrigger";
@@ -47,7 +47,7 @@ export default function CommentModal() {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#11111A] shadow-2xl"
+        className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-3xl border border-white/10 bg-surface-2 shadow-2xl"
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 p-5">

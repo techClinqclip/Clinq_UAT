@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+﻿import { useEffect, useState, useCallback } from "react";
 import { Check, X, AlertCircle } from "lucide-react";
 import { FaFacebook, FaInstagram, FaYoutube, FaTiktok } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
@@ -206,7 +206,7 @@ export default function SubmitClipDialog({
       >
         <div
           onClick={(e) => e.stopPropagation()}
-          className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#11111A] shadow-2xl"
+          className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-surface-2 shadow-2xl"
         >
           <div className="flex items-start justify-between border-b border-white/10 p-7">
             <div>

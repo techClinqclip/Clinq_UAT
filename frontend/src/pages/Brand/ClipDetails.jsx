@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import {
   ArrowLeft,
   Eye,
@@ -49,7 +49,7 @@ const STATUS_STYLES = {
 function DeleteConfirmModal({ clipTitle, onCancel, onConfirm, isDeleting }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#11111A] p-6">
+      <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-surface-2 p-6">
         <div className="flex items-start justify-between">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/10">
             <Trash2 size={18} className="text-red-400" />
@@ -126,7 +126,7 @@ export default function ClipDetails() {
       )}
 
       {/* Header */}
-      <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-violet-600/15 via-[#11111A] to-[#0B0B12] p-8">
+      <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-violet-600/15 via-surface-2 to-surface-1 p-8">
         <div className="absolute right-0 top-0 h-72 w-72 rounded-full bg-violet-500/10 blur-[120px]" />
 
         <div className="relative z-10">
@@ -166,7 +166,7 @@ export default function ClipDetails() {
       </section>
 
       {/* Video Preview */}
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
         <h2 className="text-2xl font-bold text-white">Video Preview</h2>
         <div className="mt-6 flex aspect-video items-center justify-center rounded-3xl border border-dashed border-violet-500/20 bg-violet-500/5 text-zinc-500">
           Video Player Placeholder
@@ -175,25 +175,25 @@ export default function ClipDetails() {
 
       {/* KPI Cards */}
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border border-white/10 bg-[#11111A] p-6">
+        <div className="rounded-2xl border border-white/10 bg-surface-2 p-6">
           <Eye className="mb-3 text-violet-400" />
           <h2 className="text-4xl font-bold text-white">{clip.views}</h2>
           <p className="mt-2 text-zinc-500">Views</p>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-[#11111A] p-6">
+        <div className="rounded-2xl border border-white/10 bg-surface-2 p-6">
           <Heart className="mb-3 text-pink-400" />
           <h2 className="text-4xl font-bold text-white">{clip.likes}</h2>
           <p className="mt-2 text-zinc-500">Likes</p>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-[#11111A] p-6">
+        <div className="rounded-2xl border border-white/10 bg-surface-2 p-6">
           <MessageCircle className="mb-3 text-blue-400" />
           <h2 className="text-4xl font-bold text-white">{clip.comments}</h2>
           <p className="mt-2 text-zinc-500">Comments</p>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-[#11111A] p-6">
+        <div className="rounded-2xl border border-white/10 bg-surface-2 p-6">
           <Share2 className="mb-3 text-green-400" />
           <h2 className="text-4xl font-bold text-white">{clip.shares}</h2>
           <p className="mt-2 text-zinc-500">Shares</p>
@@ -201,7 +201,7 @@ export default function ClipDetails() {
       </div>
 
       {/* Earnings Breakdown */}
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
         <h2 className="text-2xl font-bold text-white">Earnings Breakdown</h2>
 
         <div className="mt-8 grid gap-6 md:grid-cols-3">
@@ -226,7 +226,7 @@ export default function ClipDetails() {
       </section>
 
       {/* Review Notes */}
-      <section className="rounded-3xl border border-white/10 bg-[#11111A] p-8">
+      <section className="rounded-3xl border border-white/10 bg-surface-2 p-8">
         <h2 className="text-2xl font-bold text-white">Review Notes</h2>
         <p className="mt-1 text-sm text-zinc-500">
           Internal notes for your team — not visible to the clipper.
@@ -237,7 +237,7 @@ export default function ClipDetails() {
           placeholder="Add feedback for the clipper..."
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          className="mt-6 w-full rounded-2xl border border-white/10 bg-[#0B0B12] p-4 text-white outline-none focus:border-violet-500"
+          className="mt-6 w-full rounded-2xl border border-white/10 bg-surface-1 p-4 text-white outline-none focus:border-violet-500"
         />
 
         <div className="mt-6 flex items-center gap-3">

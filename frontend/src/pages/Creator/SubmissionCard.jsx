@@ -1,4 +1,4 @@
-import { useNavigate, Link } from "react-router-dom";
+﻿import { useNavigate, Link } from "react-router-dom";
 import {
     Eye,
     Wallet,
@@ -103,7 +103,7 @@ export default function SubmissionCard({ submission }) {
                     open();
                 }
             }}
-            className="group relative flex cursor-pointer flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#11111A] shadow-2xl shadow-transparent transition-all duration-300 ease-out hover:z-10 hover:-translate-y-6 hover:scale-[1.07] hover:border-violet-500/30 hover:shadow-[0_35px_60px_-15px_rgba(0,0,0,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 active:scale-[0.98]"
+            className="group relative flex cursor-pointer flex-col overflow-hidden rounded-3xl border border-white/10 bg-surface-2 shadow-2xl shadow-transparent transition-all duration-300 ease-out hover:z-10 hover:-translate-y-6 hover:scale-[1.07] hover:border-violet-500/30 hover:shadow-[0_35px_60px_-15px_rgba(0,0,0,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 active:scale-[0.98]"
         >
             {/* Cover — mirrors GigCard: real thumbnail if we have one, gradient + icon if not */}
             <div className="relative h-36 overflow-hidden sm:h-40">
@@ -119,7 +119,7 @@ export default function SubmissionCard({ submission }) {
                     </>
                 ) : (
                     <>
-                        <div className="absolute inset-0 bg-gradient-to-br from-violet-600/20 via-[#151520] to-[#0B0B12]" />
+                        <div className="absolute inset-0 bg-gradient-to-br from-violet-600/20 via-[#151520] to-surface-1" />
                         <CategoryIcon
                             size={110}
                             strokeWidth={1}
@@ -190,7 +190,7 @@ export default function SubmissionCard({ submission }) {
 
             {/* Desktop CTA: slides up on hover, doesn't grow the card's box height */}
             <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 hidden translate-y-full opacity-0 transition-all duration-300 ease-out group-hover:translate-y-0 group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 group-focus-within:pointer-events-auto lg:block">
-                <div className="border-t border-white/10 bg-[#11111A]/95 p-5 backdrop-blur-sm">
+                <div className="border-t border-white/10 bg-surface-2/95 p-5 backdrop-blur-sm">
                     <Link
                         to={`/creator/submissions/${submission.id}`}
                         onClick={(e) => e.stopPropagation()}

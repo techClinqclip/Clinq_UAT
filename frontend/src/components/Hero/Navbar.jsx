@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X, ArrowRight } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -75,7 +75,7 @@ export default function Navbar() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -40 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-[100] bg-[#07070B]/95 backdrop-blur-xl lg:hidden"
+            className="fixed inset-0 z-[100] bg-surface-0/95 backdrop-blur-xl lg:hidden"
           >
             <div className="flex h-full flex-col px-8 py-8">
 

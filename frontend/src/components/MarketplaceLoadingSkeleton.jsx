@@ -1,6 +1,6 @@
-export default function MarketplaceLoadingSkeleton() {
+﻿export default function MarketplaceLoadingSkeleton() {
   return (
-    <div className="min-h-screen space-y-8 bg-[#08080a] p-8 text-white">
+    <div className="min-h-screen space-y-8 bg-surface-0 p-8 text-white">
       <div className="h-48 animate-pulse rounded-3xl bg-white/[0.03]" />
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">

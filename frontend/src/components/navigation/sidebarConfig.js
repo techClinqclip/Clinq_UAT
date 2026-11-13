@@ -33,11 +33,13 @@ export const sidebarConfig = {
       name: "Leaderboard",
       path: "/leaderboard",
       icon: Trophy,
+      soon: true,
     },
     {
       name: "Blogs",
       path: "/blogs",
       icon: BookOpen,
+      soon: true,
     },
   ],
 
@@ -120,7 +122,7 @@ export const sidebarConfig = {
         icon: LayoutDashboard,
       },
       {
-        name: "My Submissions",
+        name: "My Gigs",
         path: "/clipper/gigs",
         icon: FolderOpen,
       },

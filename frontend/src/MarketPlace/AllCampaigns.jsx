@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { Loader2, AlertCircle, RotateCcw } from "lucide-react";
 import CampaignCard from "./components/CampaignCard";
 import MarketplaceLoadingSkeleton from "../components/MarketplaceLoadingSkeleton";
@@ -124,11 +124,11 @@ export default function AllCampaigns({ campaigns = [], filters = {}, loading = f
           )}
         </div>
       ) : !hasAnyCampaigns ? (
-        <div className="rounded-2xl border border-dashed border-white/10 bg-[#11111A] px-6 py-10 text-center text-zinc-400">
+        <div className="rounded-2xl border border-dashed border-white/10 bg-surface-2 px-6 py-10 text-center text-zinc-400">
           No campaigns are live right now — check back soon.
         </div>
       ) : filteredCampaigns.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-white/10 bg-[#11111A] px-6 py-10 text-center text-zinc-400">
+        <div className="rounded-2xl border border-dashed border-white/10 bg-surface-2 px-6 py-10 text-center text-zinc-400">
           No campaigns match your filters right now.
         </div>
       ) : (
@@ -145,7 +145,7 @@ export default function AllCampaigns({ campaigns = [], filters = {}, loading = f
                 type="button"
                 onClick={handleLoadMore}
                 disabled={loadingMore}
-                className="flex items-center gap-2 rounded-xl border border-white/10 bg-[#16161F] px-8 py-3 text-sm font-medium text-white transition hover:border-violet-500 hover:bg-violet-500/10 disabled:opacity-60"
+                className="flex items-center gap-2 rounded-xl border border-white/10 bg-surface-3 px-8 py-3 text-sm font-medium text-white transition hover:border-violet-500 hover:bg-violet-500/10 disabled:opacity-60"
               >
                 {loadingMore && <Loader2 size={16} className="animate-spin" />}
                 {loadingMore ? "Loading..." : "Load More Campaigns"}

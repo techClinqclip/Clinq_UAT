@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Search, MessageSquarePlus } from "lucide-react";
 import { useMessaging } from "../../shared/messaging/MessagingContext";
 
@@ -24,7 +24,7 @@ export default function ChatList() {
   );
 
   return (
-    <div className="flex h-full w-full max-w-sm shrink-0 flex-col border-r border-white/10 bg-[#0E0E15]">
+    <div className="flex h-full w-full max-w-sm shrink-0 flex-col border-r border-white/10 bg-surface-1">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-white/10 p-5">
         <h1 className="text-xl font-bold text-white">Messages</h1>
