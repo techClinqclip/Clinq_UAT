@@ -190,7 +190,7 @@ function CampaignCard({ campaign, onRequestAction, isToggling }) {
             <Eye size={15} className={a.text} />
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] text-zinc-500">Views</p>
+            <p className="text-xs text-zinc-400">Views</p>
             <p className="truncate text-base font-bold text-white">{formatCompact(views)}</p>
           </div>
         </div>
@@ -200,7 +200,7 @@ function CampaignCard({ campaign, onRequestAction, isToggling }) {
             <Users size={15} className={a.text} />
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] text-zinc-500">Submissions</p>
+            <p className="text-xs text-zinc-400">Submissions</p>
             <p className="truncate text-base font-bold text-white">{submissions}</p>
           </div>
         </div>
@@ -210,7 +210,7 @@ function CampaignCard({ campaign, onRequestAction, isToggling }) {
             <Wallet size={15} className={a.text} />
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] text-zinc-500">Budget</p>
+            <p className="text-xs text-zinc-400">Budget</p>
             <p className="truncate text-base font-bold text-white">{formatMoney(budget)}</p>
           </div>
         </div>
@@ -220,7 +220,7 @@ function CampaignCard({ campaign, onRequestAction, isToggling }) {
             <TrendingUp size={15} className="text-emerald-400" />
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] text-zinc-500">Paid out</p>
+            <p className="text-xs text-zinc-400">Paid out</p>
             <p className="truncate text-base font-bold text-emerald-400">{formatMoney(paidOut)}</p>
           </div>
         </div>

@@ -108,7 +108,7 @@ export default function ChatWindow() {
         {dayGroups.map((group) => (
           <div key={group.day} className="space-y-3">
             <div className="flex items-center justify-center">
-              <span className="rounded-full bg-white/5 px-3 py-1 text-[11px] font-medium text-zinc-500">
+              <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-zinc-400">
                 {group.label}
               </span>
             </div>
@@ -125,7 +125,7 @@ export default function ChatWindow() {
                     }`}
                   >
                     {msg.text}
-                    <p className={`mt-1 text-[10px] ${isMe ? "text-violet-200/70" : "text-zinc-500"}`}>
+                    <p className={`mt-1 text-xs ${isMe ? "text-violet-200/70" : "text-zinc-400"}`}>
                       {formatBubbleTime(msg.timestamp)}
                     </p>
                   </div>

@@ -253,7 +253,7 @@ export default function About() {
                       <Icon size={17} className={a.text} />
                     </div>
                     <p className="mt-2.5 text-xs font-semibold text-white">{node.label}</p>
-                    <p className="mt-1 text-[11px] leading-4 text-zinc-500">{node.detail}</p>
+                    <p className="mt-1 text-xs leading-4 text-zinc-400">{node.detail}</p>
                   </div>
                 </motion.div>
               );

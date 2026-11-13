@@ -138,10 +138,11 @@ export default function Login() {
           <form onSubmit={handleSubmit} noValidate className="mt-7 space-y-4">
             {/* Email */}
             <div>
-              <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-zinc-400">
+              <label htmlFor="login-email" className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-zinc-400">
                 Email
               </label>
               <input
+                id="login-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -157,11 +158,12 @@ export default function Login() {
 
             {/* Password */}
             <div>
-              <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-zinc-400">
+              <label htmlFor="login-password" className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-zinc-400">
                 Password
               </label>
               <div className="relative">
                 <input
+                  id="login-password"
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
