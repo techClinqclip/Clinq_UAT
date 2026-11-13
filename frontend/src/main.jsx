@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider } from "react-router-dom";
+import { MotionConfig } from "framer-motion";
 
 import "./index.css";
 import { router } from "./components/routes/router";
@@ -24,6 +25,7 @@ router.subscribe((state) => {
 });
 createRoot(document.getElementById("root")).render(
   <StrictMode>
+    <MotionConfig reducedMotion="user">
     <NetworkStatusBanner />
     <ToastProvider>
       {/* MessagingProvider stays wrapped even with messaging "off" —
@@ -46,5 +48,6 @@ createRoot(document.getElementById("root")).render(
         </NotificationProvider>
       </MessagingProvider>
     </ToastProvider>
+    </MotionConfig>
   </StrictMode>
 );

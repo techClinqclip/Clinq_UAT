@@ -156,12 +156,13 @@ export default function ResetPassword() {
             <form onSubmit={handleSubmit} noValidate className="mt-7 space-y-4">
               {/* New password */}
               <div>
-                <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-zinc-400">
+                <label htmlFor="reset-new-password" className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-zinc-400">
                   New password
                 </label>
                 <div className="relative">
                   <Lock size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500" />
                   <input
+                    id="reset-new-password"
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => {
@@ -192,12 +193,13 @@ export default function ResetPassword() {
 
               {/* Confirm password */}
               <div>
-                <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-zinc-400">
+                <label htmlFor="reset-confirm-password" className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-zinc-400">
                   Confirm password
                 </label>
                 <div className="relative">
                   <Lock size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500" />
                   <input
+                    id="reset-confirm-password"
                     type={showConfirm ? "text" : "password"}
                     value={confirmPassword}
                     onChange={(e) => {

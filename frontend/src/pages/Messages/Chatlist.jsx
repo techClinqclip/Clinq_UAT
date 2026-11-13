@@ -77,7 +77,7 @@ export default function ChatList() {
                       {peer.name}
                     </p>
                     {lastMessage && (
-                      <span className="shrink-0 text-[11px] text-zinc-500">{formatListTime(lastMessage.timestamp)}</span>
+                      <span className="shrink-0 text-xs text-zinc-400">{formatListTime(lastMessage.timestamp)}</span>
                     )}
                   </div>
                   <p className={`truncate text-xs ${unread > 0 ? "text-zinc-300" : "text-zinc-500"}`}>

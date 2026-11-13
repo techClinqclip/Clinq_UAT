@@ -78,7 +78,7 @@ export default function MarketplaceLayout({
                     <p className="text-sm font-semibold text-white">
                       Marketplace
                     </p>
-                    <p className="text-[11px] text-zinc-500">
+                    <p className="text-xs text-zinc-400">
                       Insights &amp; activity
                     </p>
                   </div>

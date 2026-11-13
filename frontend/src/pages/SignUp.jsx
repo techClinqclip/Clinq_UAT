@@ -303,10 +303,11 @@ export default function Signup() {
 
               <form onSubmit={handleCreateAccount} noValidate className="mt-7 space-y-4">
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-zinc-400">
+                  <label htmlFor="signup-email" className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-zinc-400">
                     Email address
                   </label>
                   <input
+                    id="signup-email"
                     type="email"
                     value={email}
                     onChange={(e) => {
@@ -326,11 +327,12 @@ export default function Signup() {
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-zinc-400">
+                  <label htmlFor="signup-password" className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-zinc-400">
                     Password
                   </label>
                   <div className="relative">
                     <input
+                      id="signup-password"
                       type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => {
@@ -367,7 +369,7 @@ export default function Signup() {
                       ].map(([key, label]) => (
                         <div key={key} className="flex items-center gap-1.5">
                           <Check size={12} className={passwordRules[key] ? a.dot : "text-zinc-700"} />
-                          <span className={`text-[11px] ${passwordRules[key] ? "text-zinc-400" : "text-zinc-600"}`}>
+                          <span className={`text-xs ${passwordRules[key] ? "text-zinc-400" : "text-zinc-600"}`}>
                             {label}
                           </span>
                         </div>
@@ -377,11 +379,12 @@ export default function Signup() {
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-zinc-400">
+                  <label htmlFor="signup-confirm" className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-zinc-400">
                     Confirm password
                   </label>
                   <div className="relative">
                   <input
+                      id="signup-confirm"
                       type={showConfirm ? "text" : "password"}
                       value={confirmPassword}
                       onChange={(e) => {

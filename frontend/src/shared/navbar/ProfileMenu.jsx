@@ -74,7 +74,7 @@ export default function ProfileMenu() {
             <UserAvatar user={user} size={40} />
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-white">{user.name}</p>
-              <span className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium capitalize ${ROLE_BADGE[user.role] || "bg-white/10 text-zinc-300"}`}>
+              <span className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-xs font-medium capitalize ${ROLE_BADGE[user.role] || "bg-white/10 text-zinc-300"}`}>
                 {user.role}
               </span>
             </div>

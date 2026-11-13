@@ -207,7 +207,7 @@ function OpportunityCard({ opportunity, isSaved, onToggleSave }) {
             <IndianRupee size={15} className={a.text} />
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] text-zinc-500">Reward</p>
+            <p className="text-xs text-zinc-400">Reward</p>
             <p className="truncate text-base font-bold text-green-400">₹{reward.toLocaleString()}</p>
           </div>
         </div>
@@ -217,7 +217,7 @@ function OpportunityCard({ opportunity, isSaved, onToggleSave }) {
             <FileVideo size={15} className={a.text} />
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] text-zinc-500">Deliverables</p>
+            <p className="text-xs text-zinc-400">Deliverables</p>
             <p className="truncate text-base font-bold text-white">{deliverables}</p>
           </div>
         </div>

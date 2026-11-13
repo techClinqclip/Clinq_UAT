@@ -47,3 +47,9 @@ input[type="number"] {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(255,255,255,.22);
 }
+
+/* Global focus-visible ring — unlayered so it overrides Tailwind's outline-none utility */
+:focus-visible {
+  outline: 2px solid #8b5cf6;
+  outline-offset: 2px;
+}

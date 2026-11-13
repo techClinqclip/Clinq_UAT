@@ -194,7 +194,7 @@ export default function DatePicker({
             </button>
           </div>
 
-          <div className="mt-3 grid grid-cols-7 gap-1 text-center text-[11px] text-zinc-500">
+          <div className="mt-3 grid grid-cols-7 gap-1 text-center text-xs text-zinc-500">
             {WEEKDAYS.map((w, i) => (
               <div key={i} className="py-1">
                 {w}

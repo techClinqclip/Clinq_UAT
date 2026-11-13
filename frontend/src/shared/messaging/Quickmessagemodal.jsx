@@ -127,7 +127,7 @@ export default function QuickMessageModal() {
                       }`}
                     >
                       {msg.text}
-                      <p className={`mt-1 text-[10px] ${isMe ? "text-violet-200/70" : "text-zinc-500"}`}>
+                      <p className={`mt-1 text-xs ${isMe ? "text-violet-200/70" : "text-zinc-400"}`}>
                         {formatTime(msg.timestamp)}
                       </p>
                     </div>

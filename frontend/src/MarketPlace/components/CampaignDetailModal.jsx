@@ -406,7 +406,7 @@ function Stat({ icon, iconBg, label, value, valueClass = "text-white" }) {
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="text-[11px] text-zinc-500">{label}</p>
+        <p className="text-xs text-zinc-400">{label}</p>
         <p className={`truncate text-base font-bold ${valueClass}`}>{value}</p>
       </div>
     </div>
