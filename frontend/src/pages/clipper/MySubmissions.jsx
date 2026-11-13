@@ -17,7 +17,6 @@ import {
   PlayCircle,
   Wallet,
   AlertTriangle,
-  X,
   Sparkles,
   Trophy,
   Percent,
@@ -25,6 +24,7 @@ import {
 import { FaInstagram, FaYoutube, FaFacebook } from "react-icons/fa";
 import { api } from "../../lib/api";
 import MarketplaceLoadingSkeleton from "../../components/MarketplaceLoadingSkeleton";
+import ConfirmModal from "../../shared/ui/ConfirmModal";
 
 // ----------------------------------------------------------------------
 // Platform Icon Component
@@ -42,63 +42,6 @@ const PlatformIcon = ({ platform }) => {
       return <FileVideo {...iconProps} className={`${iconProps.className} text-zinc-500`} />;
   }
 };
-
-// ----------------------------------------------------------------------
-// Delete Confirmation Modal — self-contained so it always renders
-// correctly on this dark theme (previously relied on an external
-// component that wasn't showing up / wasn't themed for dark mode).
-// ----------------------------------------------------------------------
-const DeleteConfirmModal = ({ isOpen, onClose, onConfirm, clipTitle }) => (
-  <AnimatePresence>
-    {isOpen && (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
-        onClick={onClose}
-      >
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 10 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 10 }}
-          transition={{ duration: 0.15 }}
-          onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-sm rounded-2xl border border-white/10 bg-surface-2 p-6 shadow-2xl"
-        >
-          <div className="flex items-start justify-between">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-rose-500/10">
-              <AlertTriangle className="text-rose-400" size={20} />
-            </div>
-            <button onClick={onClose} className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-white/5 hover:text-white">
-              <X size={16} />
-            </button>
-          </div>
-
-          <h3 className="mt-4 text-lg font-semibold text-white">Delete submission</h3>
-          <p className="mt-2 text-sm leading-6 text-zinc-400">
-            Are you sure you want to delete "{clipTitle}"? This action cannot be undone.
-          </p>
-
-          <div className="mt-6 flex gap-3">
-            <button
-              onClick={onClose}
-              className="flex-1 rounded-lg border border-white/10 bg-white/[0.03] py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-white/[0.06]"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={onConfirm}
-              className="flex-1 rounded-lg bg-rose-600 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-500"
-            >
-              Delete
-            </button>
-          </div>
-        </motion.div>
-      </motion.div>
-    )}
-  </AnimatePresence>
-);
 
 const INSIGHT_ICON_STYLE = {
   violet: "bg-violet-500/10 text-violet-400",
@@ -828,11 +771,15 @@ export default function MySubmissions() {
         </div>
 
         {/* Delete Confirmation Modal */}
-        <DeleteConfirmModal
-          isOpen={deleteModalOpen}
-          onClose={() => setDeleteModalOpen(false)}
+        <ConfirmModal
+          open={deleteModalOpen}
+          title="Delete submission"
+          description={`Are you sure you want to delete "${selectedSubmission?.clipTitle}"? This action cannot be undone.`}
+          icon={AlertTriangle}
+          color="red"
+          confirmText="Delete"
+          onCancel={() => setDeleteModalOpen(false)}
           onConfirm={handleDeleteConfirm}
-          clipTitle={selectedSubmission?.clipTitle}
         />
       </div>
     </div>

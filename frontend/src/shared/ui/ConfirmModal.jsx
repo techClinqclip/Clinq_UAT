@@ -27,10 +27,10 @@ const COLORS = {
 
 const CONFIRM_VARIANT = {
   red: "danger",
-  yellow: "primary",
-  green: "primary",
+  yellow: "warning",
+  green: "success",
   violet: "primary",
-  blue: "primary",
+  blue: "info",
 };
 
 export default function ConfirmModal({
@@ -42,6 +42,7 @@ export default function ConfirmModal({
   confirmText = "Confirm",
   cancelText = "Cancel",
   loading = false,
+  loadingText = "Please wait...",
   onCancel,
   onConfirm,
 }) {
@@ -95,7 +96,7 @@ export default function ConfirmModal({
           loading={loading}
           onClick={onConfirm}
         >
-          {loading ? "Please wait..." : confirmText}
+          {loading ? loadingText : confirmText}
         </Button>
       </div>
     </Modal>

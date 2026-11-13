@@ -18,7 +18,7 @@ import {
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { FaYoutube, FaInstagram, FaFacebook, FaXTwitter } from "react-icons/fa6";
 import Breadcrumbs from "../../components/Breadcrumbs";
-import ConfirmModal from "./components/ConfirmModal";
+import ConfirmModal from "../../shared/ui/ConfirmModal";
 import ViewsChart from "../Brand/Components/ViewsChart";
 import PayoutChart from "../Brand/Components/PayoutChart";
 import { api } from "../../lib/api";

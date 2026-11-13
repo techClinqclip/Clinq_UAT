@@ -3,7 +3,6 @@ import {
   ArrowLeft,
   Download,
   Trash2,
-  X,
   Inbox,
   Trophy,
   Sparkles,
@@ -22,6 +21,7 @@ import PayoutChart from "./Components/PayoutChart";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import { api } from "../../lib/api";
 import SubmissionsLoadingSkeleton from "../../shared/ui/SubmissionsLoadingSkeleton";
+import ConfirmModal from "../../shared/ui/ConfirmModal";
 
 /*
   Approve/Reject removed from this page on purpose: approval is a
@@ -177,45 +177,6 @@ const EmptyState = ({ icon: Icon = Inbox, title, description }) => (
   </div>
 );
  
-function DeleteConfirmModal({ count, onCancel, onConfirm, isDeleting }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-surface-2 p-6">
-        <div className="flex items-start justify-between">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/10">
-            <Trash2 size={18} className="text-red-400" />
-          </div>
-          <button onClick={onCancel} className="text-zinc-500 hover:text-white">
-            <X size={18} />
-          </button>
-        </div>
- 
-        <h3 className="mt-4 text-lg font-bold text-white">
-          Delete {count > 1 ? `${count} submissions` : "this submission"}?
-        </h3>
-        <p className="mt-1.5 text-sm text-zinc-400">
-          This can't be undone, and the clipper won't be notified automatically.
-        </p>
- 
-        <div className="mt-6 flex gap-3">
-          <button
-            onClick={onCancel}
-            className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-white transition hover:border-white/20"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={isDeleting}
-            className="flex-1 rounded-xl bg-red-500 py-2.5 text-sm font-medium text-white transition hover:bg-red-400 disabled:opacity-60"
-          >
-            {isDeleting ? "Deleting…" : "Delete"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 export default function ClipperSubmissions() {
   const { campaignId, clipperId, gigId, participantId } = useParams();
   // Support both Brand (/brand/campaigns/:campaignId/clippers/:clipperId/submissions)
@@ -388,14 +349,18 @@ export default function ClipperSubmissions() {
  
   return (
     <div className="space-y-8">
-      {deleteTarget && (
-        <DeleteConfirmModal
-          count={deleteTarget.ids.length}
-          isDeleting={isDeleting}
-          onCancel={() => setDeleteTarget(null)}
-          onConfirm={confirmDelete}
-        />
-      )}
+      <ConfirmModal
+        open={Boolean(deleteTarget)}
+        title={`Delete ${deleteTarget?.ids.length > 1 ? `${deleteTarget.ids.length} submissions` : "this submission"}?`}
+        description="This can't be undone, and the clipper won't be notified automatically."
+        icon={Trash2}
+        color="red"
+        confirmText="Delete"
+        loading={isDeleting}
+        loadingText="Deleting…"
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+      />
  
       {/* Header */}
       <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-violet-600/15 via-surface-2 to-surface-1 p-8">

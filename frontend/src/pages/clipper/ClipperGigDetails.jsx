@@ -22,7 +22,7 @@ import { FaInstagram, FaYoutube, FaFacebook, FaXTwitter } from "react-icons/fa6"
 import Breadcrumbs from "../../components/Breadcrumbs";
 import { useEffect, useMemo, useState } from "react";
 import useToast from "../../hooks/useToast";
-import ConfirmModal from "./components/ConfirmModal";
+import ConfirmModal from "../../shared/ui/ConfirmModal";
 import SubmitClipDialog from "../Creator/SubmitClipDialog";
 import { api } from "../../lib/api";
 import useCurrentUser from "../../hooks/useCurrentUser";

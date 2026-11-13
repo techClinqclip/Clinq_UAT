@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect } from "react";
-import { ArrowLeft, Download, Trash2, X, AlertCircle, Globe2 } from "lucide-react";
+import { ArrowLeft, Download, Trash2, AlertCircle, Globe2 } from "lucide-react";
 import { FaYoutube, FaInstagram, FaFacebook, FaTiktok, FaXTwitter } from "react-icons/fa6";
 import { Link, useParams } from "react-router-dom";
 import ViewsChart from "../Brand/Components/ViewsChart";
@@ -7,6 +7,7 @@ import PayoutChart from "../Brand/Components/PayoutChart";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import { api } from "../../lib/api";
 import useToast from "../../hooks/useToast";
+import ConfirmModal from "../../shared/ui/ConfirmModal";
 
 const clipper = {
   username: "@rahul_editz",
@@ -132,47 +133,6 @@ const PlatformBadge = ({ platform }) => {
     </span>
   );
 };
-
-function DeleteConfirmModal({ count, onCancel, onConfirm, isDeleting }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-surface-2 p-6">
-        <div className="flex items-start justify-between">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/10">
-            <Trash2 size={18} className="text-red-400" />
-          </div>
-          <button onClick={onCancel} className="text-zinc-500 hover:text-white">
-            <X size={18} />
-          </button>
-        </div>
-
-        <h3 className="mt-4 text-lg font-bold text-white">
-          Delete {count > 1 ? `${count} submissions` : "this submission"}?
-        </h3>
-        <p className="mt-1.5 text-sm text-zinc-400">
-          This can't be undone, and the clipper won't be notified automatically.
-        </p>
-
-        <div className="mt-6 flex gap-3">
-          <button
-            onClick={onCancel}
-            disabled={isDeleting}
-            className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-white transition hover:border-white/20 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={isDeleting}
-            className="flex-1 rounded-xl bg-red-500 py-2.5 text-sm font-medium text-white transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isDeleting ? "Deleting..." : "Delete"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // Skeleton shown while the participant/submissions data is loading.
 // Mirrors the real layout below (header, KPI row, table) using pulsing
@@ -370,17 +330,21 @@ export default function CreatorSubmissionDetails() {
 
   return (
     <div className="space-y-8">
-      {deleteTarget && (
-        <DeleteConfirmModal
-          count={deleteTarget.ids.length}
-          isDeleting={isDeleting}
-          onCancel={() => {
-            setDeleteTarget(null);
-            setDeleteReason("");
-          }}
-          onConfirm={confirmDelete}
-        />
-      )}
+      <ConfirmModal
+        open={Boolean(deleteTarget)}
+        title={`Delete ${deleteTarget?.ids.length > 1 ? `${deleteTarget.ids.length} submissions` : "this submission"}?`}
+        description="This can't be undone, and the clipper won't be notified automatically."
+        icon={Trash2}
+        color="red"
+        confirmText="Delete"
+        loading={isDeleting}
+        loadingText="Deleting..."
+        onCancel={() => {
+          setDeleteTarget(null);
+          setDeleteReason("");
+        }}
+        onConfirm={confirmDelete}
+      />
 
       {error && (
         <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300">

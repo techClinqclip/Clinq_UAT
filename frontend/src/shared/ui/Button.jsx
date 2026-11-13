@@ -9,6 +9,12 @@ const VARIANT_CLASSES = {
     "bg-transparent text-white hover:bg-white/5 disabled:opacity-60",
   danger:
     "bg-red-500 text-white hover:bg-red-400 disabled:opacity-60",
+  warning:
+    "bg-yellow-500 text-black hover:bg-yellow-400 disabled:opacity-60",
+  success:
+    "bg-green-500 text-white hover:bg-green-400 disabled:opacity-60",
+  info:
+    "bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-60",
 };
 
 const SIZE_CLASSES = {

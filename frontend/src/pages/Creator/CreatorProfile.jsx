@@ -26,6 +26,7 @@ import {
 } from "../../onboarding/Layout";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import useToast from "../../hooks/useToast";
+import ConfirmModal from "../../shared/ui/ConfirmModal";
 
 /*
   Backend wiring: SECTION_ENDPOINTS + buildPayload() are the only two
@@ -259,52 +260,6 @@ function Chip({ label, selected, onClick, disabled }) {
   );
 }
 
-/* Blocking confirmation modal — used for any action that would discard or
-   persist unsaved changes (tab switch, cancel, save). */
-function ConfirmDialog({ state, onCancel }) {
-  if (!state) return null;
-  const { title, message, confirmLabel, cancelLabel, tone = "default", onConfirm } = state;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-surface-2 p-6 shadow-xl">
-        <div className="flex items-start gap-3">
-          <div
-            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-              tone === "danger" ? "bg-red-500/10 text-red-400" : `${accentStyles[ACCENT].iconBg} ${accentStyles[ACCENT].iconText}`
-            }`}
-          >
-            <AlertTriangle size={16} />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-white">{title}</h3>
-            <p className="mt-1 text-sm text-zinc-400">{message}</p>
-          </div>
-        </div>
-
-        <div className="mt-6 flex justify-end gap-3">
-          <button
-            onClick={onCancel}
-            className="rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-zinc-300 transition hover:border-white/20"
-          >
-            {cancelLabel ?? "Keep editing"}
-          </button>
-          <button
-            onClick={onConfirm}
-            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-              tone === "danger"
-                ? "bg-red-500 text-white hover:bg-red-400"
-                : `text-[#0A0A0F] ${accentStyles[ACCENT].solidBtn}`
-            }`}
-          >
-            {confirmLabel ?? "Confirm"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function CreatorProfile() {
   const [tab, setTab] = useState("identity");
   const [form, setForm] = useState({
@@ -494,7 +449,17 @@ export default function CreatorProfile() {
     <div>
       <Breadcrumbs />
 
-      <ConfirmDialog state={confirmState} onCancel={closeConfirm} />
+      <ConfirmModal
+        open={Boolean(confirmState)}
+        title={confirmState?.title}
+        description={confirmState?.message}
+        icon={AlertTriangle}
+        color={confirmState?.tone === "danger" ? "red" : "violet"}
+        confirmText={confirmState?.confirmLabel ?? "Confirm"}
+        cancelText={confirmState?.cancelLabel ?? "Keep editing"}
+        onCancel={closeConfirm}
+        onConfirm={() => confirmState?.onConfirm()}
+      />
 
       {/* Hero */}
       <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03]">
