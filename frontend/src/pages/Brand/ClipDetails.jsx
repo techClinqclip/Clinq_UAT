@@ -6,11 +6,8 @@ import {
   MessageCircle,
   Share2,
   IndianRupee,
-  Trash2,
-  Check,
 } from "lucide-react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import ConfirmModal from "../../shared/ui/ConfirmModal";
+import { Link, useParams } from "react-router-dom";
 
 /*
   Approve/Reject were removed from this page on purpose: that decision now
@@ -48,48 +45,14 @@ const STATUS_STYLES = {
 
 export default function ClipDetails() {
   const { clipId } = useParams(); // TODO: fetch the real clip by this id instead of MOCK_CLIP
-  const navigate = useNavigate();
   const clip = MOCK_CLIP;
 
   const [notes, setNotes] = useState("");
-  const [notesStatus, setNotesStatus] = useState("idle"); // idle | saving | saved
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const backToSubmissions = `/brand/campaigns/${clip.campaignId}/clippers/${clip.clipperId}`;
 
-  const handleSaveNotes = () => {
-    setNotesStatus("saving");
-    // TODO: PATCH /clips/:clipId { notes }
-    setTimeout(() => {
-      setNotesStatus("saved");
-      setTimeout(() => setNotesStatus("idle"), 1800);
-    }, 700);
-  };
-
-  const handleDeleteConfirm = async () => {
-    setIsDeleting(true);
-    // TODO: DELETE /clips/:clipId
-    await new Promise((resolve) => setTimeout(resolve, 800)); // mock latency
-    setIsDeleting(false);
-    setIsDeleteOpen(false);
-    navigate(backToSubmissions);
-  };
-
   return (
     <div className="space-y-8">
-      <ConfirmModal
-        open={isDeleteOpen}
-        title="Delete this submission?"
-        description={`"${clip.title}" will be permanently removed from this campaign. This can't be undone.`}
-        icon={Trash2}
-        color="red"
-        confirmText="Delete"
-        loading={isDeleting}
-        loadingText="Deleting…"
-        onCancel={() => setIsDeleteOpen(false)}
-        onConfirm={handleDeleteConfirm}
-      />
 
       {/* Header */}
       <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-violet-600/15 via-surface-2 to-surface-1 p-8">
@@ -120,13 +83,7 @@ export default function ClipDetails() {
               </div>
             </div>
 
-            <button
-              onClick={() => setIsDeleteOpen(true)}
-              className="flex items-center gap-2 self-start rounded-xl border border-red-500/20 px-5 py-3 text-red-400 transition hover:bg-red-500/10"
-            >
-              <Trash2 size={18} />
-              Delete Submission
-            </button>
+            {/* Delete control hidden — needs DELETE /clips/:clipId API */}
           </div>
         </div>
       </section>
@@ -206,18 +163,7 @@ export default function ClipDetails() {
           className="mt-6 w-full rounded-2xl border border-white/10 bg-surface-1 p-4 text-white outline-none focus:border-violet-500"
         />
 
-        <div className="mt-6 flex items-center gap-3">
-          <button
-            onClick={handleSaveNotes}
-            disabled={notesStatus === "saving"}
-            className={`flex items-center gap-2 rounded-xl px-5 py-3 text-white transition ${
-              notesStatus === "saved" ? "bg-emerald-500" : "bg-violet-600 hover:bg-violet-500"
-            } ${notesStatus === "saving" ? "opacity-60" : ""}`}
-          >
-            {notesStatus === "saved" && <Check size={16} />}
-            {notesStatus === "saving" ? "Saving…" : notesStatus === "saved" ? "Saved" : "Save Notes"}
-          </button>
-        </div>
+        {/* Save Notes control hidden — needs PATCH /clips/:clipId API */}
       </section>
     </div>
   );

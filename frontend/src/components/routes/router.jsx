@@ -1,6 +1,8 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import AuthGuard from "./AuthGuard";
+import ErrorFallback from "../../pages/ErrorFallback";
 
+import NotFound from "../../pages/NotFound";
 import Home from "../../pages/Home";
 import Signup from "../../pages/SignUp";
 import Login from "../../pages/Login";
@@ -92,6 +94,7 @@ export const router = createBrowserRouter([
   {
     path: "/",
     element: <AuthGuard />,
+    errorElement: <ErrorFallback />,
     children: [
       {
         index: true,
@@ -439,7 +442,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "*",
-        element: <RoleSelection />,
+        element: <NotFound />,
       },
     ],
   },

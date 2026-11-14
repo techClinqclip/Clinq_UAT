@@ -29,12 +29,6 @@ import { formatINR } from "../../lib/format";
   waiting on a decision.
 */
 
-// TEMP: forces a mock admin name so you can preview the "Good
-// morning, X" greeting before real backend admin sessions exist.
-// Set to false (or delete this block + the ternary below) once
-// useCurrentUser() actually returns a real logged-in admin.
-const MOCK_PREVIEW_USER = { name: "Ananya Sharma" };
-
 const SUMMARY_CARDS = [
   {
     label: "Pending Submissions",
@@ -131,12 +125,7 @@ export default function AdminDashboard() {
   const [dashboardData, setDashboardData] = useState(null);
   const [loadError, setLoadError] = useState("");
   const [loading, setLoading] = useState(true);
-  // TEMP: falls back to the mock user only if the real hook has no
-  // name yet (guest/unauthenticated). Once real admin sessions exist,
-  // realUser.name will populate and this fallback stops mattering —
-  // safe to leave in, or delete MOCK_PREVIEW_USER entirely.
-  const user = firstName(realUser?.name) ? realUser : MOCK_PREVIEW_USER;
-  const name = firstName(user?.name);
+  const name = firstName(realUser?.name);
 
   useEffect(() => {
     let active = true;
@@ -169,7 +158,7 @@ export default function AdminDashboard() {
           Admin Panel
         </span>
         <h1 className="mt-5 text-4xl font-bold">
-          {name ? `${getGreeting()}, ${name}` : "Overview"}
+          {name ? `${getGreeting()}, ${name}` : "Welcome back"}
         </h1>
         <p className="mt-4 max-w-2xl leading-7 text-zinc-400">
           Everything that needs an admin's eyes, in one place — submissions, payouts, and support.

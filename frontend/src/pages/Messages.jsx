@@ -1,4 +1,15 @@
-﻿export default function Messages() {
+﻿import { Navigate } from "react-router-dom";
+import { FEATURES } from "../config/Features";
+import useCurrentUser from "../hooks/useCurrentUser";
+
+export default function Messages() {
+  const user = useCurrentUser();
+
+  if (!FEATURES.messaging) {
+    const role = user?.role || "brand";
+    return <Navigate to={`/${role}/dashboard`} replace />;
+  }
+
   return (
     <div className="min-h-screen bg-surface-0 text-white">
       <div className="mx-auto max-w-6xl px-6 py-16">
