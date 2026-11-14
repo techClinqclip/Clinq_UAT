@@ -4,6 +4,7 @@ import { Search, Layers, Users, FileVideo, Wallet } from "lucide-react";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import { api } from "../../lib/api";
 import AdminLoadingSkeleton from "./components/AdminLoadingSkeleton";
+import { formatINR } from "../../lib/format";
 
 const OWNER_STYLES = { campaign: "bg-cyan-500/10 text-cyan-300", gig: "bg-violet-500/10 text-violet-300" };
 const titleCase = (value) => String(value || "").replace(/^./, (letter) => letter.toUpperCase());
@@ -135,7 +136,7 @@ export default function CampaignSubmissions() {
                   </span>
                   <span className="flex items-center gap-1.5">
                     <Wallet size={14} className="text-zinc-500" />
-                    ₹{campaign.budget.toLocaleString()} budget
+                    {formatINR(campaign.budget)} budget
                   </span>
                 </div>
                 <div className="flex shrink-0 gap-2">

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import MarketplaceLayout from "./components/layout/MarketplaceLayout";
 import HeroSection from "./components/hero/HeroSection";
 import DiscoveryToolbar from "./components/discovery/DiscoveryToolbar";
@@ -24,8 +25,17 @@ export default function Marketplace() {
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [filters, setFilters] = useState(defaultFilters);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [fetchKey, setFetchKey] = useState(0);
+
+  const filters = {
+    search: searchParams.get("search") ?? defaultFilters.search,
+    status: searchParams.get("status") ?? defaultFilters.status,
+    category: searchParams.get("category") ?? defaultFilters.category,
+    reward: searchParams.get("reward") ?? defaultFilters.reward,
+    sort: searchParams.get("sort") ?? defaultFilters.sort,
+    platform: searchParams.get("platform") ?? defaultFilters.platform,
+  };
 
   // Only show the full LoadingScreen once per browser session (e.g. right
   // after login/signup). On later visits to /marketplace within the same
@@ -82,8 +92,18 @@ export default function Marketplace() {
   };
 
   const updateFilter = (key, value) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (value === defaultFilters[key]) {
+        next.delete(key);
+      } else {
+        next.set(key, value);
+      }
+      return next;
+    });
   };
+
+  const clearFilters = () => setSearchParams({});
 
   const handleLoaderFinish = () => {
     sessionStorage.setItem(LOADER_SEEN_KEY, "1");
@@ -115,7 +135,7 @@ export default function Marketplace() {
             <FeaturedCampaigns campaigns={campaigns} loading={loading} error={error} onRetry={handleRetry} />
           </div>
           <div className="mt-16">
-            <AllCampaigns campaigns={campaigns} filters={filters} loading={loading} error={error} onRetry={handleRetry} />
+            <AllCampaigns campaigns={campaigns} filters={filters} loading={loading} error={error} onRetry={handleRetry} onClearFilters={clearFilters} />
           </div>
         </MarketplaceLayout>
       )}

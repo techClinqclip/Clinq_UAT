@@ -26,6 +26,7 @@ import ConfirmModal from "../../shared/ui/ConfirmModal";
 import SubmitClipDialog from "../Creator/SubmitClipDialog";
 import { api } from "../../lib/api";
 import useCurrentUser from "../../hooks/useCurrentUser";
+import { formatINR } from "../../lib/format";
 
 /*
   Campaign-state gating: a campaign can stop accepting submissions for three
@@ -76,23 +77,6 @@ function getPlatformKey(platform) {
     return normalized === "x" || normalized.includes("twitter") ? "x" : normalized;
 }
 
-// Indian-style currency shorthand: thousand -> k, lakh -> L, crore -> Cr
-function formatINR(value) {
-    const num = Number(value || 0);
-    if (Number.isNaN(num)) return "₹0";
-    const sign = num < 0 ? "-" : "";
-    const abs = Math.abs(num);
-
-    const trim = (n) => {
-        const fixed = n.toFixed(2);
-        return fixed.replace(/\.?0+$/, "");
-    };
-
-    if (abs >= 1e7) return `${sign}₹${trim(abs / 1e7)}Cr`;
-    if (abs >= 1e5) return `${sign}₹${trim(abs / 1e5)}L`;
-    if (abs >= 1e3) return `${sign}₹${trim(abs / 1e3)}k`;
-    return `${sign}₹${abs.toLocaleString("en-IN")}`;
-}
 
 // Small donut gauge used for "earnings vs. cap" — plain numbers don't make
 // how close a clipper is to the payout ceiling obvious at a glance.
@@ -204,7 +188,7 @@ function getCampaignNotice(gig) {
             tone: "warning",
             icon: Trophy,
             title: "Maximum Creator Earnings Reached",
-            message: `You've reached ${formatINR(gig.maxCreatorEarnings)}. Further submissions won't generate rewards.`,
+            message: `You've reached ${formatINR(gig.maxCreatorEarnings, { decimals: 2 })}. Further submissions won't generate rewards.`,
         };
     }
 
@@ -574,7 +558,7 @@ export default function ClipperGigDetails() {
                             My Earnings
                         </p>
                         <h3 className="mt-2 text-2xl font-semibold">
-                            {formatINR(gig?.myEarnings)}
+                            {formatINR(gig?.myEarnings, { decimals: 2 })}
                         </h3>
                     </div>
 
@@ -584,7 +568,7 @@ export default function ClipperGigDetails() {
                             Pending Payout
                         </p>
                         <h3 className="mt-2 text-2xl font-semibold">
-                            {formatINR(gig?.pendingPayout)}
+                            {formatINR(gig?.pendingPayout, { decimals: 2 })}
                         </h3>
                     </div>
 
@@ -677,7 +661,7 @@ export default function ClipperGigDetails() {
                         <BudgetRing percent={budgetPercentage} />
 
                         <p className="mt-4 text-sm text-zinc-400">
-                            {formatINR(gig?.usedBudget)} used of {formatINR(gig?.rewardPool)}
+                            {formatINR(gig?.usedBudget, { decimals: 2 })} used of {formatINR(gig?.rewardPool)}
                         </p>
 
                     </div>
@@ -730,7 +714,7 @@ export default function ClipperGigDetails() {
                         <div>
                             <p className="text-sm text-zinc-500">Your Earnings vs. Cap</p>
                             <h3 className="mt-1 text-lg font-semibold">
-                                {formatINR(gig?.myEarnings)}
+                                {formatINR(gig?.myEarnings, { decimals: 2 })}
                                 <span className="text-sm font-normal text-zinc-500">
                                     {" "}/ {formatINR(gig?.maxCreatorEarnings)}
                                 </span>
@@ -978,14 +962,14 @@ export default function ClipperGigDetails() {
                                                 {/* Earned */}
                                                 <td className="px-5 py-5 font-medium text-white">
                                                     {submission.earnings
-                                                        ? formatINR(submission.earnings)
+                                                        ? formatINR(submission.earnings, { decimals: 2 })
                                                         : "-"}
                                                 </td>
 
                                                 {/* Pending Payout */}
                                                 <td className="px-5 py-5 text-zinc-300">
                                                     {submission.pendingPayout
-                                                        ? formatINR(submission.pendingPayout)
+                                                        ? formatINR(submission.pendingPayout, { decimals: 2 })
                                                         : "-"}
                                                 </td>
 

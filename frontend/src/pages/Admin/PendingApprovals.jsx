@@ -17,6 +17,7 @@ import useToast from "../../hooks/useToast";
 import PendingApprovalReviewModal from "./components/PendingApprovalReviewModal";
 import AdminLoadingSkeleton from "./components/AdminLoadingSkeleton";
 import { api } from "../../lib/api";
+import { formatINR } from "../../lib/format";
 
 /*
   Admin — Pending Amount Approval queue. From the spec sheet:
@@ -278,9 +279,9 @@ export default function PendingApprovals() {
   const kpiCards = [
     { label: "Total Campaigns", value: totalCampaignsCount, icon: Layers, accent: "cyan" },
     { label: "Pending Review", value: pendingCount, icon: Clock3, accent: "amber" },
-    { label: "Total Pending Amount", value: `₹${totalPendingAmount.toLocaleString()}`, icon: CircleDollarSign, accent: "violet" },
+    { label: "Total Pending Amount", value: formatINR(totalPendingAmount, { decimals: 2 }), icon: CircleDollarSign, accent: "violet" },
     { label: "Over CAP", value: overCapCount, icon: Flag, accent: "rose" },
-    { label: "Approved Amount", value: `₹${totalApprovedAmount.toLocaleString()}`, icon: CheckCircle2, accent: "emerald" },
+    { label: "Approved Amount", value: formatINR(totalApprovedAmount, { decimals: 2 }), icon: CheckCircle2, accent: "emerald" },
     { label: "Approved Count", value: approvedTodayCount, icon: CheckCircle2, accent: "cyan" },
   ];
 
@@ -430,7 +431,7 @@ export default function PendingApprovals() {
                     <div className="flex items-center gap-2">
                       {groupPendingTotal > 0 && (
                         <span className="rounded-full bg-amber-500/10 px-3 py-1 text-sm font-medium text-amber-400">
-                          ₹{groupPendingTotal.toLocaleString()} pending
+                          {formatINR(groupPendingTotal, { decimals: 2 })} pending
                         </span>
                       )}
                       <span className="rounded-full bg-white/5 px-3 py-1 text-sm text-zinc-400">
@@ -462,7 +463,7 @@ export default function PendingApprovals() {
                           </div>
 
                           <div className="hidden shrink-0 text-sm font-medium text-white sm:block">
-                            ₹{item.pendingAmount.toLocaleString()}
+                            {formatINR(item.pendingAmount, { decimals: 2 })}
                           </div>
 
                           <span className="hidden shrink-0 text-xs text-zinc-500 md:block">{item.submittedAt}</span>

@@ -13,6 +13,7 @@ import Breadcrumbs from "../../components/Breadcrumbs";
 import useToast from "../../hooks/useToast";
 import { api } from "../../lib/api";
 import AdminLoadingSkeleton, { AdminListSkeleton } from "./components/AdminLoadingSkeleton";
+import { formatINR } from "../../lib/format";
 import ManualPayoutModal from "./components/ManualPayoutModal";
 import RejectPayoutModal from "./components/RejectPayoutModal";
 import ConfirmModal from "../../shared/ui/ConfirmModal";
@@ -106,7 +107,7 @@ function PayoutRow({ item, manualPay, actionId, onApprove, onReject }) {
       </div>
       <div className="flex flex-wrap items-center gap-3 lg:justify-end">
         <span className="text-lg font-semibold text-white">
-          ₹{Number(item.amount || 0).toLocaleString()}
+          {formatINR(item.amount, { decimals: 2 })}
         </span>
         {canAct ? (
           <>
@@ -391,7 +392,7 @@ export default function AdminPayoutApproval() {
           <p className="text-sm text-zinc-500">Mode</p>
           <h3 className="mt-2 text-2xl font-bold">{MODE_LABELS[mode] || mode}</h3>
           {statusFilter === "pending" ? (
-            <p className="mt-2 text-xs text-zinc-500">Pending amount ₹{pendingAmount.toLocaleString()}</p>
+            <p className="mt-2 text-xs text-zinc-500">Pending amount {formatINR(pendingAmount)}</p>
           ) : null}
         </div>
       </section>

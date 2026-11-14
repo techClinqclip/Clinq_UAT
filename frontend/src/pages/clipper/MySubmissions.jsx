@@ -25,6 +25,7 @@ import { FaInstagram, FaYoutube, FaFacebook } from "react-icons/fa";
 import { api } from "../../lib/api";
 import MarketplaceLoadingSkeleton from "../../components/MarketplaceLoadingSkeleton";
 import ConfirmModal from "../../shared/ui/ConfirmModal";
+import { formatINR } from "../../lib/format";
 
 // ----------------------------------------------------------------------
 // Platform Icon Component
@@ -339,13 +340,13 @@ export default function MySubmissions() {
         color: "amber",
         label: "Best Earning Campaign",
         value: bestCampaign ? bestCampaign[0] : "—",
-        detail: bestCampaign ? `₹${bestCampaign[1].toLocaleString()} earned` : "No data yet",
+        detail: bestCampaign ? `${formatINR(bestCampaign[1], { decimals: 2 })} earned` : "No data yet",
       },
       {
         icon: IndianRupee,
         color: "emerald",
         label: "Avg. Earnings / Approved Clip",
-        value: `₹${avgEarningsPerApproved.toLocaleString()}`,
+        value: formatINR(avgEarningsPerApproved, { decimals: 2 }),
         detail: `${approvedSubs.length} approved clip${approvedSubs.length === 1 ? "" : "s"}`,
       },
     ];
@@ -432,7 +433,7 @@ export default function MySubmissions() {
             { label: "Total Submissions", value: total, icon: FileVideo, color: "violet" },
             { label: "Approved", value: approved, icon: CheckCircle2, color: "emerald" },
             { label: "Pending", value: pending, icon: Clock3, color: "amber" },
-            { label: "Lifetime Earnings", value: `₹${totalEarnings.toLocaleString()}`, icon: IndianRupee, color: "emerald" },
+            { label: "Lifetime Earnings", value: formatINR(totalEarnings, { decimals: 2 }), icon: IndianRupee, color: "emerald" },
           ].map((card) => (
             <div
               key={card.label}
@@ -573,8 +574,7 @@ export default function MySubmissions() {
                             {camp.pending} pending
                           </span>
                           <span className="flex items-center gap-1.5 font-mono tabular-nums">
-                            <IndianRupee size={13} className="text-emerald-400" />
-                            {camp.totalEarnings.toLocaleString()}
+                            {formatINR(camp.totalEarnings, { decimals: 2 })}
                           </span>
                           <span className="text-zinc-600">Last: {camp.lastSubmission}</span>
                         </div>
@@ -658,7 +658,7 @@ export default function MySubmissions() {
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                       <span className="font-mono tabular-nums text-emerald-400">
-                                        ₹{sub.earnings.toLocaleString()}
+                                        {formatINR(sub.earnings, { decimals: 2 })}
                                       </span>
                                     </td>
                                     <td className="px-6 py-4 text-zinc-500">{sub.submittedAt}</td>

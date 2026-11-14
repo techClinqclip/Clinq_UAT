@@ -12,6 +12,7 @@ import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import { resolveImageUrl } from "../../lib/media";
+import ErrorState from "../../shared/ui/ErrorState";
 
 const formatCompact = (n) =>
   new Intl.NumberFormat("en-IN", {
@@ -44,12 +45,15 @@ export default function Dashboard() {
   const [dashboardMetrics, setDashboardMetrics] = useState(null);
   const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(true);
   const [campaignsError, setCampaignsError] = useState(null);
+  const [dashboardMetricsError, setDashboardMetricsError] = useState(null);
+  const [fetchKey, setFetchKey] = useState(0);
   const [avatarFailed, setAvatarFailed] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     setIsLoadingCampaigns(true);
     setCampaignsError(null);
+    setDashboardMetricsError(null);
 
     api("/api/content/campaigns/")
       .then((data) => {
@@ -65,8 +69,9 @@ export default function Dashboard() {
               setCreatorsWorkedWith(Number(metrics.creators_worked_with) || 0);
             }
           })
-          .catch(() => {
-            // ignore dashboard fetch errors
+          .catch((err) => {
+            if (!mounted) return;
+            setDashboardMetricsError(err?.message || "Unable to load dashboard metrics.");
           });
       })
       .catch((err) => {
@@ -81,7 +86,7 @@ export default function Dashboard() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [fetchKey]);
 
   useEffect(() => {
     let mounted = true;
@@ -141,6 +146,13 @@ export default function Dashboard() {
           <AlertTriangle size={16} className="shrink-0" />
           {campaignsError}
         </div>
+      )}
+
+      {dashboardMetricsError && (
+        <ErrorState
+          error={dashboardMetricsError}
+          onRetry={() => setFetchKey((k) => k + 1)}
+        />
       )}
 
       {/* Hero Section */}

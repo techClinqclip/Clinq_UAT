@@ -1,5 +1,6 @@
 ﻿import { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { formatINR } from "../../lib/format";
 import {
     IndianRupee,
     TrendingUp,
@@ -32,9 +33,6 @@ function normalizeString(value, fallback = "") {
     return text || fallback;
 }
 
-function formatMoney(value) {
-    return `₹${Number(value || 0).toLocaleString("en-IN")}`;
-}
 
 function formatCompact(value) {
     return new Intl.NumberFormat("en-IN", {
@@ -168,12 +166,12 @@ export default function GigCard({ gig }) {
                 <StatBox
                     icon={<IndianRupee size={15} className="text-violet-400" />}
                     label="Reward Pool"
-                    value={formatMoney(rewardPool)}
+                    value={formatINR(rewardPool)}
                 />
                 <StatBox
                     icon={<TrendingUp size={15} className="text-emerald-400" />}
                     label="My Earnings"
-                    value={formatMoney(myEarnings)}
+                    value={formatINR(myEarnings, { decimals: 2 })}
                     valueClass="text-emerald-400"
                 />
                 <StatBox
@@ -207,7 +205,7 @@ export default function GigCard({ gig }) {
             <div className="px-5 pb-5 pt-3">
                 <div className="mb-1.5 flex items-center justify-between text-xs">
                     <span className="text-zinc-500">
-                        {formatMoney(usedBudget)} of {formatMoney(rewardPool)} used
+                        {formatINR(usedBudget, { decimals: 2 })} of {formatINR(rewardPool)} used
                     </span>
                     <span className="font-semibold text-white">{progress}%</span>
                 </div>

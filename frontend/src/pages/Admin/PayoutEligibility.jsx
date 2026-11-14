@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search, Eye, IndianRupee, TrendingUp, Send, ChevronLeft, ChevronRight } from "lucide-react";
+import { formatINR } from "../../lib/format";
 import { FaYoutube, FaInstagram, FaTiktok, FaXTwitter } from "react-icons/fa6";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import useToast from "../../hooks/useToast";
@@ -80,7 +81,7 @@ export default function PayoutEligibility() {
   const kpiCards = [
     { label: "Eligible Now", value: eligibleCount, icon: IndianRupee, accent: "emerald" },
     { label: "Approaching 1,000", value: approachingCount, icon: TrendingUp, accent: "amber" },
-    { label: "Eligible Amount", value: `₹${totalEligibleAmount.toLocaleString()}`, icon: IndianRupee, accent: "violet" },
+    { label: "Eligible Amount", value: formatINR(totalEligibleAmount, { decimals: 2 }), icon: IndianRupee, accent: "violet" },
     { label: "Sent to Approval", value: sentCount, icon: Send, accent: "cyan" },
   ];
 
@@ -235,7 +236,7 @@ export default function PayoutEligibility() {
                     </div>
 
                     <div className="flex shrink-0 items-center gap-3 sm:flex-col sm:items-end">
-                      <span className="text-sm font-medium text-white">₹{item.estimatedPayout.toLocaleString()} est.</span>
+                      <span className="text-sm font-medium text-white">{formatINR(item.estimatedPayout, { decimals: 2 })} est.</span>
                       {status === "Eligible" && (
                         <button
                           onClick={() => handleSendToApproval(item.id)}

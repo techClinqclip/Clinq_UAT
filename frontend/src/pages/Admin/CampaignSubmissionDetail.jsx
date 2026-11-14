@@ -4,6 +4,7 @@ import { ArrowLeft, Users, FileVideo, Wallet, IndianRupee } from "lucide-react";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import { api } from "../../lib/api";
 import AdminLoadingSkeleton from "./components/AdminLoadingSkeleton";
+import { formatINR } from "../../lib/format";
 
 const STATUS_STYLES = {
   pending: "bg-amber-500/10 text-amber-400",
@@ -93,11 +94,11 @@ export default function CampaignSubmissionDetail() {
             <div className="mt-6 flex flex-wrap gap-6 text-sm text-zinc-300">
               <span className="flex items-center gap-1.5">
                 <Wallet size={15} className="text-zinc-500" />
-                ₹{Number(campaign.campaignBudget || 0).toLocaleString()} total budget
+                {formatINR(campaign.campaignBudget)} total budget
               </span>
               <span className="flex items-center gap-1.5">
                 <IndianRupee size={15} className="text-zinc-500" />
-                ₹{Number(campaign.campaignRewardPer1k || 0).toLocaleString()} / 1K views
+                {formatINR(campaign.campaignRewardPer1k, { decimals: 2 })} / 1K views
               </span>
             </div>
           </section>
@@ -113,7 +114,7 @@ export default function CampaignSubmissionDetail() {
               },
               {
                 label: "Est. Spend (Approved)",
-                value: `₹${estimatedSpend.toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
+                value: formatINR(estimatedSpend, { decimals: 2 }),
                 icon: Wallet,
                 color: "text-emerald-400",
               },

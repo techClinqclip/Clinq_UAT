@@ -13,6 +13,7 @@ import Breadcrumbs from "../../components/Breadcrumbs";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { api } from "../../lib/api";
 import AdminLoadingSkeleton from "./components/AdminLoadingSkeleton";
+import { formatINR } from "../../lib/format";
 
 /*
   Admin — overview/home. Summarizes the sections from the spec sheet
@@ -152,8 +153,8 @@ export default function AdminDashboard() {
 
   const summaryCards = dashboardData ? [
     { ...SUMMARY_CARDS[0], value: dashboardData.pending_submissions },
-    { ...SUMMARY_CARDS[1], value: `₹${Number(dashboardData.pending_payout_amount || 0).toLocaleString()}`, hint: `Across ${dashboardData.pending_payout_clippers || 0} clippers` },
-    { ...SUMMARY_CARDS[2], value: `₹${Number(dashboardData.paid_out || 0).toLocaleString()}`, hint: "Released from approved submissions" },
+    { ...SUMMARY_CARDS[1], value: formatINR(dashboardData.pending_payout_amount, { decimals: 2 }), hint: `Across ${dashboardData.pending_payout_clippers || 0} clippers` },
+    { ...SUMMARY_CARDS[2], value: formatINR(dashboardData.paid_out, { decimals: 2 }), hint: "Released from approved submissions" },
     { ...SUMMARY_CARDS[3], value: dashboardData.open_support_tickets, hint: `${dashboardData.urgent_support_tickets || 0} marked urgent` },
   ] : SUMMARY_CARDS.map((card) => ({ ...card, value: "—" }));
   const recentActivity = dashboardData?.recent_activity || [];
