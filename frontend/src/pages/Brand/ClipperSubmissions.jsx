@@ -293,21 +293,15 @@ export default function ClipperSubmissions() {
  
     setIsDeleting(true);
     try {
-      console.log('🔴 DELETE: called with ids:', deleteTarget.ids);
-      console.log('🔴 DELETE: Campaign ID:', actualCampaignId);
-      console.log('🔴 DELETE: Clipper ID:', actualClipperId);
- 
       const deletePromises = deleteTarget.ids.map((submissionId) => {
         const url = `/api/content/campaigns/${actualCampaignId}/clippers/${actualClipperId}/submissions/${submissionId}/`;
-        console.log('🔴 DELETE: calling URL:', url);
         return api(url, {
           method: "DELETE",
         });
       });
  
-      const results = await Promise.all(deletePromises);
-      console.log('✅ DELETE: Success, responses:', results);
-      
+      await Promise.all(deletePromises);
+
       // Remove deleted submissions from state
       setSubmissions((subs) => subs.filter((s) => !deleteTarget.ids.includes(s.id)));
       setSelectedIds((sel) => sel.filter((id) => !deleteTarget.ids.includes(id)));

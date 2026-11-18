@@ -198,9 +198,7 @@ export default function CreatorSubmissionDetails() {
     setError(null);
     try {
       const url = `/api/content/campaigns/${gigId}/clippers/${participantId}/submissions/`;
-      console.log('📥 Loading submissions from:', url);
       const data = await api(url);
-      console.log('📦 Loaded data:', data);
 
       setCampaignInfo(data.participant?.campaignInfo || null);
       setSubmissions(
@@ -270,24 +268,16 @@ export default function CreatorSubmissionDetails() {
     try {
       const payload = deleteReason.trim() ? { reason: deleteReason.trim() } : {};
 
-      console.log('🔴 DELETE DEBUG INFO:');
-      console.log('  gigId:', gigId);
-      console.log('  participantId:', participantId);
-      console.log('  deleteTarget.ids:', deleteTarget.ids);
-      console.log('  deleteReason:', deleteReason.trim());
-
       // Delete each submission individually using the correct endpoint
       const deletePromises = deleteTarget.ids.map((submissionId) => {
         const url = `/api/content/campaigns/${gigId}/clippers/${participantId}/submissions/${submissionId}/`;
-        console.log('  calling URL:', url);
         return api(url, {
           method: "DELETE",
           body: payload,
         });
       });
 
-      const results = await Promise.all(deletePromises);
-      console.log('✅ Delete API response:', results);
+      await Promise.all(deletePromises);
 
       await loadSubmissions();
       setSelectedIds((sel) => sel.filter((id) => !deleteTarget.ids.includes(id)));
