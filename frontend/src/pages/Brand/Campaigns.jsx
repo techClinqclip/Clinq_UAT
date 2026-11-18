@@ -21,6 +21,7 @@ import {
 import CampaignCardSkeleton from "../../shared/ui/CampaignCardSkeleton";
 import ConfirmModal from "../../shared/ui/ConfirmModal";
 import useToast from "../../hooks/useToast";
+import usePageTitle from "../../lib/usePageTitle";
 
 const ACCENTS = {
   violet: {
@@ -313,6 +314,7 @@ function CampaignCard({ campaign, onRequestAction, isToggling }) {
 }
 
 export default function Campaigns() {
+  usePageTitle("Campaigns");
   const navigate = useNavigate();
   const [campaigns, setCampaigns] = useState([]);
   const [isLoading, setIsLoading] = useState(true);

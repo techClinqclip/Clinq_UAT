@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import { resolveImageUrl } from "../../lib/media";
 import ErrorState from "../../shared/ui/ErrorState";
+import usePageTitle from "../../lib/usePageTitle";
 
 const formatCompact = (n) =>
   new Intl.NumberFormat("en-IN", {
@@ -39,6 +40,7 @@ function SkeletonBlock({ className }) {
 }
 
 export default function Dashboard() {
+  usePageTitle("Dashboard");
   const [profile, setProfile] = useState(null);
   const [campaigns, setCampaigns] = useState([]);
   const [creatorsWorkedWith, setCreatorsWorkedWith] = useState(0);

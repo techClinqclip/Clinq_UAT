@@ -33,6 +33,7 @@ import useToast from "../../hooks/useToast";
 import { api, API_BASE_URL } from "../../lib/api";
 import { getStoredUser, hydrateAuthState } from "../../lib/auth";
 import ConfirmModal from "../../shared/ui/ConfirmModal";
+import usePageTitle from "../../lib/usePageTitle";
 
 const resolveImageUrl = (url) => {
   if (!url || typeof url !== "string") return null;
@@ -546,6 +547,7 @@ function NiceSelect({ value, onChange, options, disabled, placeholder = "Select"
 /* ---------- main component ---------- */
 
 export default function CreatorProfile() {
+  usePageTitle("Profile");
   const [tab, setTab] = useState("identity");
   const [form, setForm] = useState(() => buildInitialForm());
   const [profileData, setProfileData] = useState(null);

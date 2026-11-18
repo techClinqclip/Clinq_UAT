@@ -33,6 +33,7 @@ import ProfileLoadingSkeleton from "../../shared/ui/ProfileLoadingSkeleton";
 import { api } from "../../lib/api";
 import useToast from "../../hooks/useToast";
 import ConfirmModal from "../../shared/ui/ConfirmModal";
+import usePageTitle from "../../lib/usePageTitle";
 
 /*
   Backend wiring: SECTION_ENDPOINTS + buildPayload() are the only two
@@ -538,6 +539,7 @@ function MultiChipField({ presets, selected, customValues, otherActive, otherDra
 }
 
 export default function ClipperProfile() {
+  usePageTitle("Profile");
   const [searchParams] = useSearchParams();
   const requestedTab = searchParams.get("tab");
   const [tab, setTab] = useState(

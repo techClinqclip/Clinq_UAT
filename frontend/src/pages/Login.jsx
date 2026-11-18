@@ -4,6 +4,7 @@ import { Eye, EyeOff, Loader2, ArrowLeft } from "lucide-react";
 import useToast from "../hooks/useToast";
 import { api, loginWithGoogle, setAuthStorage } from "../lib/api";
 import { getOnboardingRedirectPath, hydrateAuthState } from "../lib/auth";
+import usePageTitle from "../lib/usePageTitle";
 
 function useTimecode() {
   const [frames, setFrames] = useState(0);
@@ -21,6 +22,7 @@ function useTimecode() {
 const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
 export default function Login() {
+  usePageTitle("Log in");
   const navigate = useNavigate();
   const { showToast } = useToast();
   const timecode = useTimecode();
