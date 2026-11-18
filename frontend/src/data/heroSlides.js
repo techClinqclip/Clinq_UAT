@@ -19,11 +19,4 @@ export const heroSlides = [
         creator:"FitLife",
         reward:"₹6,000",
     },
-    
-    {
-        title:"Finance Campaign",
-        image:"/hero/finance.jpg",
-        creator:"CashCraft",
-        reward:"₹4,000",
-    },
     ]
