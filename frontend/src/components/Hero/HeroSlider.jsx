@@ -52,6 +52,8 @@ export default function HeroSlider() {
           <img
             src={heroSlides[current].image}
             alt={heroSlides[current].title}
+            fetchpriority="high"
+            decoding="async"
             className="h-full w-full object-cover"
           />
 
@@ -106,6 +108,8 @@ function Slide({ slide, position }) {
       <img
         src={slide.image}
         alt={slide.title}
+        loading="lazy"
+        decoding="async"
         className="h-full w-full object-cover"
       />
 
