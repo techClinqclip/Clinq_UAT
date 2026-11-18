@@ -14,6 +14,7 @@ import useToast from "../../hooks/useToast";
 import { api } from "../../lib/api";
 import { normalizeClipperWithdrawal } from "./TransactionHistory";
 import { formatINR } from "../../lib/format";
+import usePageTitle from "../../lib/usePageTitle";
 
 const defaultOverview = {
     total_earnings: 0,
@@ -28,6 +29,7 @@ const defaultOverview = {
 };
 
 export default function ClipperEarnings() {
+    usePageTitle("Earnings");
     const [overview, setOverview] = useState(defaultOverview);
     const [withdrawals, setWithdrawals] = useState([]);
     const [loading, setLoading] = useState(true);

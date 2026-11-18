@@ -34,6 +34,7 @@ import { getStoredUser, hydrateAuthState } from "../../lib/auth";
 import useToast from "../../hooks/useToast";
 import ProfileLoadingSkeleton from "../../shared/ui/ProfileLoadingSkeleton";
 import ConfirmModal from "../../shared/ui/ConfirmModal";
+import usePageTitle from "../../lib/usePageTitle";
 
 /*
   Profile — the editable settings page (as opposed to profilesetup.jsx,
@@ -479,6 +480,7 @@ function NiceSelect({ value, onChange, options, disabled, placeholder = "Select"
 }
 
 export default function Profile() {
+  usePageTitle("Profile");
   // FIX: previously hardcoded to "identity" regardless of URL, so
   // AddFundsModal's "Change" link (?tab=payments) never actually landed
   // on the Payments tab. Now reads the tab from the query string on load.

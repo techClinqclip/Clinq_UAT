@@ -34,8 +34,6 @@ export default function EditGig() {
 
   const handleUpdate = async (formData) => {
     // TODO: PATCH /gigs/:id
-    console.log("Updating Gig", id, formData);
-
     navigate(`/creator/gigs/${id}`);
   };
 

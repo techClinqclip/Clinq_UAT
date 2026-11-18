@@ -23,6 +23,7 @@ import WithdrawModal from "./components/WithdrawModal";
 import TransferToCampaignModal from "./components/TransferToCampaignModal";
 import { normalizeCreatorWalletTransaction } from "./TransactionHistory";
 import { api } from "../../lib/api"; // ADJUST to match this file's actual path
+import usePageTitle from "../../lib/usePageTitle";
 
 /*
   Creator Wallet — a creator has two responsibilities the Brand and
@@ -237,6 +238,7 @@ function WalletSkeleton() {
 }
 
 export default function CreatorWallet() {
+    usePageTitle("Wallet");
     const [selectedFilter, setSelectedFilter] = useState("30 Days");
     const [chartView, setChartView] = useState("earnings"); // "earnings" | "spend"
 

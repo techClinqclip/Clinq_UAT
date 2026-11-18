@@ -12,6 +12,7 @@ import {
 
 import { Link } from "react-router-dom";
 import { api } from "../../lib/api";
+import usePageTitle from "../../lib/usePageTitle";
 
 const formatCompact = (value) => {
   if (typeof value === "number") {
@@ -50,6 +51,7 @@ function EmptyTopGigs() {
 }
 
 export default function Dashboard() {
+  usePageTitle("Dashboard");
   const [stats, setStats] = useState([]);
   const [topGigs, setTopGigs] = useState([]);
   const [profile, setProfile] = useState(null);

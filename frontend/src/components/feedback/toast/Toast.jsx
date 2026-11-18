@@ -71,7 +71,6 @@ export default function Toast({ toast, removeToast }) {
     removeToast(id);
   };
 
-  console.log("Toast component rendered");
   return (
     <motion.div
   layout

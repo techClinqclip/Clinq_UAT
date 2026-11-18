@@ -7,8 +7,10 @@
   
         {/* LEFT BANNER */}
         <img
-          src="/hero/podcast.jpg"
+          src="/hero/podcast.webp"
           alt="podcast Campaign"
+          loading="lazy"
+          decoding="async"
           className="
             absolute
             left-[-20px]
@@ -27,8 +29,10 @@
   
         {/* CENTER BANNER */}
         <img
-          src="/hero/gaming.jpg"
+          src="/hero/gaming.webp"
           alt="Gaming Campaign"
+          fetchpriority="high"
+          decoding="async"
           className="
             absolute
             left-1/2
@@ -46,8 +50,10 @@
   
         {/* RIGHT BANNER */}
         <img
-          src="/hero/fitness.jpg"
+          src="/hero/fitness.webp"
           alt="Fitness Campaign"
+          loading="lazy"
+          decoding="async"
           className="
             absolute
             right-[-20px]

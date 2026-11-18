@@ -16,6 +16,7 @@ import AddFundsModal from "../../shared/wallet/AddFundsModal";
 import { syncPendingWalletTopups } from "../../shared/wallet/syncPendingTopups";
 import { notifyWalletBalanceChanged } from "../../shared/wallet/walletBalanceEvents";
 import { api } from "../../lib/api"; // ADJUST to match this file's actual path
+import usePageTitle from "../../lib/usePageTitle";
 
 /*
   Brand Wallet — the spend-side counterpart to ClipperEarnings. Same
@@ -120,6 +121,7 @@ const normalizeSpendSeries = (series = []) =>
     }));
 
 export default function BrandWallet() {
+    usePageTitle("Wallet");
     const [filter, setFilter] = useState("30D");
     const [addFundsOpen, setAddFundsOpen] = useState(false);
     const [walletData, setWalletData] = useState(null);

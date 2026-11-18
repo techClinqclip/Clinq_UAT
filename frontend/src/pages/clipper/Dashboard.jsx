@@ -15,6 +15,7 @@ import { api } from "../../lib/api";
 import { formatINR } from "../../lib/format";
 import { FaInstagram, FaYoutube, FaFacebook } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
+import usePageTitle from "../../lib/usePageTitle";
 
 const STATUS_STYLES = {
     Approved: "bg-green-500/10 text-green-400",
@@ -55,6 +56,7 @@ function EmptyState({ icon: Icon, title, description, ctaLabel, ctaTo, className
 }
 
 export default function ClipperDashboard() {
+    usePageTitle("Dashboard");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [gigs, setGigs] = useState([]);

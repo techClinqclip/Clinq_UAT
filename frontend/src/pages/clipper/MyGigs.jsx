@@ -14,6 +14,7 @@ import Breadcrumbs from "../../components/Breadcrumbs";
 import MarketplaceLoadingSkeleton from "../../components/MarketplaceLoadingSkeleton";
 import GigCard from "./GigCard";
 import { formatINR } from "../../lib/format";
+import usePageTitle from "../../lib/usePageTitle";
 
 const filters = [
     "All",
@@ -23,6 +24,7 @@ const filters = [
 ];
 
 export default function MyGigs() {
+    usePageTitle("My Gigs");
     const [gigs, setGigs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");

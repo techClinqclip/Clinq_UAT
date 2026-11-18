@@ -20,6 +20,7 @@ import Breadcrumbs from "../../components/Breadcrumbs";
 import useToast from "../../hooks/useToast";
 import { api } from "../../lib/api";
 import ConfirmModal from "../../shared/ui/ConfirmModal";
+import usePageTitle from "../../lib/usePageTitle";
 
 const initialGigs = [];
 
@@ -311,6 +312,7 @@ function EmptyGigsState({ hasAnyGigs, onClearFilters }) {
 }
 
 export default function CreatorGigs() {
+  usePageTitle("My Gigs");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const statusFilter = searchParams.get("status");

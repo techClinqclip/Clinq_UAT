@@ -8,6 +8,7 @@ import {
   getRoleFromPayload,
 } from "../lib/auth";
 import { LEGAL_DOCUMENT_KEYS, openLegalDocument } from "../lib/resourceTemplate";
+import usePageTitle from "../lib/usePageTitle";
 
 const roleConfig = {
   clipper: { title: "Creating a Clipper Account", description: "Start earning rewards by creating engaging clips.", accent: "amber" },
@@ -82,6 +83,7 @@ function OtpInput({ length = 6, value, onChange, accent, hasError }) {
 }
 
 export default function Signup() {
+  usePageTitle("Sign up");
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const role = searchParams.get("role") || "";

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Home, ArrowLeft, Rocket, Compass } from "lucide-react";
 import AnimatedBackground from "./AnimatedBackground";
+import usePageTitle from "../lib/usePageTitle";
 
 const container = {
   hidden: {},
@@ -41,6 +42,7 @@ function OrbitDigit() {
 }
 
 export default function NotFound() {
+  usePageTitle("404 Not Found");
   return (
     <div className="relative flex min-h-screen items-center justify-center px-6 py-20">
       <AnimatedBackground />
